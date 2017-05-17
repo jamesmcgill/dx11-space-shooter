@@ -1,0 +1,26 @@
+newmtl cubePolygon2
+Ka 0.000 0.032 0.190
+Kd 0.000 0.032 0.190
+Ks 1 1 1
+illum 2
+Ns 50
+
+newmtl cubePolygon3
+Ka 1.000 0.890 0.000
+Kd 1.000 0.890 0.000
+Ks 0 0 0
+illum 0
+
+newmtl cubePolygon
+Ka 1 0 0
+Kd 1 0 0
+Ks 1 1 1
+illum 2
+Ns 50
+
+newmtl DefaultLib_Material11
+Ka 0.890 0.890 0.890
+Kd 0.890 0.890 0.890
+Ks 1 1 1
+illum 2
+Ns 50
