@@ -25,8 +25,8 @@ Game::Game()
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
 
-	m_entities[0].m_position = Vector3(0.0f, -0.3f, 0.0f);
-	m_entities[1].m_position = Vector3(0.0f,  0.3f, 0.0f);
+	m_entities[0].position = Vector3(0.0f, -0.3f, 0.0f);
+	m_entities[1].position = Vector3(0.0f, 0.3f, 0.0f);
 }
 
 // Initialize the Direct3D resources required to run.
@@ -74,7 +74,8 @@ Game::Update(DX::StepTimer const& timer)
 	// CAMERA
 	const float CAMERA_DIST = 4.5f;
 
-	const auto& atP							 = m_entities[0].m_position + m_modelBound.Center;
+	assert(m_entities[0].model);
+	const auto& atP = m_entities[0].position + m_entities[0].model->bound.Center;
 	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
 	static const XMVECTORF32 at	= {atP.x, atP.y, atP.z, 0.0f};
 	static const XMVECTORF32 up	= {0.0f, 1.0f, 0.0f, 0.0f};
@@ -112,24 +113,54 @@ Game::Update(DX::StepTimer const& timer)
 	m_playerAccel *= PLAYER_SPEED;
 
 	// Friction
-	Vector3 frictionNormal = -player.m_velocity;
+	Vector3 frictionNormal = -player.velocity;
 	frictionNormal.Normalize();
 	m_playerAccel += PLAYER_FRICTION * frictionNormal;
 
-	player.m_position = 0.5f * m_playerAccel * (elapsedTimeS * elapsedTimeS)
-											+ player.m_velocity * elapsedTimeS + player.m_position;
-	player.m_velocity = m_playerAccel * elapsedTimeS + player.m_velocity;
+	player.position = 0.5f * m_playerAccel * (elapsedTimeS * elapsedTimeS)
+										+ player.velocity * elapsedTimeS + player.position;
+	player.velocity = m_playerAccel * elapsedTimeS + player.velocity;
 
 	// Clamp velocity
-	float velocityMagnitude = player.m_velocity.Length();
+	float velocityMagnitude = player.velocity.Length();
 	if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
-		player.m_velocity.Normalize();
-		player.m_velocity *= PLAYER_MAX_VELOCITY;
+		player.velocity.Normalize();
+		player.velocity *= PLAYER_MAX_VELOCITY;
 	}
 	else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
 	{
-		player.m_velocity = Vector3();
+		player.velocity = Vector3();
 	}
+
+	// Collision
+	for (size_t srcIdx = 0; srcIdx < NUM_ENTITIES; ++srcIdx)
+	{
+		m_entities[srcIdx].isColliding = false;
+	}
+
+	for (size_t srcIdx = 0; srcIdx < NUM_ENTITIES; ++srcIdx)
+	{
+		// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
+		assert(m_entities[srcIdx].model);
+		auto& srcEntity = m_entities[srcIdx];
+		auto& srcBound	= m_entities[srcIdx].model->bound;
+		auto srcCenter	= srcEntity.position + srcBound.Center;
+
+		for (size_t testIdx = srcIdx + 1; testIdx < NUM_ENTITIES; ++testIdx)
+		{
+			assert(m_entities[testIdx].model);
+			auto& testEntity = m_entities[testIdx];
+			auto& testBound	= m_entities[testIdx].model->bound;
+			auto testCenter	= testEntity.position + testBound.Center;
+
+			auto distance = (srcCenter - testCenter).Length();
+			if (distance <= (srcBound.Radius + testBound.Radius)) {
+				srcEntity.isColliding	= true;
+				testEntity.isColliding = true;
+			}
+		}
+	}
+
 #endif
 
 	m_starField->update(timer);
@@ -147,35 +178,35 @@ Game::HandleInput(DX::StepTimer const& timer)
 		ExitGame();
 	}
 
-	if (kbState.Up) {
+	if (kbState.W) {
 		m_cameraRotationX -= elapsedTimeS * CAMERA_SPEED_X;
 	}
-	else if (kbState.Down)
+	else if (kbState.S)
 	{
 		m_cameraRotationX += elapsedTimeS * CAMERA_SPEED_X;
 	}
 
-	if (kbState.Left) {
+	if (kbState.A) {
 		m_cameraRotationY -= elapsedTimeS * CAMERA_SPEED_Y;
 	}
-	else if (kbState.Right)
+	else if (kbState.D)
 	{
 		m_cameraRotationY += elapsedTimeS * CAMERA_SPEED_Y;
 	}
 
 	m_playerAccel = Vector3();
-	if (kbState.W) {
+	if (kbState.Up) {
 		m_playerAccel.y = 1.0f;
 	}
-	else if (kbState.S)
+	else if (kbState.Down)
 	{
 		m_playerAccel.y = -1.0f;
 	}
 
-	if (kbState.A) {
+	if (kbState.Left) {
 		m_playerAccel.x = -1.0f;
 	}
-	else if (kbState.D)
+	else if (kbState.Right)
 	{
 		m_playerAccel.x = 1.0f;
 	}
@@ -210,48 +241,10 @@ Game::Render()
 	m_starField->render(*m_spriteBatch);
 	m_spriteBatch->End();
 
-
-	for (auto& entity : m_entities) {
-
-		m_world = Matrix::CreateTranslation(m_modelBound.Center).Invert()
-			* Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, XM_PI)
-			* Matrix::CreateTranslation(
-				entity.m_position + m_modelBound.Center);
-
-		m_sphereWorld
-			= Matrix::CreateTranslation(entity.m_position + m_modelBound.Center);
-		m_sphereWorld.m[0][0] *= m_modelBound.Radius;
-		m_sphereWorld.m[1][1] *= m_modelBound.Radius;
-		m_sphereWorld.m[2][2] *= m_modelBound.Radius;
-
-
-		m_model->Draw(
-			m_deviceResources->GetD3DDeviceContext(),
-			*m_states,
-			m_world,
-			m_view,
-			m_proj);
-
-		// DEBUG BOUND
-		m_debugBoundEffect->SetView(m_view);
-		m_debugBoundEffect->SetProjection(m_proj);
-		m_debugBoundEffect->SetWorld(m_sphereWorld);
-		m_debugBoundEffect->Apply(context);
-
-		context->OMSetBlendState(m_states->AlphaBlend(), Colors::White, 0xFFFFFFFF);
-		context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
-		context->RSSetState(m_states->CullNone());
-
-		m_debugBound->Draw(
-			m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
+	for (auto& entity : m_entities)
+	{
+		renderEntity(entity, context);
 	}
-	// DEBUG BOUND
-
-	// m_world
-	//	= XMMatrixTranslationFromVector(XMLoadFloat3(&m_entities[1].m_position));
-	// m_model->Draw(
-	//	m_deviceResources->GetD3DDeviceContext(), *m_states, m_world, m_view,
-	// m_proj);
 
 	m_deviceResources->PIXEndEvent();
 
@@ -259,6 +252,46 @@ Game::Render()
 	m_deviceResources->Present();
 }
 
+//------------------------------------------------------------------------------
+void
+Game::renderEntity(Entity& entity, ID3D11DeviceContext* context)
+{
+	// TODO(James): Use <notnullable> to enforce assertion
+	assert(entity.model);
+	const auto& modelData		= entity.model;
+	const auto& boundCenter = entity.model->bound.Center;
+
+	Matrix world = Matrix::CreateTranslation(boundCenter).Invert()
+								 * Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, XM_PI)
+								 * Matrix::CreateTranslation(entity.position + boundCenter);
+
+	Matrix boundWorld = Matrix::CreateTranslation(entity.position + boundCenter);
+	boundWorld.m[0][0] *= modelData->bound.Radius;
+	boundWorld.m[1][1] *= modelData->bound.Radius;
+	boundWorld.m[2][2] *= modelData->bound.Radius;
+
+	modelData->model->Draw(
+		m_deviceResources->GetD3DDeviceContext(), *m_states, world, m_view, m_proj);
+
+	// DEBUG BOUND
+	Vector4 color = entity.isColliding ? Vector4(1.0f, 0.0f, 0.0f, 0.4f)
+																		 : Vector4(0.0f, 1.0f, 0.0f, 0.4f);
+	m_debugBoundEffect->SetColorAndAlpha(color);
+
+	m_debugBoundEffect->SetView(m_view);
+	m_debugBoundEffect->SetProjection(m_proj);
+	m_debugBoundEffect->SetWorld(boundWorld);
+	m_debugBoundEffect->Apply(context);
+
+	context->OMSetBlendState(m_states->AlphaBlend(), Colors::White, 0xFFFFFFFF);
+	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+	context->RSSetState(m_states->CullNone());
+
+	m_debugBound->Draw(
+		m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
+}
+
+//------------------------------------------------------------------------------
 // Helper method to clear the back buffers.
 void
 Game::Clear()
@@ -362,14 +395,30 @@ Game::CreateDeviceDependentResources()
 	m_debugBound->CreateInputLayout(
 		m_debugBoundEffect.get(), &m_debugBoundInputLayout);
 
-	m_model = Model::CreateFromSDKMESH(
-		device, L"assets/player.sdkmesh", *m_effectFactory);
-	m_modelBound				= {};
-	m_modelBound.Radius = 0.0f;
-	for (const auto& mesh : m_model->meshes)
+	// Load the models
+	for (size_t i = 0; i < NUM_MODELS; ++i)
 	{
-		BoundingSphere::CreateMerged(
-			m_modelBound, mesh->boundingSphere, m_modelBound);
+		m_models[i].model
+			= Model::CreateFromSDKMESH(device, MODELS_FILES[i], *m_effectFactory);
+		m_models[i].bound				 = {};
+		m_models[i].bound.Radius = 0.0f;
+		for (const auto& mesh : m_models[i].model->meshes)
+		{
+			BoundingSphere::CreateMerged(
+				m_models[i].bound, mesh->boundingSphere, m_models[i].bound);
+		}
+	}
+
+	// TODO(James): Critical these are not null for any entity
+	// TODO(James): Better way of matching model to entity? std::map/elResource
+	// type, with lookup names in set?
+	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	{
+		m_entities[i].model = &m_models[1];
+	}
+	for (size_t i = 0; i < NUM_SHOTS; ++i)
+	{
+		m_shots[i].model = &m_models[0];
 	}
 }
 
@@ -384,10 +433,9 @@ Game::CreateWindowSizeDependentResources()
 	float aspectRatio = float(outputSize.right - outputSize.left)
 											/ (outputSize.bottom - outputSize.top);
 
-	m_world = Matrix::Identity;
-	m_view	= Matrix::Identity;
-	m_proj	= Matrix::CreatePerspectiveFieldOfView(
-		 fovAngleY, aspectRatio, 0.01f, 100.f);
+	m_view = Matrix::Identity;
+	m_proj = Matrix::CreatePerspectiveFieldOfView(
+		fovAngleY, aspectRatio, 0.01f, 100.f);
 
 	m_starField->setWindowSize(outputSize.right, outputSize.bottom);
 }
@@ -395,7 +443,10 @@ Game::CreateWindowSizeDependentResources()
 void
 Game::OnDeviceLost()
 {
-	m_model.reset();
+	for (size_t i = 0; i < NUM_MODELS; ++i)
+	{
+		m_models[i].model.reset();
+	}
 
 	m_debugBound.reset();
 	m_debugBoundInputLayout.Reset();

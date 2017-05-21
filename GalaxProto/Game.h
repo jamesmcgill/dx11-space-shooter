@@ -41,6 +41,8 @@ private:
 	void HandleInput(DX::StepTimer const& timer);
 	void Render();
 
+	void renderEntity(Entity& entity, ID3D11DeviceContext* context);
+
 	void Clear();
 
 	void CreateDeviceDependentResources();
@@ -59,22 +61,28 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugBoundInputLayout;
 	std::unique_ptr<DirectX::GeometricPrimitive> m_debugBound;
 
-	std::unique_ptr<DirectX::Model> m_model;
-	DirectX::BoundingSphere m_modelBound;
-	
-	DirectX::SimpleMath::Matrix m_world;
-	DirectX::SimpleMath::Matrix m_sphereWorld;
+	std::unique_ptr<DirectX::Model> m_shotModel;
+	DirectX::BoundingSphere m_shotBound;
 
 	DirectX::SimpleMath::Matrix m_view;
 	DirectX::SimpleMath::Matrix m_proj;
 	float m_rotationRadiansPS = 0.0f;
-	float m_cameraRotationX = 0.0f;
-	float m_cameraRotationY = 0.0f;
-	float m_cameraDist = 1.0f;
+	float m_cameraRotationX		= 0.0f;
+	float m_cameraRotationY		= 0.0f;
+	float m_cameraDist				= 1.0f;
 
-	Entity m_entities[2];
+	static const size_t NUM_ENTITIES = 2;
+	Entity m_entities[NUM_ENTITIES];
+
+	static const size_t NUM_SHOTS = 10;
+	Entity m_shots[NUM_SHOTS];
+
+	static const size_t NUM_MODELS = 2;
+	wchar_t* MODELS_FILES[NUM_MODELS]
+		= {L"assets/shot.sdkmesh", L"assets/player.sdkmesh"};
+	ModelData m_models[NUM_MODELS];
+
 	DirectX::SimpleMath::Vector3 m_playerAccel = {};
-
 	// Rendering loop timer.
 	DX::StepTimer m_timer;
 };
