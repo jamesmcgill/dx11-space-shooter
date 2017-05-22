@@ -8,6 +8,7 @@
 #include "StepTimer.h"
 #include "Starfield.h"
 #include "Entity.h"
+#include <map>
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -71,18 +72,26 @@ private:
 	float m_cameraRotationY		= 0.0f;
 	float m_cameraDist				= 1.0f;
 
-	static const size_t NUM_ENTITIES = 2;
-	Entity m_entities[NUM_ENTITIES];
+	static const size_t NUM_PLAYERS = 1;
+	static const size_t PLAYERS_IDX = 0;
+	static const size_t PLAYERS_END = PLAYERS_IDX + NUM_PLAYERS;
 
 	static const size_t NUM_SHOTS = 10;
-	Entity m_shots[NUM_SHOTS];
+	static const size_t SHOTS_IDX = PLAYERS_END;
+	static const size_t SHOTS_END = SHOTS_IDX + NUM_SHOTS;
 
-	static const size_t NUM_MODELS = 2;
-	wchar_t* MODELS_FILES[NUM_MODELS]
-		= {L"assets/shot.sdkmesh", L"assets/player.sdkmesh"};
-	ModelData m_models[NUM_MODELS];
+	static const size_t NUM_ENEMIES = 10;
+	static const size_t ENEMIES_IDX = SHOTS_END;
+	static const size_t ENEMIES_END = ENEMIES_IDX + NUM_ENEMIES;
+
+	static const size_t NUM_ENTITIES = ENEMIES_END;
+	Entity m_entities[NUM_ENTITIES];
+
+	std::map<char*, wchar_t*> m_modelLocations;
+	std::map<char*, ModelData> m_modelData;
 
 	DirectX::SimpleMath::Vector3 m_playerAccel = {};
+
 	// Rendering loop timer.
 	DX::StepTimer m_timer;
 };

@@ -25,8 +25,27 @@ Game::Game()
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
 
-	m_entities[0].position = Vector3(0.0f, -0.3f, 0.0f);
-	m_entities[1].position = Vector3(0.0f, 0.3f, 0.0f);
+	m_modelLocations["PLAYER"] = L"assets/player.sdkmesh";
+	m_modelLocations["SHOT"]	 = L"assets/player.sdkmesh";
+
+	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
+	const Vector3 ENEMY_START_POS(0.0f, 0.3f, 0.0f);
+
+	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
+	{
+		m_entities[i].isAlive	= true;
+		m_entities[i].position = PLAYER_START_POS;
+	}
+	for (size_t i = SHOTS_IDX; i < SHOTS_END; ++i)
+	{
+	}
+	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
+	{
+		m_entities[i].position = ENEMY_START_POS;
+	}
+
+	// TEMP, activate one enemy
+	m_entities[ENEMIES_IDX].isAlive = true;
 }
 
 // Initialize the Direct3D resources required to run.
@@ -72,10 +91,11 @@ Game::Update(DX::StepTimer const& timer)
 	// float totalTimeS = static_cast<float>(timer.GetTotalSeconds());
 
 	// CAMERA
-	const float CAMERA_DIST = 4.5f;
+	const float CAMERA_DIST = 40.5f;
 
-	assert(m_entities[0].model);
-	const auto& atP = m_entities[0].position + m_entities[0].model->bound.Center;
+	auto& player = m_entities[PLAYERS_IDX];
+	assert(player.model);
+	const auto& atP							 = player.position + player.model->bound.Center;
 	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
 	static const XMVECTORF32 at	= {atP.x, atP.y, atP.z, 0.0f};
 	static const XMVECTORF32 up	= {0.0f, 1.0f, 0.0f, 0.0f};
@@ -105,7 +125,6 @@ Game::Update(DX::StepTimer const& timer)
 								m_entities[0].m_position + m_modelBound.Center);
 
 #else
-	auto& player										= m_entities[0];
 	const float PLAYER_SPEED				= 20.0f;
 	const float PLAYER_FRICTION			= 6.0f;
 	const float PLAYER_MAX_VELOCITY = 2.7f;
@@ -143,15 +162,22 @@ Game::Update(DX::StepTimer const& timer)
 		// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
 		assert(m_entities[srcIdx].model);
 		auto& srcEntity = m_entities[srcIdx];
-		auto& srcBound	= m_entities[srcIdx].model->bound;
-		auto srcCenter	= srcEntity.position + srcBound.Center;
+		if (!srcEntity.isAlive) {
+			continue;
+		}
+		auto& srcBound = srcEntity.model->bound;
+		auto srcCenter = srcEntity.position + srcBound.Center;
 
 		for (size_t testIdx = srcIdx + 1; testIdx < NUM_ENTITIES; ++testIdx)
 		{
 			assert(m_entities[testIdx].model);
 			auto& testEntity = m_entities[testIdx];
-			auto& testBound	= m_entities[testIdx].model->bound;
-			auto testCenter	= testEntity.position + testBound.Center;
+			if (!testEntity.isAlive) {
+				continue;
+			}
+
+			auto& testBound = testEntity.model->bound;
+			auto testCenter = testEntity.position + testBound.Center;
 
 			auto distance = (srcCenter - testCenter).Length();
 			if (distance <= (srcBound.Radius + testBound.Radius)) {
@@ -243,7 +269,9 @@ Game::Render()
 
 	for (auto& entity : m_entities)
 	{
-		renderEntity(entity, context);
+		if (entity.isAlive) {
+			renderEntity(entity, context);
+		}
 	}
 
 	m_deviceResources->PIXEndEvent();
@@ -396,29 +424,31 @@ Game::CreateDeviceDependentResources()
 		m_debugBoundEffect.get(), &m_debugBoundInputLayout);
 
 	// Load the models
-	for (size_t i = 0; i < NUM_MODELS; ++i)
+	for (const auto& res : m_modelLocations)
 	{
-		m_models[i].model
-			= Model::CreateFromSDKMESH(device, MODELS_FILES[i], *m_effectFactory);
-		m_models[i].bound				 = {};
-		m_models[i].bound.Radius = 0.0f;
-		for (const auto& mesh : m_models[i].model->meshes)
+		auto& data = m_modelData[res.first];
+		data.model = Model::CreateFromSDKMESH(device, res.second, *m_effectFactory);
+		data.bound = {};
+		data.bound.Radius = 0.0f;
+		for (const auto& mesh : data.model->meshes)
 		{
 			BoundingSphere::CreateMerged(
-				m_models[i].bound, mesh->boundingSphere, m_models[i].bound);
+				data.bound, mesh->boundingSphere, data.bound);
 		}
 	}
 
-	// TODO(James): Critical these are not null for any entity
-	// TODO(James): Better way of matching model to entity? std::map/elResource
-	// type, with lookup names in set?
-	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
+	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_entities[i].model = &m_models[1];
+		m_entities[i].model = &m_modelData["PLAYER"];
 	}
-	for (size_t i = 0; i < NUM_SHOTS; ++i)
+	for (size_t i = SHOTS_IDX; i < SHOTS_END; ++i)
 	{
-		m_shots[i].model = &m_models[0];
+		m_entities[i].model = &m_modelData["SHOT"];
+	}
+	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
+	{
+		m_entities[i].model = &m_modelData["PLAYER"];
 	}
 }
 
@@ -443,9 +473,9 @@ Game::CreateWindowSizeDependentResources()
 void
 Game::OnDeviceLost()
 {
-	for (size_t i = 0; i < NUM_MODELS; ++i)
+	for (auto& modelData : m_modelData)
 	{
-		m_models[i].model.reset();
+		modelData.second.model.reset();
 	}
 
 	m_debugBound.reset();

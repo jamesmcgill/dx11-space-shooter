@@ -9,15 +9,9 @@ struct ModelData
 
 struct Entity
 {
-	enum class Type
-	{
-		Player,
-		Enemy
-	};
-
 	DirectX::SimpleMath::Vector3 position = {};
 	DirectX::SimpleMath::Vector3 velocity = {};
 	ModelData* model											= nullptr;
-	Type type															= Type::Player;
 	bool isColliding											= false;
+	bool isAlive													= false;
 };
