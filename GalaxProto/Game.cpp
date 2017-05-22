@@ -17,16 +17,25 @@ constexpr float ROTATION_DEGREES_PER_SECOND = 45.f;
 constexpr float CAMERA_SPEED_X							= 1.0f;
 constexpr float CAMERA_SPEED_Y							= 1.0f;
 
+constexpr float PLAYER_SPEED				= 200.0f;
+constexpr float PLAYER_FRICTION			= 60.0f;
+constexpr float PLAYER_MAX_VELOCITY = 20.0f;
+constexpr float PLAYER_MIN_VELOCITY = 0.3f;
+constexpr float SHOT_SPEED					= 20.0f;
+
+constexpr float CAMERA_DIST = 40.5f;
+
 //------------------------------------------------------------------------------
 Game::Game()
 		: m_keyboard(std::make_unique<Keyboard>())
+		, m_kbTracker(std::make_unique<Keyboard::KeyboardStateTracker>())
 		, m_rotationRadiansPS(XMConvertToRadians(ROTATION_DEGREES_PER_SECOND))
 {
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
 
 	m_modelLocations["PLAYER"] = L"assets/player.sdkmesh";
-	m_modelLocations["SHOT"]	 = L"assets/player.sdkmesh";
+	m_modelLocations["SHOT"]	 = L"assets/shot.sdkmesh";
 
 	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
 	const Vector3 ENEMY_START_POS(0.0f, 0.3f, 0.0f);
@@ -88,11 +97,9 @@ Game::Update(DX::StepTimer const& timer)
 	HandleInput(timer);
 
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
-	// float totalTimeS = static_cast<float>(timer.GetTotalSeconds());
+	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
 	// CAMERA
-	const float CAMERA_DIST = 40.5f;
-
 	auto& player = m_entities[PLAYERS_IDX];
 	assert(player.model);
 	const auto& atP							 = player.position + player.model->bound.Center;
@@ -125,38 +132,41 @@ Game::Update(DX::StepTimer const& timer)
 								m_entities[0].m_position + m_modelBound.Center);
 
 #else
-	const float PLAYER_SPEED				= 20.0f;
-	const float PLAYER_FRICTION			= 6.0f;
-	const float PLAYER_MAX_VELOCITY = 2.7f;
-	const float PLAYER_MIN_VELOCITY = 0.3f;
 	m_playerAccel *= PLAYER_SPEED;
+	const Vector3 innertAccel = {};
 
 	// Friction
 	Vector3 frictionNormal = -player.velocity;
 	frictionNormal.Normalize();
 	m_playerAccel += PLAYER_FRICTION * frictionNormal;
 
-	player.position = 0.5f * m_playerAccel * (elapsedTimeS * elapsedTimeS)
-										+ player.velocity * elapsedTimeS + player.position;
-	player.velocity = m_playerAccel * elapsedTimeS + player.velocity;
-
-	// Clamp velocity
-	float velocityMagnitude = player.velocity.Length();
-	if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
-		player.velocity.Normalize();
-		player.velocity *= PLAYER_MAX_VELOCITY;
-	}
-	else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
+	for (size_t i = 0; i < NUM_ENTITIES; ++i)
 	{
-		player.velocity = Vector3();
+		const bool isPlayer = (i < PLAYERS_END);
+		auto& e							= m_entities[i];
+		e.isColliding				= false;
+
+		// Integrate Position
+		const Vector3& accel = (isPlayer) ? m_playerAccel : innertAccel;
+		e.position					 = 0.5f * accel * (elapsedTimeS * elapsedTimeS)
+								 + e.velocity * elapsedTimeS + e.position;
+		e.velocity = accel * elapsedTimeS + e.velocity;
+
+		if (isPlayer) {
+			// Clamp velocity
+			float velocityMagnitude = e.velocity.Length();
+			if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
+				e.velocity.Normalize();
+				e.velocity *= PLAYER_MAX_VELOCITY;
+			}
+			else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
+			{
+				e.velocity = Vector3();
+			}
+		}
 	}
 
 	// Collision
-	for (size_t srcIdx = 0; srcIdx < NUM_ENTITIES; ++srcIdx)
-	{
-		m_entities[srcIdx].isColliding = false;
-	}
-
 	for (size_t srcIdx = 0; srcIdx < NUM_ENTITIES; ++srcIdx)
 	{
 		// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
@@ -197,9 +207,12 @@ void
 Game::HandleInput(DX::StepTimer const& timer)
 {
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
+	auto& player			 = m_entities[PLAYERS_IDX];
 
 	// Handle Keyboard Input
 	auto kbState = m_keyboard->GetState();
+	m_kbTracker->Update(kbState);
+
 	if (kbState.Escape) {
 		ExitGame();
 	}
@@ -240,6 +253,23 @@ Game::HandleInput(DX::StepTimer const& timer)
 	if (m_playerAccel.x != 0.0f && m_playerAccel.y != 0.0f) {
 		const float UNIT_DIAGONAL_LENGTH = 0.7071067811865475f;
 		m_playerAccel *= UNIT_DIAGONAL_LENGTH;
+	}
+
+	if (
+		m_kbTracker->IsKeyPressed(Keyboard::LeftControl)
+		|| m_kbTracker->IsKeyPressed(Keyboard::Space))
+	{
+		// Create Shot
+		auto& newShot		 = m_entities[m_currentShotIdx];
+		newShot.isAlive	= true;
+		newShot.position = player.position + player.model->bound.Center
+											 + Vector3(0.0f, player.model->bound.Radius, 0.0f);
+		newShot.velocity = Vector3(0.0f, SHOT_SPEED, 0.0f);
+
+		m_currentShotIdx++;
+		if (m_currentShotIdx >= SHOTS_END) {
+			m_currentShotIdx = SHOTS_IDX;
+		}
 	}
 }
 

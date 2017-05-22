@@ -52,6 +52,7 @@ private:
 	// Device resources.
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;
 	std::unique_ptr<DirectX::Keyboard> m_keyboard;
+	std::unique_ptr<DirectX::Keyboard::KeyboardStateTracker> m_kbTracker;
 	std::unique_ptr<DirectX::CommonStates> m_states;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
@@ -79,6 +80,7 @@ private:
 	static const size_t NUM_SHOTS = 10;
 	static const size_t SHOTS_IDX = PLAYERS_END;
 	static const size_t SHOTS_END = SHOTS_IDX + NUM_SHOTS;
+	size_t m_currentShotIdx				= SHOTS_IDX;
 
 	static const size_t NUM_ENEMIES = 10;
 	static const size_t ENEMIES_IDX = SHOTS_END;
