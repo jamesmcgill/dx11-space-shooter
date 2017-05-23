@@ -146,6 +146,23 @@ Game::Update(DX::StepTimer const& timer)
 		}
 	}
 
+	// Spawn enemy shots
+	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
+		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
+		{
+			if (m_entities[i].isAlive) {
+				emitShot(
+					m_entities[i],
+					-1.0f,
+					-SHOT_SPEED,
+					m_nextEnemyShotIdx,
+					ENEMY_SHOTS_IDX,
+					ENEMY_SHOTS_END);
+				break;
+			}
+		}
+	}
+
 #endif
 
 	m_starField->update(timer);
@@ -208,17 +225,36 @@ Game::HandleInput(DX::StepTimer const& timer)
 		m_kbTracker->IsKeyPressed(Keyboard::LeftControl)
 		|| m_kbTracker->IsKeyPressed(Keyboard::Space))
 	{
-		// Create Shot
-		auto& newShot		 = m_entities[m_nextPlayerShotIdx];
-		newShot.isAlive	= true;
-		newShot.position = player.position + player.model->bound.Center
-											 + Vector3(0.0f, player.model->bound.Radius, 0.0f);
-		newShot.velocity = Vector3(0.0f, SHOT_SPEED, 0.0f);
+		emitShot(
+			player,
+			1.0f,
+			SHOT_SPEED,
+			m_nextPlayerShotIdx,
+			PLAYER_SHOTS_IDX,
+			PLAYER_SHOTS_END);
+	}
+}
 
-		m_nextPlayerShotIdx++;
-		if (m_nextPlayerShotIdx >= PLAYER_SHOTS_END) {
-			m_nextPlayerShotIdx = PLAYER_SHOTS_IDX;
-		}
+//------------------------------------------------------------------------------
+void
+Game::emitShot(
+	const Entity& emitter,
+	const float yPosScale,
+	const float speed,
+	size_t& shotEntityIdx,
+	const size_t minEntityIdx,
+	const size_t maxEntityIdxPlusOne)
+{
+	auto& newShot		= m_entities[shotEntityIdx];
+	newShot.isAlive = true;
+	newShot.position
+		= emitter.position + emitter.model->bound.Center
+			+ Vector3(0.0f, (yPosScale * emitter.model->bound.Radius), 0.0f);
+	newShot.velocity = Vector3(0.0f, speed, 0.0f);
+
+	shotEntityIdx++;
+	if (shotEntityIdx >= maxEntityIdxPlusOne) {
+		shotEntityIdx = minEntityIdx;
 	}
 }
 
