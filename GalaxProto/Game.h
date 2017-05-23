@@ -80,11 +80,12 @@ private:
 	static const size_t NUM_SHOTS = 10;
 	static const size_t SHOTS_IDX = PLAYERS_END;
 	static const size_t SHOTS_END = SHOTS_IDX + NUM_SHOTS;
-	size_t m_currentShotIdx				= SHOTS_IDX;
+	size_t m_nextShotIdx					= SHOTS_IDX;
 
 	static const size_t NUM_ENEMIES = 10;
 	static const size_t ENEMIES_IDX = SHOTS_END;
 	static const size_t ENEMIES_END = ENEMIES_IDX + NUM_ENEMIES;
+	size_t m_nextEnemyIdx						= ENEMIES_IDX;
 
 	static const size_t NUM_ENTITIES = ENEMIES_END;
 	Entity m_entities[NUM_ENTITIES];

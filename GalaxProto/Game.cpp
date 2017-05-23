@@ -38,23 +38,12 @@ Game::Game()
 	m_modelLocations["SHOT"]	 = L"assets/shot.sdkmesh";
 
 	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
-	const Vector3 ENEMY_START_POS(0.0f, 0.3f, 0.0f);
 
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
 		m_entities[i].isAlive	= true;
 		m_entities[i].position = PLAYER_START_POS;
 	}
-	for (size_t i = SHOTS_IDX; i < SHOTS_END; ++i)
-	{
-	}
-	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
-	{
-		m_entities[i].position = ENEMY_START_POS;
-	}
-
-	// TEMP, activate one enemy
-	m_entities[ENEMIES_IDX].isAlive = true;
 }
 
 // Initialize the Direct3D resources required to run.
@@ -97,7 +86,7 @@ Game::Update(DX::StepTimer const& timer)
 	HandleInput(timer);
 
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
-	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
+	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
 	// CAMERA
 	auto& player = m_entities[PLAYERS_IDX];
@@ -197,6 +186,27 @@ Game::Update(DX::StepTimer const& timer)
 		}
 	}
 
+	// Spawn enemies
+	const Vector3 ENEMY_START_POS(-10.0f, 3.0f, 0.0f);
+	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
+		for (auto i = 0; i < 5; ++i)
+		{
+			// Create Enemy
+			auto enemyIdx		 = (m_nextEnemyIdx - ENEMIES_IDX);
+			auto row				 = floor(enemyIdx / 5.0f);
+			auto col				 = static_cast<float>(fmod(enemyIdx, 5.0f));
+			auto& newEnemy	 = m_entities[m_nextEnemyIdx];
+			newEnemy.isAlive = true;
+			newEnemy.position
+				= ENEMY_START_POS + Vector3(col * 5.0f, row * 5.0f, 0.0f);
+
+			m_nextEnemyIdx++;
+			if (m_nextEnemyIdx >= ENEMIES_END) {
+				m_nextEnemyIdx = ENEMIES_IDX;
+			}
+		}
+	}
+
 #endif
 
 	m_starField->update(timer);
@@ -260,15 +270,15 @@ Game::HandleInput(DX::StepTimer const& timer)
 		|| m_kbTracker->IsKeyPressed(Keyboard::Space))
 	{
 		// Create Shot
-		auto& newShot		 = m_entities[m_currentShotIdx];
+		auto& newShot		 = m_entities[m_nextShotIdx];
 		newShot.isAlive	= true;
 		newShot.position = player.position + player.model->bound.Center
 											 + Vector3(0.0f, player.model->bound.Radius, 0.0f);
 		newShot.velocity = Vector3(0.0f, SHOT_SPEED, 0.0f);
 
-		m_currentShotIdx++;
-		if (m_currentShotIdx >= SHOTS_END) {
-			m_currentShotIdx = SHOTS_IDX;
+		m_nextShotIdx++;
+		if (m_nextShotIdx >= SHOTS_END) {
+			m_nextShotIdx = SHOTS_IDX;
 		}
 	}
 }
