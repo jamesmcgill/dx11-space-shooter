@@ -40,8 +40,14 @@ public:
 private:
 	void Update(DX::StepTimer const& timer);
 	void HandleInput(DX::StepTimer const& timer);
-	void Render();
+	void performPhysicsUpdate(DX::StepTimer const& timer);
+	void performCollisionTests();
+	void collisionTestEntity(
+		Entity& entity,
+		const size_t testRangeStartIdx,
+		const size_t testRangeOnePastEndIdx);
 
+	void Render();
 	void renderEntity(Entity& entity, ID3D11DeviceContext* context);
 
 	void Clear();
@@ -77,13 +83,18 @@ private:
 	static const size_t PLAYERS_IDX = 0;
 	static const size_t PLAYERS_END = PLAYERS_IDX + NUM_PLAYERS;
 
-	static const size_t NUM_SHOTS = 10;
-	static const size_t SHOTS_IDX = PLAYERS_END;
-	static const size_t SHOTS_END = SHOTS_IDX + NUM_SHOTS;
-	size_t m_nextShotIdx					= SHOTS_IDX;
+	static const size_t NUM_PLAYER_SHOTS = 10;
+	static const size_t PLAYER_SHOTS_IDX = PLAYERS_END;
+	static const size_t PLAYER_SHOTS_END = PLAYER_SHOTS_IDX + NUM_PLAYER_SHOTS;
+	size_t m_nextPlayerShotIdx					 = PLAYER_SHOTS_IDX;
+
+	static const size_t NUM_ENEMY_SHOTS = 10;
+	static const size_t ENEMY_SHOTS_IDX = PLAYER_SHOTS_END;
+	static const size_t ENEMY_SHOTS_END = ENEMY_SHOTS_IDX + NUM_ENEMY_SHOTS;
+	size_t m_nextEnemyShotIdx						= ENEMY_SHOTS_IDX;
 
 	static const size_t NUM_ENEMIES = 10;
-	static const size_t ENEMIES_IDX = SHOTS_END;
+	static const size_t ENEMIES_IDX = ENEMY_SHOTS_END;
 	static const size_t ENEMIES_END = ENEMIES_IDX + NUM_ENEMIES;
 	size_t m_nextEnemyIdx						= ENEMIES_IDX;
 

@@ -121,70 +121,9 @@ Game::Update(DX::StepTimer const& timer)
 								m_entities[0].m_position + m_modelBound.Center);
 
 #else
-	m_playerAccel *= PLAYER_SPEED;
-	const Vector3 innertAccel = {};
 
-	// Friction
-	Vector3 frictionNormal = -player.velocity;
-	frictionNormal.Normalize();
-	m_playerAccel += PLAYER_FRICTION * frictionNormal;
-
-	for (size_t i = 0; i < NUM_ENTITIES; ++i)
-	{
-		const bool isPlayer = (i < PLAYERS_END);
-		auto& e							= m_entities[i];
-		e.isColliding				= false;
-
-		// Integrate Position
-		const Vector3& accel = (isPlayer) ? m_playerAccel : innertAccel;
-		e.position					 = 0.5f * accel * (elapsedTimeS * elapsedTimeS)
-								 + e.velocity * elapsedTimeS + e.position;
-		e.velocity = accel * elapsedTimeS + e.velocity;
-
-		if (isPlayer) {
-			// Clamp velocity
-			float velocityMagnitude = e.velocity.Length();
-			if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
-				e.velocity.Normalize();
-				e.velocity *= PLAYER_MAX_VELOCITY;
-			}
-			else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
-			{
-				e.velocity = Vector3();
-			}
-		}
-	}
-
-	// Collision
-	for (size_t srcIdx = 0; srcIdx < NUM_ENTITIES; ++srcIdx)
-	{
-		// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
-		assert(m_entities[srcIdx].model);
-		auto& srcEntity = m_entities[srcIdx];
-		if (!srcEntity.isAlive) {
-			continue;
-		}
-		auto& srcBound = srcEntity.model->bound;
-		auto srcCenter = srcEntity.position + srcBound.Center;
-
-		for (size_t testIdx = srcIdx + 1; testIdx < NUM_ENTITIES; ++testIdx)
-		{
-			assert(m_entities[testIdx].model);
-			auto& testEntity = m_entities[testIdx];
-			if (!testEntity.isAlive) {
-				continue;
-			}
-
-			auto& testBound = testEntity.model->bound;
-			auto testCenter = testEntity.position + testBound.Center;
-
-			auto distance = (srcCenter - testCenter).Length();
-			if (distance <= (srcBound.Radius + testBound.Radius)) {
-				srcEntity.isColliding	= true;
-				testEntity.isColliding = true;
-			}
-		}
-	}
+	performPhysicsUpdate(timer);
+	performCollisionTests();
 
 	// Spawn enemies
 	const Vector3 ENEMY_START_POS(-10.0f, 3.0f, 0.0f);
@@ -270,15 +209,113 @@ Game::HandleInput(DX::StepTimer const& timer)
 		|| m_kbTracker->IsKeyPressed(Keyboard::Space))
 	{
 		// Create Shot
-		auto& newShot		 = m_entities[m_nextShotIdx];
+		auto& newShot		 = m_entities[m_nextPlayerShotIdx];
 		newShot.isAlive	= true;
 		newShot.position = player.position + player.model->bound.Center
 											 + Vector3(0.0f, player.model->bound.Radius, 0.0f);
 		newShot.velocity = Vector3(0.0f, SHOT_SPEED, 0.0f);
 
-		m_nextShotIdx++;
-		if (m_nextShotIdx >= SHOTS_END) {
-			m_nextShotIdx = SHOTS_IDX;
+		m_nextPlayerShotIdx++;
+		if (m_nextPlayerShotIdx >= PLAYER_SHOTS_END) {
+			m_nextPlayerShotIdx = PLAYER_SHOTS_IDX;
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Game::performPhysicsUpdate(DX::StepTimer const& timer)
+{
+	float elapsedTimeS = float(timer.GetElapsedSeconds());
+
+	auto& player = m_entities[PLAYERS_IDX];
+	m_playerAccel *= PLAYER_SPEED;
+	const Vector3 innertAccel = {};
+
+	// Friction
+	Vector3 frictionNormal = -player.velocity;
+	frictionNormal.Normalize();
+	m_playerAccel += PLAYER_FRICTION * frictionNormal;
+
+	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	{
+		const bool isPlayer = (i < PLAYERS_END);
+		auto& e							= m_entities[i];
+		e.isColliding				= false;
+
+		// Integrate Position
+		const Vector3& accel = (isPlayer) ? m_playerAccel : innertAccel;
+		e.position					 = 0.5f * accel * (elapsedTimeS * elapsedTimeS)
+								 + e.velocity * elapsedTimeS + e.position;
+		e.velocity = accel * elapsedTimeS + e.velocity;
+
+		if (isPlayer) {
+			// Clamp velocity
+			float velocityMagnitude = e.velocity.Length();
+			if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
+				e.velocity.Normalize();
+				e.velocity *= PLAYER_MAX_VELOCITY;
+			}
+			else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
+			{
+				e.velocity = Vector3();
+			}
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Game::performCollisionTests()
+{
+	auto& player = m_entities[PLAYERS_IDX];
+
+	// Pass 1 - Player				-> EnemyShots
+	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END);
+
+	// Pass 2 - Player				-> Enemies
+	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END);
+
+	// Pass 3 - PlayerShots		-> Enemies
+	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
+	{
+		auto& srcEntity = m_entities[srcIdx];
+		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END);
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Game::collisionTestEntity(
+	Entity& entity,
+	const size_t testRangeStartIdx,
+	const size_t testRangeOnePastEndIdx)
+{
+	if (!entity.isAlive) {
+		return;
+	}
+
+	// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
+	assert(entity.model);
+	auto& srcBound = entity.model->bound;
+	auto srcCenter = entity.position + srcBound.Center;
+
+	for (size_t testIdx = testRangeStartIdx; testIdx < testRangeOnePastEndIdx;
+			 ++testIdx)
+	{
+		assert(m_entities[testIdx].model);
+		auto& testEntity = m_entities[testIdx];
+		if (!testEntity.isAlive) {
+			continue;
+		}
+
+		auto& testBound = testEntity.model->bound;
+		auto testCenter = testEntity.position + testBound.Center;
+
+		auto distance = (srcCenter - testCenter).Length();
+		if (distance <= (srcBound.Radius + testBound.Radius)) {
+			entity.isColliding		 = true;
+			testEntity.isColliding = true;
 		}
 	}
 }
@@ -482,7 +519,11 @@ Game::CreateDeviceDependentResources()
 	{
 		m_entities[i].model = &m_modelData["PLAYER"];
 	}
-	for (size_t i = SHOTS_IDX; i < SHOTS_END; ++i)
+	for (size_t i = PLAYER_SHOTS_IDX; i < PLAYER_SHOTS_END; ++i)
+	{
+		m_entities[i].model = &m_modelData["SHOT"];
+	}
+	for (size_t i = ENEMY_SHOTS_IDX; i < ENEMY_SHOTS_END; ++i)
 	{
 		m_entities[i].model = &m_modelData["SHOT"];
 	}
