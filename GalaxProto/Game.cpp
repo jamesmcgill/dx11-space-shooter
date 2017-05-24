@@ -41,8 +41,8 @@ Game::Game()
 
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_entities[i].isAlive	= true;
-		m_entities[i].position = PLAYER_START_POS;
+		m_state.entities[i].isAlive	= true;
+		m_state.entities[i].position = PLAYER_START_POS;
 	}
 }
 
@@ -89,7 +89,7 @@ Game::Update(DX::StepTimer const& timer)
 	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
 	// CAMERA
-	auto& player = m_entities[PLAYERS_IDX];
+	auto& player = m_state.entities[PLAYERS_IDX];
 	assert(player.model);
 	const auto& atP							 = player.position + player.model->bound.Center;
 	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
@@ -118,7 +118,7 @@ Game::Update(DX::StepTimer const& timer)
 	m_world = Matrix::CreateTranslation(m_modelBound.Center).Invert()
 						* Matrix::CreateFromYawPitchRoll(XM_PI - 0.5f, radians, -XM_PI / 2)
 						* Matrix::CreateTranslation(
-								m_entities[0].m_position + m_modelBound.Center);
+								m_state.entities[0].m_position + m_modelBound.Center);
 
 #else
 
@@ -131,17 +131,17 @@ Game::Update(DX::StepTimer const& timer)
 		for (auto i = 0; i < 5; ++i)
 		{
 			// Create Enemy
-			auto enemyIdx		 = (m_nextEnemyIdx - ENEMIES_IDX);
+			auto enemyIdx		 = (m_state.nextEnemyIdx - ENEMIES_IDX);
 			auto row				 = floor(enemyIdx / 5.0f);
 			auto col				 = static_cast<float>(fmod(enemyIdx, 5.0f));
-			auto& newEnemy	 = m_entities[m_nextEnemyIdx];
+			auto& newEnemy	 = m_state.entities[m_state.nextEnemyIdx];
 			newEnemy.isAlive = true;
 			newEnemy.position
 				= ENEMY_START_POS + Vector3(col * 5.0f, row * 5.0f, 0.0f);
 
-			m_nextEnemyIdx++;
-			if (m_nextEnemyIdx >= ENEMIES_END) {
-				m_nextEnemyIdx = ENEMIES_IDX;
+			m_state.nextEnemyIdx++;
+			if (m_state.nextEnemyIdx >= ENEMIES_END) {
+				m_state.nextEnemyIdx = ENEMIES_IDX;
 			}
 		}
 	}
@@ -150,12 +150,12 @@ Game::Update(DX::StepTimer const& timer)
 	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
 		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 		{
-			if (m_entities[i].isAlive) {
+			if (m_state.entities[i].isAlive) {
 				emitShot(
-					m_entities[i],
+					m_state.entities[i],
 					-1.0f,
 					-SHOT_SPEED,
-					m_nextEnemyShotIdx,
+					m_state.nextEnemyShotIdx,
 					ENEMY_SHOTS_IDX,
 					ENEMY_SHOTS_END);
 				break;
@@ -173,7 +173,7 @@ void
 Game::HandleInput(DX::StepTimer const& timer)
 {
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
-	auto& player			 = m_entities[PLAYERS_IDX];
+	auto& player			 = m_state.entities[PLAYERS_IDX];
 
 	// Handle Keyboard Input
 	auto kbState = m_keyboard->GetState();
@@ -229,7 +229,7 @@ Game::HandleInput(DX::StepTimer const& timer)
 			player,
 			1.0f,
 			SHOT_SPEED,
-			m_nextPlayerShotIdx,
+			m_state.nextPlayerShotIdx,
 			PLAYER_SHOTS_IDX,
 			PLAYER_SHOTS_END);
 	}
@@ -245,7 +245,7 @@ Game::emitShot(
 	const size_t minEntityIdx,
 	const size_t maxEntityIdxPlusOne)
 {
-	auto& newShot		= m_entities[shotEntityIdx];
+	auto& newShot		= m_state.entities[shotEntityIdx];
 	newShot.isAlive = true;
 	newShot.position
 		= emitter.position + emitter.model->bound.Center
@@ -264,7 +264,7 @@ Game::performPhysicsUpdate(DX::StepTimer const& timer)
 {
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 
-	auto& player = m_entities[PLAYERS_IDX];
+	auto& player = m_state.entities[PLAYERS_IDX];
 	m_playerAccel *= PLAYER_SPEED;
 	const Vector3 innertAccel = {};
 
@@ -276,7 +276,7 @@ Game::performPhysicsUpdate(DX::StepTimer const& timer)
 	for (size_t i = 0; i < NUM_ENTITIES; ++i)
 	{
 		const bool isPlayer = (i < PLAYERS_END);
-		auto& e							= m_entities[i];
+		auto& e							= m_state.entities[i];
 		e.isColliding				= false;
 
 		// Integrate Position
@@ -304,7 +304,7 @@ Game::performPhysicsUpdate(DX::StepTimer const& timer)
 void
 Game::performCollisionTests()
 {
-	auto& player = m_entities[PLAYERS_IDX];
+	auto& player = m_state.entities[PLAYERS_IDX];
 
 	// Pass 1 - Player				-> EnemyShots
 	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END);
@@ -315,7 +315,7 @@ Game::performCollisionTests()
 	// Pass 3 - PlayerShots		-> Enemies
 	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
 	{
-		auto& srcEntity = m_entities[srcIdx];
+		auto& srcEntity = m_state.entities[srcIdx];
 		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END);
 	}
 }
@@ -339,8 +339,8 @@ Game::collisionTestEntity(
 	for (size_t testIdx = testRangeStartIdx; testIdx < testRangeOnePastEndIdx;
 			 ++testIdx)
 	{
-		assert(m_entities[testIdx].model);
-		auto& testEntity = m_entities[testIdx];
+		assert(m_state.entities[testIdx].model);
+		auto& testEntity = m_state.entities[testIdx];
 		if (!testEntity.isAlive) {
 			continue;
 		}
@@ -380,7 +380,7 @@ Game::Render()
 	m_starField->render(*m_spriteBatch);
 	m_spriteBatch->End();
 
-	for (auto& entity : m_entities)
+	for (auto& entity : m_state.entities)
 	{
 		if (entity.isAlive) {
 			renderEntity(entity, context);
@@ -553,19 +553,19 @@ Game::CreateDeviceDependentResources()
 	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_entities[i].model = &m_modelData["PLAYER"];
+		m_state.entities[i].model = &m_modelData["PLAYER"];
 	}
 	for (size_t i = PLAYER_SHOTS_IDX; i < PLAYER_SHOTS_END; ++i)
 	{
-		m_entities[i].model = &m_modelData["SHOT"];
+		m_state.entities[i].model = &m_modelData["SHOT"];
 	}
 	for (size_t i = ENEMY_SHOTS_IDX; i < ENEMY_SHOTS_END; ++i)
 	{
-		m_entities[i].model = &m_modelData["SHOT"];
+		m_state.entities[i].model = &m_modelData["SHOT"];
 	}
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		m_entities[i].model = &m_modelData["PLAYER"];
+		m_state.entities[i].model = &m_modelData["PLAYER"];
 	}
 }
 

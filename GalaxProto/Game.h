@@ -86,27 +86,7 @@ private:
 	float m_cameraRotationY		= 0.0f;
 	float m_cameraDist				= 1.0f;
 
-	static const size_t NUM_PLAYERS = 1;
-	static const size_t PLAYERS_IDX = 0;
-	static const size_t PLAYERS_END = PLAYERS_IDX + NUM_PLAYERS;
-
-	static const size_t NUM_PLAYER_SHOTS = 10;
-	static const size_t PLAYER_SHOTS_IDX = PLAYERS_END;
-	static const size_t PLAYER_SHOTS_END = PLAYER_SHOTS_IDX + NUM_PLAYER_SHOTS;
-	size_t m_nextPlayerShotIdx					 = PLAYER_SHOTS_IDX;
-
-	static const size_t NUM_ENEMY_SHOTS = 10;
-	static const size_t ENEMY_SHOTS_IDX = PLAYER_SHOTS_END;
-	static const size_t ENEMY_SHOTS_END = ENEMY_SHOTS_IDX + NUM_ENEMY_SHOTS;
-	size_t m_nextEnemyShotIdx						= ENEMY_SHOTS_IDX;
-
-	static const size_t NUM_ENEMIES = 10;
-	static const size_t ENEMIES_IDX = ENEMY_SHOTS_END;
-	static const size_t ENEMIES_END = ENEMIES_IDX + NUM_ENEMIES;
-	size_t m_nextEnemyIdx						= ENEMIES_IDX;
-
-	static const size_t NUM_ENTITIES = ENEMIES_END;
-	Entity m_entities[NUM_ENTITIES];
+	GameState m_state;
 
 	std::map<char*, wchar_t*> m_modelLocations;
 	std::map<char*, ModelData> m_modelData;
