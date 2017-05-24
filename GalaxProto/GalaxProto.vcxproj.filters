@@ -20,6 +20,7 @@
     </ClInclude>
     <ClInclude Include="Starfield.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="GameMaster.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -30,6 +31,7 @@
     </ClCompile>
     <ClCompile Include="Starfield.cpp" />
     <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="GameMaster.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

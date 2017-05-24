@@ -8,6 +8,7 @@
 #include "StepTimer.h"
 #include "Starfield.h"
 #include "Entity.h"
+#include "GameMaster.h"
 #include <map>
 
 // A basic game implementation that creates a D3D11 device and
@@ -40,13 +41,6 @@ public:
 private:
 	void Update(DX::StepTimer const& timer);
 	void HandleInput(DX::StepTimer const& timer);
-	void emitShot(
-		const Entity& emitter,
-		const float yPosScale,
-		const float speed,
-		size_t& shotEntityIdx,
-		const size_t minEntityIdx,
-		const size_t maxEntityIdxPlusOne);
 	void performPhysicsUpdate(DX::StepTimer const& timer);
 	void performCollisionTests();
 	void collisionTestEntity(
@@ -87,6 +81,7 @@ private:
 	float m_cameraDist				= 1.0f;
 
 	GameState m_state;
+	GameMaster m_gameMaster;
 
 	std::map<char*, wchar_t*> m_modelLocations;
 	std::map<char*, ModelData> m_modelData;

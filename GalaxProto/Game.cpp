@@ -21,7 +21,6 @@ constexpr float PLAYER_SPEED				= 200.0f;
 constexpr float PLAYER_FRICTION			= 60.0f;
 constexpr float PLAYER_MAX_VELOCITY = 20.0f;
 constexpr float PLAYER_MIN_VELOCITY = 0.3f;
-constexpr float SHOT_SPEED					= 20.0f;
 
 constexpr float CAMERA_DIST = 40.5f;
 
@@ -30,6 +29,7 @@ Game::Game()
 		: m_keyboard(std::make_unique<Keyboard>())
 		, m_kbTracker(std::make_unique<Keyboard::KeyboardStateTracker>())
 		, m_rotationRadiansPS(XMConvertToRadians(ROTATION_DEGREES_PER_SECOND))
+		, m_gameMaster(m_state)
 {
 	m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_deviceResources->RegisterDeviceNotify(this);
@@ -85,8 +85,8 @@ Game::Update(DX::StepTimer const& timer)
 {
 	HandleInput(timer);
 
-	float elapsedTimeS = float(timer.GetElapsedSeconds());
-	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
+	// float elapsedTimeS = float(timer.GetElapsedSeconds());
+	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
 	// CAMERA
 	auto& player = m_state.entities[PLAYERS_IDX];
@@ -125,43 +125,7 @@ Game::Update(DX::StepTimer const& timer)
 	performPhysicsUpdate(timer);
 	performCollisionTests();
 
-	// Spawn enemies
-	const Vector3 ENEMY_START_POS(-10.0f, 3.0f, 0.0f);
-	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
-		for (auto i = 0; i < 5; ++i)
-		{
-			// Create Enemy
-			auto enemyIdx		 = (m_state.nextEnemyIdx - ENEMIES_IDX);
-			auto row				 = floor(enemyIdx / 5.0f);
-			auto col				 = static_cast<float>(fmod(enemyIdx, 5.0f));
-			auto& newEnemy	 = m_state.entities[m_state.nextEnemyIdx];
-			newEnemy.isAlive = true;
-			newEnemy.position
-				= ENEMY_START_POS + Vector3(col * 5.0f, row * 5.0f, 0.0f);
-
-			m_state.nextEnemyIdx++;
-			if (m_state.nextEnemyIdx >= ENEMIES_END) {
-				m_state.nextEnemyIdx = ENEMIES_IDX;
-			}
-		}
-	}
-
-	// Spawn enemy shots
-	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
-		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
-		{
-			if (m_state.entities[i].isAlive) {
-				emitShot(
-					m_state.entities[i],
-					-1.0f,
-					-SHOT_SPEED,
-					m_state.nextEnemyShotIdx,
-					ENEMY_SHOTS_IDX,
-					ENEMY_SHOTS_END);
-				break;
-			}
-		}
-	}
+	m_gameMaster.Update(timer);
 
 #endif
 
@@ -173,7 +137,6 @@ void
 Game::HandleInput(DX::StepTimer const& timer)
 {
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
-	auto& player			 = m_state.entities[PLAYERS_IDX];
 
 	// Handle Keyboard Input
 	auto kbState = m_keyboard->GetState();
@@ -225,36 +188,7 @@ Game::HandleInput(DX::StepTimer const& timer)
 		m_kbTracker->IsKeyPressed(Keyboard::LeftControl)
 		|| m_kbTracker->IsKeyPressed(Keyboard::Space))
 	{
-		emitShot(
-			player,
-			1.0f,
-			SHOT_SPEED,
-			m_state.nextPlayerShotIdx,
-			PLAYER_SHOTS_IDX,
-			PLAYER_SHOTS_END);
-	}
-}
-
-//------------------------------------------------------------------------------
-void
-Game::emitShot(
-	const Entity& emitter,
-	const float yPosScale,
-	const float speed,
-	size_t& shotEntityIdx,
-	const size_t minEntityIdx,
-	const size_t maxEntityIdxPlusOne)
-{
-	auto& newShot		= m_state.entities[shotEntityIdx];
-	newShot.isAlive = true;
-	newShot.position
-		= emitter.position + emitter.model->bound.Center
-			+ Vector3(0.0f, (yPosScale * emitter.model->bound.Radius), 0.0f);
-	newShot.velocity = Vector3(0.0f, speed, 0.0f);
-
-	shotEntityIdx++;
-	if (shotEntityIdx >= maxEntityIdxPlusOne) {
-		shotEntityIdx = minEntityIdx;
+		m_gameMaster.emitPlayerShot();
 	}
 }
 

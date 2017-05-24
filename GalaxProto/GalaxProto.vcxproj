@@ -161,6 +161,7 @@
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameMaster.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Starfield.h" />
     <ClInclude Include="StepTimer.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameMaster.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
