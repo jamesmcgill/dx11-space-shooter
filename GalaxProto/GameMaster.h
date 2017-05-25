@@ -2,7 +2,16 @@
 #include <pch.h>
 #include "StepTimer.h"
 #include "Entity.h"
+#include <vector>
 
+//------------------------------------------------------------------------------
+struct Waypoint
+{
+	DirectX::SimpleMath::Vector3 wayPoint			= {};
+	DirectX::SimpleMath::Vector3 controlPoint = {};
+};
+
+//------------------------------------------------------------------------------
 class GameMaster
 {
 public:
@@ -19,6 +28,12 @@ public:
 
 	void emitPlayerShot();
 
+	void LoadWaveData();
+	void RenderWaveData();
+
 private:
 	GameState& m_state;
+	std::vector<Waypoint> m_waypoints;
 };
+
+//------------------------------------------------------------------------------

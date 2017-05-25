@@ -4,6 +4,7 @@
 
 #include "pch.h"
 #include "Game.h"
+#include "DebugDraw.h"
 
 extern void ExitGame();
 
@@ -317,9 +318,35 @@ Game::Render()
 	for (auto& entity : m_state.entities)
 	{
 		if (entity.isAlive) {
-			renderEntity(entity, context);
+			renderEntity(entity);
 		}
 	}
+
+	// Debug Drawing
+	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+	context->OMSetDepthStencilState(m_states->DepthNone(), 0);
+	context->RSSetState(m_states->CullNone());
+
+	m_debugEffect->SetView(m_view);
+	m_debugEffect->SetProjection(m_proj);
+	m_debugEffect->Apply(context);
+	context->IASetInputLayout(m_debugInputLayout.Get());
+
+	m_batch->Begin();
+	for (auto& entity : m_state.entities)
+	{
+		if (entity.isAlive) {
+			renderEntityBound(entity);
+		}
+	}
+
+	Waypoint ways[] = {{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+										 {Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)}};
+
+	DX::DrawCurve(
+		m_batch.get(), ways[0].wayPoint, ways[1].wayPoint, ways[1].controlPoint);
+
+	m_batch->End();
 
 	m_deviceResources->PIXEndEvent();
 
@@ -329,7 +356,7 @@ Game::Render()
 
 //------------------------------------------------------------------------------
 void
-Game::renderEntity(Entity& entity, ID3D11DeviceContext* context)
+Game::renderEntity(Entity& entity)
 {
 	// TODO(James): Use <notnullable> to enforce assertion
 	assert(entity.model);
@@ -340,15 +367,16 @@ Game::renderEntity(Entity& entity, ID3D11DeviceContext* context)
 								 * Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, XM_PI)
 								 * Matrix::CreateTranslation(entity.position + boundCenter);
 
+	modelData->model->Draw(
+		m_deviceResources->GetD3DDeviceContext(), *m_states, world, m_view, m_proj);
+
+#if 0
+	// DEBUG BOUND
 	Matrix boundWorld = Matrix::CreateTranslation(entity.position + boundCenter);
 	boundWorld.m[0][0] *= modelData->bound.Radius;
 	boundWorld.m[1][1] *= modelData->bound.Radius;
 	boundWorld.m[2][2] *= modelData->bound.Radius;
 
-	modelData->model->Draw(
-		m_deviceResources->GetD3DDeviceContext(), *m_states, world, m_view, m_proj);
-
-	// DEBUG BOUND
 	Vector4 color = entity.isColliding ? Vector4(1.0f, 0.0f, 0.0f, 0.4f)
 																		 : Vector4(0.0f, 1.0f, 0.0f, 0.4f);
 	m_debugBoundEffect->SetColorAndAlpha(color);
@@ -364,6 +392,35 @@ Game::renderEntity(Entity& entity, ID3D11DeviceContext* context)
 
 	m_debugBound->Draw(
 		m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
+#endif
+}
+
+//------------------------------------------------------------------------------
+void
+Game::renderEntityBound(Entity& entity)
+{
+	// TODO(James): Use <notnullable> to enforce assertion
+	assert(entity.model);
+	// const auto& modelData = entity.model;
+
+	auto bound	 = entity.model->bound;
+	bound.Center = bound.Center + entity.position;
+	DX::Draw(
+		m_batch.get(), bound, (entity.isColliding) ? Colors::Red : Colors::Green);
+
+	// Matrix world = Matrix::CreateTranslation(entity.position + boundCenter);
+	// world.m[0][0] *= modelData->bound.Radius;
+	// world.m[1][1] *= modelData->bound.Radius;
+	// world.m[2][2] *= modelData->bound.Radius;
+
+	// DEBUG BOUND
+	// Vector4 color = entity.isColliding ? Vector4(1.0f, 0.0f, 0.0f, 0.4f)
+	//																	 : Vector4(0.0f, 1.0f, 0.0f, 0.4f);
+	// m_debugEffect->SetColorAndAlpha(color);
+	// m_debugBoundEffect->SetWorld(world);
+
+	// m_debugBound->Draw(
+	//	m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
 }
 
 //------------------------------------------------------------------------------
@@ -450,12 +507,8 @@ Game::CreateDeviceDependentResources()
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
 	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
-
-	m_spriteBatch = std::make_unique<SpriteBatch>(context);
-
-	DX::ThrowIfFailed(CreateDDSTextureFromFile(
-		device, L"assets/star.dds", nullptr, m_texture.ReleaseAndGetAddressOf()));
-	m_starField = std::make_unique<StarField>(m_texture.Get());
+	m_debugEffect = std::make_unique<BasicEffect>(device);
+	m_debugEffect->SetVertexColorEnabled(true);
 
 	m_effectFactory = std::make_unique<EffectFactory>(device);
 
@@ -465,6 +518,26 @@ Game::CreateDeviceDependentResources()
 		m_effectFactory->CreateEffect(info, context));
 	m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
 	// m_debugBoundEffect->SetLightingEnabled(false);
+
+	m_spriteBatch = std::make_unique<SpriteBatch>(context);
+
+	DX::ThrowIfFailed(CreateDDSTextureFromFile(
+		device, L"assets/star.dds", nullptr, m_texture.ReleaseAndGetAddressOf()));
+	m_starField = std::make_unique<StarField>(m_texture.Get());
+
+	m_batch = std::make_unique<PrimitiveBatchType>(context);
+	{
+		void const* shaderByteCode;
+		size_t byteCodeLength;
+		m_debugEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+
+		DX::ThrowIfFailed(device->CreateInputLayout(
+			VertexPositionColor::InputElements,
+			VertexPositionColor::InputElementCount,
+			shaderByteCode,
+			byteCodeLength,
+			m_debugInputLayout.ReleaseAndGetAddressOf()));
+	}
 
 	m_debugBound = GeometricPrimitive::CreateSphere(context, 2.0f);
 	m_debugBound->CreateInputLayout(
@@ -533,8 +606,10 @@ Game::OnDeviceLost()
 	m_debugBoundInputLayout.Reset();
 	m_debugBoundEffect.reset();
 	m_effectFactory.reset();
+	m_debugEffect.reset();
 
 	m_starField.reset();
+	m_batch.reset();
 	m_spriteBatch.reset();
 	m_texture.Reset();
 	m_states.reset();

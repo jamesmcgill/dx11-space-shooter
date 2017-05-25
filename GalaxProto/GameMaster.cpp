@@ -96,3 +96,24 @@ GameMaster::emitPlayerShot()
 }
 
 //------------------------------------------------------------------------------
+void
+GameMaster::LoadWaveData()
+{
+	m_waypoints.clear();
+
+	m_waypoints.emplace_back(
+		Waypoint({Vector3(5.0f, 5.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)}));
+
+	m_waypoints.emplace_back(
+		Waypoint({Vector3(0.0f, 2.5f, 0.0f), Vector3(0.0f, 5.0f, 0.0f)}));
+
+	m_waypoints.emplace_back(
+		Waypoint({Vector3(-5.0f, 0.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)}));
+}
+
+//------------------------------------------------------------------------------
+void
+GameMaster::RenderWaveData()
+{
+}
+//------------------------------------------------------------------------------

@@ -49,7 +49,8 @@ private:
 		const size_t testRangeOnePastEndIdx);
 
 	void Render();
-	void renderEntity(Entity& entity, ID3D11DeviceContext* context);
+	void renderEntity(Entity& entity);
+	void renderEntityBound(Entity& entity);
 
 	void Clear();
 
@@ -64,6 +65,12 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 	std::unique_ptr<StarField> m_starField;
+
+	using PrimitiveBatchType
+		= DirectX::PrimitiveBatch<DirectX::VertexPositionColor>;
+	std::unique_ptr<PrimitiveBatchType> m_batch;
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugInputLayout;
+	std::unique_ptr<DirectX::BasicEffect> m_debugEffect;
 
 	std::unique_ptr<DirectX::EffectFactory> m_effectFactory;
 	std::shared_ptr<DirectX::BasicEffect> m_debugBoundEffect;
