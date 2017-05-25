@@ -16,7 +16,8 @@ class GameMaster
 {
 public:
 	GameMaster(GameState& gameState);
-	void Update(DX::StepTimer const& timer);
+	void update(const DX::StepTimer& timer);
+	void performPhysicsUpdate(const DX::StepTimer& timer);
 
 	void emitShot(
 		const Entity& emitter,
@@ -28,11 +29,13 @@ public:
 
 	void emitPlayerShot();
 
-	void LoadWaveData();
-	void RenderWaveData();
+	void loadWaveData();
+	void debugRender(DX::DebugBatchType* batch);
 
 private:
 	GameState& m_state;
+	float m_waveSpawnTime;
+	bool m_isWaveSpawned = false;
 	std::vector<Waypoint> m_waypoints;
 };
 

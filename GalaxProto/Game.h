@@ -66,9 +66,7 @@ private:
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 	std::unique_ptr<StarField> m_starField;
 
-	using PrimitiveBatchType
-		= DirectX::PrimitiveBatch<DirectX::VertexPositionColor>;
-	std::unique_ptr<PrimitiveBatchType> m_batch;
+	std::unique_ptr<DX::DebugBatchType> m_batch;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugInputLayout;
 	std::unique_ptr<DirectX::BasicEffect> m_debugEffect;
 

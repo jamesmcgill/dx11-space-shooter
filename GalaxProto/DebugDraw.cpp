@@ -1,4 +1,4 @@
-//--------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // File: DebugDraw.cpp
 //
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
@@ -9,7 +9,7 @@
 // Copyright(c) Microsoft Corporation. All rights reserved.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
-//-------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 #include "pch.h"
 #include "DebugDraw.h"
@@ -18,11 +18,9 @@ using namespace DirectX;
 
 namespace
 {
+//------------------------------------------------------------------------------
 inline void XM_CALLCONV
-DrawCube(
-	PrimitiveBatch<VertexPositionColor>* batch,
-	CXMMATRIX matWorld,
-	FXMVECTOR color)
+DrawCube(DX::DebugBatchType* batch, CXMMATRIX matWorld, FXMVECTOR color)
 {
 	static const XMVECTORF32 s_verts[8] = {{-1.f, -1.f, -1.f, 0.f},
 																				 {1.f, -1.f, -1.f, 0.f},
@@ -53,11 +51,10 @@ DrawCube(
 }
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::Draw(
-	PrimitiveBatch<VertexPositionColor>* batch,
-	const BoundingSphere& sphere,
-	FXMVECTOR color)
+	DX::DebugBatchType* batch, const BoundingSphere& sphere, FXMVECTOR color)
 {
 	XMVECTOR origin = XMLoadFloat3(&sphere.Center);
 
@@ -72,11 +69,9 @@ DX::Draw(
 	DrawRing(batch, origin, yaxis, zaxis, color);
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
-DX::Draw(
-	PrimitiveBatch<VertexPositionColor>* batch,
-	const BoundingBox& box,
-	FXMVECTOR color)
+DX::Draw(DX::DebugBatchType* batch, const BoundingBox& box, FXMVECTOR color)
 {
 	XMMATRIX matWorld
 		= XMMatrixScaling(box.Extents.x, box.Extents.y, box.Extents.z);
@@ -86,11 +81,10 @@ DX::Draw(
 	DrawCube(batch, matWorld, color);
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::Draw(
-	PrimitiveBatch<VertexPositionColor>* batch,
-	const BoundingOrientedBox& obb,
-	FXMVECTOR color)
+	DX::DebugBatchType* batch, const BoundingOrientedBox& obb, FXMVECTOR color)
 {
 	XMMATRIX matWorld
 		= XMMatrixRotationQuaternion(XMLoadFloat4(&obb.Orientation));
@@ -103,11 +97,10 @@ DX::Draw(
 	DrawCube(batch, matWorld, color);
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::Draw(
-	PrimitiveBatch<VertexPositionColor>* batch,
-	const BoundingFrustum& frustum,
-	FXMVECTOR color)
+	DX::DebugBatchType* batch, const BoundingFrustum& frustum, FXMVECTOR color)
 {
 	XMFLOAT3 corners[BoundingFrustum::CORNER_COUNT];
 	frustum.GetCorners(corners);
@@ -148,9 +141,10 @@ DX::Draw(
 	batch->Draw(D3D11_PRIMITIVE_TOPOLOGY_LINELIST, verts, _countof(verts));
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::DrawGrid(
-	PrimitiveBatch<VertexPositionColor>* batch,
+	DX::DebugBatchType* batch,
 	FXMVECTOR xAxis,
 	FXMVECTOR yAxis,
 	FXMVECTOR origin,
@@ -186,9 +180,10 @@ DX::DrawGrid(
 	}
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::DrawRing(
-	PrimitiveBatch<VertexPositionColor>* batch,
+	DX::DebugBatchType* batch,
 	FXMVECTOR origin,
 	FXMVECTOR majorAxis,
 	FXMVECTOR minorAxis,
@@ -224,9 +219,10 @@ DX::DrawRing(
 	batch->Draw(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP, verts, c_ringSegments + 1);
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::DrawRay(
-	PrimitiveBatch<VertexPositionColor>* batch,
+	DX::DebugBatchType* batch,
 	FXMVECTOR origin,
 	FXMVECTOR direction,
 	bool normalize,
@@ -259,9 +255,10 @@ DX::DrawRay(
 	batch->Draw(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP, verts, 2);
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::DrawTriangle(
-	PrimitiveBatch<VertexPositionColor>* batch,
+	DX::DebugBatchType* batch,
 	FXMVECTOR pointA,
 	FXMVECTOR pointB,
 	FXMVECTOR pointC,
@@ -281,19 +278,21 @@ DX::DrawTriangle(
 	batch->Draw(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP, verts, 4);
 }
 
-FXMVECTOR
+//------------------------------------------------------------------------------
+static FXMVECTOR
 bezier(FLOAT t, FXMVECTOR startPos, FXMVECTOR endPos, FXMVECTOR control)
 {
 	// https://pomax.github.io/bezierinfo/
 	float t2	= t * t;
 	float mt	= 1 - t;
 	float mt2 = mt * mt;
-	return (startPos * mt2) + (control * 2 * mt * t) + (endPos * t2);
+	return (startPos * mt2) + (control * (2 * mt * t)) + (endPos * t2);
 }
 
+//------------------------------------------------------------------------------
 void XM_CALLCONV
 DX::DrawCurve(
-	PrimitiveBatch<VertexPositionColor>* batch,
+	DX::DebugBatchType* batch,
 	FXMVECTOR startPos,
 	FXMVECTOR endPos,
 	FXMVECTOR control,
@@ -320,3 +319,18 @@ DX::DrawCurve(
 
 	batch->Draw(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP, verts, numSegments + 1);
 }
+
+//------------------------------------------------------------------------------
+void XM_CALLCONV
+DX::DrawLine(
+	DX::DebugBatchType* batch,
+	FXMVECTOR startPos,
+	FXMVECTOR endPos,
+	FXMVECTOR color)
+{
+	VertexPositionColor v1(startPos, color);
+	VertexPositionColor v2(endPos, color);
+	batch->DrawLine(v1, v2);
+}
+
+//------------------------------------------------------------------------------

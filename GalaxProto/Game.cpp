@@ -123,10 +123,9 @@ Game::Update(DX::StepTimer const& timer)
 
 #else
 
+	m_gameMaster.update(timer);
 	performPhysicsUpdate(timer);
 	performCollisionTests();
-
-	m_gameMaster.Update(timer);
 
 #endif
 
@@ -199,24 +198,24 @@ Game::performPhysicsUpdate(DX::StepTimer const& timer)
 {
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 
+	// Player input forces
 	auto& player = m_state.entities[PLAYERS_IDX];
 	m_playerAccel *= PLAYER_SPEED;
-	const Vector3 innertAccel = {};
 
-	// Friction
 	Vector3 frictionNormal = -player.velocity;
 	frictionNormal.Normalize();
 	m_playerAccel += PLAYER_FRICTION * frictionNormal;
 
-	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	// Ballistic entities
+	for (size_t i = BALLISTIC_IDX; i < BALLISTIC_END; ++i)
 	{
 		const bool isPlayer = (i < PLAYERS_END);
 		auto& e							= m_state.entities[i];
-		e.isColliding				= false;
 
 		// Integrate Position
-		const Vector3& accel = (isPlayer) ? m_playerAccel : innertAccel;
-		e.position					 = 0.5f * accel * (elapsedTimeS * elapsedTimeS)
+		const Vector3& accel = (isPlayer) ? m_playerAccel : Vector3();
+
+		e.position = 0.5f * accel * (elapsedTimeS * elapsedTimeS)
 								 + e.velocity * elapsedTimeS + e.position;
 		e.velocity = accel * elapsedTimeS + e.velocity;
 
@@ -239,6 +238,11 @@ Game::performPhysicsUpdate(DX::StepTimer const& timer)
 void
 Game::performCollisionTests()
 {
+	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	{
+		m_state.entities[i].isColliding = false;
+	}
+
 	auto& player = m_state.entities[PLAYERS_IDX];
 
 	// Pass 1 - Player				-> EnemyShots
@@ -340,11 +344,7 @@ Game::Render()
 		}
 	}
 
-	Waypoint ways[] = {{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-										 {Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)}};
-
-	DX::DrawCurve(
-		m_batch.get(), ways[0].wayPoint, ways[1].wayPoint, ways[1].controlPoint);
+	m_gameMaster.debugRender(m_batch.get());
 
 	m_batch->End();
 
@@ -406,7 +406,7 @@ Game::renderEntityBound(Entity& entity)
 	auto bound	 = entity.model->bound;
 	bound.Center = bound.Center + entity.position;
 	DX::Draw(
-		m_batch.get(), bound, (entity.isColliding) ? Colors::Red : Colors::Green);
+		m_batch.get(), bound, (entity.isColliding) ? Colors::Red : Colors::Lime);
 
 	// Matrix world = Matrix::CreateTranslation(entity.position + boundCenter);
 	// world.m[0][0] *= modelData->bound.Radius;
@@ -525,7 +525,7 @@ Game::CreateDeviceDependentResources()
 		device, L"assets/star.dds", nullptr, m_texture.ReleaseAndGetAddressOf()));
 	m_starField = std::make_unique<StarField>(m_texture.Get());
 
-	m_batch = std::make_unique<PrimitiveBatchType>(context);
+	m_batch = std::make_unique<DX::DebugBatchType>(context);
 	{
 		void const* shaderByteCode;
 		size_t byteCodeLength;

@@ -26,6 +26,9 @@ static const size_t ENEMIES_END = ENEMIES_IDX + NUM_ENEMIES;
 
 static const size_t NUM_ENTITIES = ENEMIES_END;
 
+static const size_t BALLISTIC_IDX = 0;
+static const size_t BALLISTIC_END = ENEMIES_IDX;
+
 struct Entity
 {
 	DirectX::SimpleMath::Vector3 position = {};

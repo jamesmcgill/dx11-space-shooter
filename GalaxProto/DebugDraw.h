@@ -22,28 +22,30 @@
 
 namespace DX
 {
+using DebugBatchType = DirectX::PrimitiveBatch<DirectX::VertexPositionColor>;
+
 void XM_CALLCONV Draw(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	const DirectX::BoundingSphere& sphere,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV Draw(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	const DirectX::BoundingBox& box,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV Draw(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	const DirectX::BoundingOrientedBox& obb,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV Draw(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	const DirectX::BoundingFrustum& frustum,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawGrid(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	DirectX::FXMVECTOR xAxis,
 	DirectX::FXMVECTOR yAxis,
 	DirectX::FXMVECTOR origin,
@@ -52,30 +54,36 @@ void XM_CALLCONV DrawGrid(
 	DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawRing(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	DirectX::FXMVECTOR origin,
 	DirectX::FXMVECTOR majorAxis,
 	DirectX::FXMVECTOR minorAxis,
 	DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawRay(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	DirectX::FXMVECTOR origin,
 	DirectX::FXMVECTOR direction,
 	bool normalize					 = true,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawTriangle(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	DirectX::FXMVECTOR pointA,
 	DirectX::FXMVECTOR pointB,
 	DirectX::FXMVECTOR pointC,
 	DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawCurve(
-	DirectX::PrimitiveBatch<DirectX::VertexPositionColor>* batch,
+	DebugBatchType* batch,
 	DirectX::FXMVECTOR startPos,
 	DirectX::FXMVECTOR endPos,
 	DirectX::FXMVECTOR control,
+	DirectX::GXMVECTOR color = DirectX::Colors::White);
+
+void XM_CALLCONV DrawLine(
+	DebugBatchType* batch,
+	DirectX::FXMVECTOR startPos,
+	DirectX::FXMVECTOR endPos,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
 }
