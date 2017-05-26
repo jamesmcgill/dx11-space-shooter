@@ -3,6 +3,7 @@
 #include "StepTimer.h"
 #include "Entity.h"
 #include <vector>
+#include <array>
 
 //------------------------------------------------------------------------------
 struct Waypoint
@@ -50,6 +51,8 @@ public:
 	void debugRender(DX::DebugBatchType* batch);
 
 private:
+	std::array<const EnemyWaveInstance*, NUM_ENEMIES> m_enemyToWaveMap;
+
 	GameState& m_state;
 	size_t m_currentLevel;
 	float m_nextEventTimeS;

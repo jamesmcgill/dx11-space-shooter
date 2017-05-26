@@ -52,6 +52,10 @@ GameMaster::GameMaster(GameState& gameState)
 {
 	assert(!s_levels[m_currentLevel].waves.empty());
 	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;
+	for (auto& e : m_enemyToWaveMap)
+	{
+		e = nullptr;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -69,7 +73,9 @@ GameMaster::update(const DX::StepTimer& timer)
 		for (int i = 0; i < numShips; ++i)
 		{
 			// Spawn enemy
-			auto& newEnemy	 = m_state.entities[m_state.nextEnemyIdx];
+			auto& newEnemy = m_state.entities[m_state.nextEnemyIdx];
+			m_enemyToWaveMap[m_state.nextEnemyIdx - ENEMIES_IDX]
+				= &level.waves[m_nextEventWaveIdx];
 			newEnemy.isAlive = true;
 			m_state.nextEnemyIdx++;
 			if (m_state.nextEnemyIdx >= ENEMIES_END) {
@@ -133,10 +139,9 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 	// when moving between curves
 	const float segmentDurationS = 1.2f;
 
-	auto& level = s_levels[m_currentLevel];
-
-	// TODO(James): Which wave instance(s) are active??
-	const EnemyWaveInstance& instance = level.waves[m_activeWaveIdx];
+	// TODO(James):
+	// 2) multiple waves at once
+	// 3) multiple enemies per wave (still using t)
 
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
@@ -144,6 +149,8 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 		if (!e.isAlive) {
 			continue;
 		}
+		assert(m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr);
+		const EnemyWaveInstance& instance = *m_enemyToWaveMap[i - ENEMIES_IDX];
 
 		const float aliveS = (totalTimeS - instance.instanceTimeS);
 		const size_t currentSegment
@@ -202,29 +209,36 @@ GameMaster::emitPlayerShot()
 void
 GameMaster::debugRender(DX::DebugBatchType* batch)
 {
-	auto& level = s_levels[m_currentLevel];
-
-	// TODO(James): Which wave instance(s) are active??
-	const EnemyWaveInstance& instance = level.waves[m_activeWaveIdx];
+	std::set<const EnemyWaveInstance*> wavesToRender;
+	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
+	{
+		if (m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr) {
+			wavesToRender.insert(m_enemyToWaveMap[i - ENEMIES_IDX]);
+		}
+	}
 
 	const float radius = 0.1f;
 	XMVECTOR xaxis		 = g_XMIdentityR0 * radius;
 	XMVECTOR yaxis		 = g_XMIdentityR1 * radius;
 
-	auto prevPoint = instance.wave.waypoints[0].wayPoint;
-	for (size_t i = 1; i < instance.wave.waypoints.size(); ++i)
+	for (const auto& w : wavesToRender)
 	{
-		const auto& point		= instance.wave.waypoints[i].wayPoint;
-		const auto& control = instance.wave.waypoints[i].controlPoint;
+		const auto& waypoints = w->wave.waypoints;
+		auto prevPoint				= waypoints[0].wayPoint;
+		for (size_t i = 1; i < waypoints.size(); ++i)
+		{
+			const auto& point		= waypoints[i].wayPoint;
+			const auto& control = waypoints[i].controlPoint;
 
-		DX::DrawCurve(batch, prevPoint, point, control);
-		DX::DrawRing(batch, prevPoint, xaxis, yaxis);
-		DX::DrawRing(batch, point, xaxis, yaxis);
+			DX::DrawCurve(batch, prevPoint, point, control);
+			DX::DrawRing(batch, prevPoint, xaxis, yaxis);
+			DX::DrawRing(batch, point, xaxis, yaxis);
 
-		DX::DrawLine(batch, point, control, Colors::Yellow);
-		DX::DrawRing(batch, control, xaxis, yaxis, Colors::Yellow);
+			DX::DrawLine(batch, point, control, Colors::Yellow);
+			DX::DrawRing(batch, control, xaxis, yaxis, Colors::Yellow);
 
-		prevPoint = point;
+			prevPoint = point;
+		}
 	}
 }
 //------------------------------------------------------------------------------
