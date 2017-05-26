@@ -11,6 +11,24 @@ struct Waypoint
 	DirectX::SimpleMath::Vector3 controlPoint = {};
 };
 
+struct EnemyWave
+{
+	const std::vector<Waypoint> waypoints;
+	const int numShips;
+	const int shipType;
+};
+
+struct EnemyWaveInstance
+{
+	const EnemyWave wave;
+	const float instanceTimeS;
+};
+
+struct Level
+{
+	const std::vector<EnemyWaveInstance> waves;
+};
+
 //------------------------------------------------------------------------------
 class GameMaster
 {
@@ -29,14 +47,14 @@ public:
 
 	void emitPlayerShot();
 
-	void loadWaveData();
 	void debugRender(DX::DebugBatchType* batch);
 
 private:
 	GameState& m_state;
-	float m_waveSpawnTime;
-	bool m_isWaveSpawned = false;
-	std::vector<Waypoint> m_waypoints;
+	size_t m_currentLevel;
+	float m_nextEventTimeS;
+	size_t m_nextEventWaveIdx;
+	size_t m_activeWaveIdx;
 };
 
 //------------------------------------------------------------------------------

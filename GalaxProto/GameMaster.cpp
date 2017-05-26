@@ -5,15 +5,53 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-const Vector3 ENEMY_START_POS(-10.0f, 3.0f, 0.0f);
+static const std::vector<Waypoint> path1 = {
+	{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+	{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)},
+	{Vector3(-10.0f, -10.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)},
+};
+
+static const std::vector<Waypoint> path2 = {
+	{Vector3(-10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+	{Vector3(10.0f, 8.0f, 0.0f), Vector3(10.0f, 10.0f, 0.0f)},
+	{Vector3(-10.0f, 6.0f, 0.0f), Vector3(-10.0f, 8.0f, 0.0f)},
+	{Vector3(10.0f, 4.0f, 0.0f), Vector3(10.0f, 8.0f, 0.0f)},
+	{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
+};
+
+static const EnemyWave wave1 = {path1, 3, 0};
+static const EnemyWave wave2 = {path2, 3, 0};
+static const EnemyWave wave3 = {path1, 5, 0};
+static const EnemyWave wave4 = {path2, 5, 0};
+
+static const EnemyWaveInstance waveInstance1{wave1, 5.0f};
+static const EnemyWaveInstance waveInstance2{wave2, 10.0f};
+static const EnemyWaveInstance waveInstance3{wave3, 20.0f};
+static const EnemyWaveInstance waveInstance4{wave4, 30.0f};
+static const EnemyWaveInstance waveInstance5{wave1, 40.0f};
+static const EnemyWaveInstance waveInstance6{wave2, 50.0f};
+
+static const Level level1 = {{waveInstance1,
+															waveInstance2,
+															waveInstance3,
+															waveInstance4,
+															waveInstance5,
+															waveInstance6}};
+
+static const std::vector<Level> s_levels = {{level1}};
+
+//------------------------------------------------------------------------------
 constexpr float SHOT_SPEED = 20.0f;
 
 //------------------------------------------------------------------------------
 GameMaster::GameMaster(GameState& gameState)
 		: m_state(gameState)
+		, m_currentLevel(0)
+		, m_nextEventWaveIdx(0)
+		, m_activeWaveIdx(0)
 {
-	// TODO(James)
-	loadWaveData();
+	assert(!s_levels[m_currentLevel].waves.empty());
+	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;
 }
 
 //------------------------------------------------------------------------------
@@ -23,36 +61,34 @@ GameMaster::update(const DX::StepTimer& timer)
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
-// Spawn enemies
-#if 0
-	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
-		//	for (auto i = 0; i < 5; ++i)
-		//	{
-		//		// Create Enemy
-		// auto enemyIdx			= (m_state.nextEnemyIdx - ENEMIES_IDX);
-		// auto row					= floor(enemyIdx / 5.0f);
-		// auto col					= static_cast<float>(fmod(enemyIdx, 5.0f));
-		auto& newEnemy	 = m_state.entities[m_state.nextEnemyIdx];
-		newEnemy.isAlive = true;
-		// newEnemy.position = ENEMY_START_POS + Vector3(col * 5.0f, row * 5.0f,
-		// 0.0f);
-		newEnemy.position = m_waypoints[0].wayPoint;
-
-		m_state.nextEnemyIdx++;
-		if (m_state.nextEnemyIdx >= ENEMIES_END) {
-			m_state.nextEnemyIdx = ENEMIES_IDX;
+	// Spawn enemies
+	auto& level = s_levels[m_currentLevel];
+	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS) {
+		// Spawn wave
+		auto& numShips = level.waves[m_nextEventWaveIdx].wave.numShips;
+		for (int i = 0; i < numShips; ++i)
+		{
+			// Spawn enemy
+			auto& newEnemy	 = m_state.entities[m_state.nextEnemyIdx];
+			newEnemy.isAlive = true;
+			m_state.nextEnemyIdx++;
+			if (m_state.nextEnemyIdx >= ENEMIES_END) {
+				m_state.nextEnemyIdx = ENEMIES_IDX;
+			}
 		}
-		//	}
-	}
-#else
-	if (!m_isWaveSpawned && fmod(totalTimeS, 3.0f) < elapsedTimeS) {
-		auto& newEnemy	 = m_state.entities[m_state.nextEnemyIdx];
-		newEnemy.isAlive = true;
-		m_waveSpawnTime	= totalTimeS;
-		m_isWaveSpawned	= true;
-	}
 
-#endif
+		m_nextEventWaveIdx++;
+		if (m_nextEventWaveIdx < level.waves.size()) {
+			m_nextEventTimeS = level.waves[m_nextEventWaveIdx].instanceTimeS;
+			m_activeWaveIdx	= m_nextEventWaveIdx - 1;
+		}
+		else
+		{
+			m_activeWaveIdx		 = 0;
+			m_nextEventWaveIdx = 0;
+			m_nextEventTimeS	 = 0.0f;
+		}
+	}
 
 	// Spawn enemy shots
 	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
@@ -74,6 +110,7 @@ GameMaster::update(const DX::StepTimer& timer)
 	performPhysicsUpdate(timer);
 }
 
+//------------------------------------------------------------------------------
 static FXMVECTOR
 bezier(FLOAT t, FXMVECTOR startPos, FXMVECTOR endPos, FXMVECTOR control)
 {
@@ -91,18 +128,15 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 	// float elapsedTimeS = float(timer.GetElapsedSeconds());
 	float totalTimeS = static_cast<float>(timer.GetTotalSeconds());
 
+	// TODO(James): make the ships move at constant speed.
+	// At the moment it looks bad that the speed changes suddenly
+	// when moving between curves
 	const float segmentDurationS = 1.2f;
-	const float aliveS					 = (totalTimeS - m_waveSpawnTime);
-	const size_t currentSegment
-		= static_cast<size_t>(floor(aliveS / segmentDurationS));
 
-	if (currentSegment >= m_waypoints.size() - 1) {
-		m_isWaveSpawned																 = false;
-		m_state.entities[m_state.nextEnemyIdx].isAlive = false;
-		return;
-	}
+	auto& level = s_levels[m_currentLevel];
 
-	const float t = fmod(aliveS, segmentDurationS) / segmentDurationS;
+	// TODO(James): Which wave instance(s) are active??
+	const EnemyWaveInstance& instance = level.waves[m_activeWaveIdx];
 
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
@@ -110,11 +144,21 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 		if (!e.isAlive) {
 			continue;
 		}
-		e.position = bezier(
-			t,
-			m_waypoints[currentSegment].wayPoint,
-			m_waypoints[currentSegment + 1].wayPoint,
-			m_waypoints[currentSegment + 1].controlPoint);
+
+		const float aliveS = (totalTimeS - instance.instanceTimeS);
+		const size_t currentSegment
+			= static_cast<size_t>(floor(aliveS / segmentDurationS));
+		if (currentSegment >= instance.wave.waypoints.size() - 1) {
+			e.isAlive = false;
+			continue;
+		}
+
+		const float t = fmod(aliveS, segmentDurationS) / segmentDurationS;
+		e.position		= bezier(
+			 t,
+			 instance.wave.waypoints[currentSegment].wayPoint,
+			 instance.wave.waypoints[currentSegment + 1].wayPoint,
+			 instance.wave.waypoints[currentSegment + 1].controlPoint);
 	}
 }
 
@@ -156,37 +200,22 @@ GameMaster::emitPlayerShot()
 
 //------------------------------------------------------------------------------
 void
-GameMaster::loadWaveData()
-{
-	m_waypoints.clear();
-
-	m_waypoints.emplace_back(
-		Waypoint({Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)}));
-
-	m_waypoints.emplace_back(
-		Waypoint({Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)}));
-
-	m_waypoints.emplace_back(
-		Waypoint({Vector3(-10.0f, -10.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)}));
-}
-
-//------------------------------------------------------------------------------
-void
 GameMaster::debugRender(DX::DebugBatchType* batch)
 {
-	if (m_waypoints.empty()) {
-		return;
-	}
+	auto& level = s_levels[m_currentLevel];
+
+	// TODO(James): Which wave instance(s) are active??
+	const EnemyWaveInstance& instance = level.waves[m_activeWaveIdx];
 
 	const float radius = 0.1f;
 	XMVECTOR xaxis		 = g_XMIdentityR0 * radius;
 	XMVECTOR yaxis		 = g_XMIdentityR1 * radius;
 
-	auto prevPoint = m_waypoints[0].wayPoint;
-	for (size_t i = 1; i < m_waypoints.size(); ++i)
+	auto prevPoint = instance.wave.waypoints[0].wayPoint;
+	for (size_t i = 1; i < instance.wave.waypoints.size(); ++i)
 	{
-		const auto& point		= m_waypoints[i].wayPoint;
-		const auto& control = m_waypoints[i].controlPoint;
+		const auto& point		= instance.wave.waypoints[i].wayPoint;
+		const auto& control = instance.wave.waypoints[i].controlPoint;
 
 		DX::DrawCurve(batch, prevPoint, point, control);
 		DX::DrawRing(batch, prevPoint, xaxis, yaxis);
