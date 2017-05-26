@@ -33,6 +33,7 @@ struct Entity
 {
 	DirectX::SimpleMath::Vector3 position = {};
 	DirectX::SimpleMath::Vector3 velocity = {};
+	float birthTimeS											= 0.0f;
 	ModelData* model											= nullptr;
 	bool isColliding											= false;
 	bool isAlive													= false;

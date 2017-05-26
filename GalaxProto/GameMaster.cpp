@@ -24,12 +24,12 @@ static const EnemyWave wave2 = {path2, 3, 0};
 static const EnemyWave wave3 = {path1, 5, 0};
 static const EnemyWave wave4 = {path2, 5, 0};
 
-static const EnemyWaveInstance waveInstance1{wave1, 5.0f};
-static const EnemyWaveInstance waveInstance2{wave2, 10.0f};
-static const EnemyWaveInstance waveInstance3{wave3, 20.0f};
-static const EnemyWaveInstance waveInstance4{wave4, 30.0f};
-static const EnemyWaveInstance waveInstance5{wave1, 40.0f};
-static const EnemyWaveInstance waveInstance6{wave2, 50.0f};
+static const EnemyWaveInstance waveInstance1{wave1, 3.0f};
+static const EnemyWaveInstance waveInstance2{wave2, 5.0f};
+static const EnemyWaveInstance waveInstance3{wave3, 10.0f};
+static const EnemyWaveInstance waveInstance4{wave4, 14.0f};
+static const EnemyWaveInstance waveInstance5{wave1, 20.0f};
+static const EnemyWaveInstance waveInstance6{wave2, 25.0f};
 
 static const Level level1 = {{waveInstance1,
 															waveInstance2,
@@ -41,7 +41,8 @@ static const Level level1 = {{waveInstance1,
 static const std::vector<Level> s_levels = {{level1}};
 
 //------------------------------------------------------------------------------
-constexpr float SHOT_SPEED = 20.0f;
+constexpr float SHOT_SPEED									= 20.0f;
+constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 //------------------------------------------------------------------------------
 GameMaster::GameMaster(GameState& gameState)
@@ -70,17 +71,20 @@ GameMaster::update(const DX::StepTimer& timer)
 	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS) {
 		// Spawn wave
 		auto& numShips = level.waves[m_nextEventWaveIdx].wave.numShips;
+		float delayS	 = 0.0f;
 		for (int i = 0; i < numShips; ++i)
 		{
 			// Spawn enemy
 			auto& newEnemy = m_state.entities[m_state.nextEnemyIdx];
 			m_enemyToWaveMap[m_state.nextEnemyIdx - ENEMIES_IDX]
 				= &level.waves[m_nextEventWaveIdx];
-			newEnemy.isAlive = true;
+			newEnemy.isAlive		= true;
+			newEnemy.birthTimeS = totalTimeS + delayS;
 			m_state.nextEnemyIdx++;
 			if (m_state.nextEnemyIdx >= ENEMIES_END) {
 				m_state.nextEnemyIdx = ENEMIES_IDX;
 			}
+			delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
 		}
 
 		m_nextEventWaveIdx++;
@@ -113,6 +117,14 @@ GameMaster::update(const DX::StepTimer& timer)
 		}
 	}
 
+	int countAlive = 0;
+	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	{
+		if (m_state.entities[i].isAlive) {
+			++countAlive;
+		}
+	}
+
 	performPhysicsUpdate(timer);
 }
 
@@ -137,11 +149,7 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 	// TODO(James): make the ships move at constant speed.
 	// At the moment it looks bad that the speed changes suddenly
 	// when moving between curves
-	const float segmentDurationS = 1.2f;
-
-	// TODO(James):
-	// 2) multiple waves at once
-	// 3) multiple enemies per wave (still using t)
+	static const float SEGMENT_DURATION_S = 1.2f;
 
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
@@ -152,15 +160,21 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 		assert(m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr);
 		const EnemyWaveInstance& instance = *m_enemyToWaveMap[i - ENEMIES_IDX];
 
-		const float aliveS = (totalTimeS - instance.instanceTimeS);
+		const float aliveS = (totalTimeS - e.birthTimeS);
+		if (aliveS < 0.0f) {
+			e.position = instance.wave.waypoints[0].wayPoint;
+			continue;
+		}
+
+		// Enemy finished it's route
 		const size_t currentSegment
-			= static_cast<size_t>(floor(aliveS / segmentDurationS));
+			= static_cast<size_t>(floor(aliveS / SEGMENT_DURATION_S));
 		if (currentSegment >= instance.wave.waypoints.size() - 1) {
 			e.isAlive = false;
 			continue;
 		}
 
-		const float t = fmod(aliveS, segmentDurationS) / segmentDurationS;
+		const float t = fmod(aliveS, SEGMENT_DURATION_S) / SEGMENT_DURATION_S;
 		e.position		= bezier(
 			 t,
 			 instance.wave.waypoints[currentSegment].wayPoint,
@@ -217,9 +231,9 @@ GameMaster::debugRender(DX::DebugBatchType* batch)
 		}
 	}
 
-	const float radius = 0.1f;
-	XMVECTOR xaxis		 = g_XMIdentityR0 * radius;
-	XMVECTOR yaxis		 = g_XMIdentityR1 * radius;
+	static const float radius		= 0.1f;
+	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
+	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
 
 	for (const auto& w : wavesToRender)
 	{
