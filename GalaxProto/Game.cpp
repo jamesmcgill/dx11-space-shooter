@@ -259,6 +259,12 @@ Game::performCollisionTests()
 	}
 }
 
+// TODO(James)
+// 1) Kill enemies with player shots
+// 2) Score display at top of screen (add points per kill)
+// 3) Limit player to screen area
+// 4) Player death (lives)
+
 //------------------------------------------------------------------------------
 void
 Game::collisionTestEntity(
