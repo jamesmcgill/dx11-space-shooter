@@ -221,6 +221,31 @@ Game::performPhysicsUpdate(DX::StepTimer const& timer)
 		e.velocity = accel * elapsedTimeS + e.velocity;
 
 		if (isPlayer) {
+			auto slide = [&incident = e.velocity](Vector3 normal) {
+				return incident - 1.0f * incident.Dot(normal) * normal;
+			};
+
+			const Vector3 PLAYER_MAX_POSITION = { 16.0f, 9.0f, 0.0f };
+			const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
+
+			// Limit position
+			if (e.position.x < -PLAYER_MAX_POSITION.x) {
+				e.position.x = -PLAYER_MAX_POSITION.x;
+				e.velocity = slide(Vector3(1.0f, 0.0f, 0.0f));
+			}
+			else if (e.position.x > PLAYER_MAX_POSITION.x) {
+				e.position.x = PLAYER_MAX_POSITION.x;
+				e.velocity = slide(Vector3(-1.0f, 0.0f, 0.0f));
+			}
+			if (e.position.y < -PLAYER_MAX_POSITION.y) {
+				e.position.y = -PLAYER_MAX_POSITION.y;
+				e.velocity = slide(Vector3(0.0f, 1.0f, 0.0f));
+			}
+			else if (e.position.y > PLAYER_MAX_POSITION.y) {
+				e.position.y = PLAYER_MAX_POSITION.y;
+				e.velocity = slide(Vector3(0.0f, -1.0f, 0.0f));
+			}
+
 			// Clamp velocity
 			float velocityMagnitude = e.velocity.Length();
 			if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
@@ -274,9 +299,8 @@ Game::performCollisionTests()
 }
 
 // TODO(James)
-// 1) Score display at top of screen (add points per kill)
-// 2) Limit player to screen area
-// 3) Player death (lives)
+// 1) Player death (lives)
+// 2) Main Menu (state changes!)
 
 //------------------------------------------------------------------------------
 template<typename Func>
