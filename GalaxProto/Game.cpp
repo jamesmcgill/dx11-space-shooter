@@ -245,32 +245,45 @@ Game::performCollisionTests()
 
 	auto& player = m_state.entities[PLAYERS_IDX];
 
+	auto defaultOnCollision = [](Entity& entity, Entity& testEntity) {
+		entity.isColliding = true;
+		testEntity.isColliding = true;
+	};
+
+	auto playerShotsOnEnemies = [](Entity& entity, Entity& testEntity) {
+		entity.isColliding = true;
+		testEntity.isColliding = true;
+		entity.isAlive = false;
+		testEntity.isAlive = false;
+	};
+
 	// Pass 1 - Player				-> EnemyShots
-	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END);
+	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, defaultOnCollision);
 
 	// Pass 2 - Player				-> Enemies
-	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END);
+	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, defaultOnCollision);
 
 	// Pass 3 - PlayerShots		-> Enemies
 	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
 	{
 		auto& srcEntity = m_state.entities[srcIdx];
-		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END);
+		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END, playerShotsOnEnemies);
 	}
 }
 
 // TODO(James)
-// 1) Kill enemies with player shots
-// 2) Score display at top of screen (add points per kill)
-// 3) Limit player to screen area
-// 4) Player death (lives)
+// 1) Score display at top of screen (add points per kill)
+// 2) Limit player to screen area
+// 3) Player death (lives)
 
 //------------------------------------------------------------------------------
+template<typename Func>
 void
 Game::collisionTestEntity(
 	Entity& entity,
-	const size_t testRangeStartIdx,
-	const size_t testRangeOnePastEndIdx)
+	const size_t rangeStartIdx,
+	const size_t rangeOnePastEndIdx,
+	Func onCollision)
 {
 	if (!entity.isAlive) {
 		return;
@@ -281,7 +294,7 @@ Game::collisionTestEntity(
 	auto& srcBound = entity.model->bound;
 	auto srcCenter = entity.position + srcBound.Center;
 
-	for (size_t testIdx = testRangeStartIdx; testIdx < testRangeOnePastEndIdx;
+	for (size_t testIdx = rangeStartIdx; testIdx < rangeOnePastEndIdx;
 			 ++testIdx)
 	{
 		assert(m_state.entities[testIdx].model);
@@ -295,8 +308,7 @@ Game::collisionTestEntity(
 
 		auto distance = (srcCenter - testCenter).Length();
 		if (distance <= (srcBound.Radius + testBound.Radius)) {
-			entity.isColliding		 = true;
-			testEntity.isColliding = true;
+			onCollision(entity, testEntity);
 		}
 	}
 }

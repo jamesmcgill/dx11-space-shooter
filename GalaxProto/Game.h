@@ -43,10 +43,13 @@ private:
 	void HandleInput(DX::StepTimer const& timer);
 	void performPhysicsUpdate(DX::StepTimer const& timer);
 	void performCollisionTests();
+
+	template <typename Func>
 	void collisionTestEntity(
 		Entity& entity,
-		const size_t testRangeStartIdx,
-		const size_t testRangeOnePastEndIdx);
+		const size_t rangeStartIdx,
+		const size_t rangeOnePastEndIdx,
+		Func onCollision);
 
 	void Render();
 	void renderEntity(Entity& entity);
