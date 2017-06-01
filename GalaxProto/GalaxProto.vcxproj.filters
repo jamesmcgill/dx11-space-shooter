@@ -8,6 +8,9 @@
       <UniqueIdentifier>40429be5-2926-4ecb-b070-7922e1c633fe</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dds;dlg;fbx;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="fmt">
+      <UniqueIdentifier>{a442010c-d978-4aa6-8ac1-aa3cc413c51d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -22,6 +25,9 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="GameMaster.h" />
     <ClInclude Include="DebugDraw.h" />
+    <ClInclude Include="fmt\format.h">
+      <Filter>fmt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -34,6 +40,9 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="GameMaster.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
+    <ClCompile Include="fmt\format.cc">
+      <Filter>fmt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

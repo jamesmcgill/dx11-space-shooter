@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 #include "DebugDraw.h"
+#include "fmt/format.h"
 
 extern void ExitGame();
 
@@ -250,11 +251,12 @@ Game::performCollisionTests()
 		testEntity.isColliding = true;
 	};
 
-	auto playerShotsOnEnemies = [](Entity& entity, Entity& testEntity) {
+	auto playerShotsOnEnemies = [&score = m_playerScore](Entity& entity, Entity& testEntity) {
 		entity.isColliding = true;
 		testEntity.isColliding = true;
 		entity.isAlive = false;
 		testEntity.isAlive = false;
+		score += 10;
 	};
 
 	// Pass 1 - Player				-> EnemyShots
@@ -366,6 +368,8 @@ Game::Render()
 
 	m_batch->End();
 
+	DrawHUD();
+
 	m_deviceResources->PIXEndEvent();
 
 	// Show the new frame.
@@ -439,6 +443,30 @@ Game::renderEntityBound(Entity& entity)
 
 	// m_debugBound->Draw(
 	//	m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
+}
+
+//------------------------------------------------------------------------------
+void
+Game::DrawHUD()
+{
+
+	std::wstring scoreString = fmt::format(L"Score: {}", m_playerScore);
+
+	XMVECTOR dimensions = m_font->MeasureString(scoreString.c_str());
+	Vector2 fontOrigin = {
+		(XMVectorGetX(dimensions) / 2.f), 0.0f };
+
+	m_spriteBatch->Begin();
+
+	m_font->DrawString(
+		m_spriteBatch.get(),
+		scoreString.c_str(),
+		m_hudScorePosition,
+		Colors::Yellow,
+		0.f,
+		fontOrigin);
+
+	m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -543,6 +571,8 @@ Game::CreateDeviceDependentResources()
 		device, L"assets/star.dds", nullptr, m_texture.ReleaseAndGetAddressOf()));
 	m_starField = std::make_unique<StarField>(m_texture.Get());
 
+	m_font = std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
+
 	m_batch = std::make_unique<DX::DebugBatchType>(context);
 	{
 		void const* shaderByteCode;
@@ -610,6 +640,11 @@ Game::CreateWindowSizeDependentResources()
 		fovAngleY, aspectRatio, 0.01f, 100.f);
 
 	m_starField->setWindowSize(outputSize.right, outputSize.bottom);
+
+	// Position HUD
+	auto size = m_deviceResources->GetOutputSize();
+	m_hudScorePosition.x = size.right / 2.f;
+	m_hudScorePosition.y = static_cast<float>(size.top);
 }
 
 void
@@ -626,6 +661,7 @@ Game::OnDeviceLost()
 	m_effectFactory.reset();
 	m_debugEffect.reset();
 
+	m_font.reset();
 	m_starField.reset();
 	m_batch.reset();
 	m_spriteBatch.reset();

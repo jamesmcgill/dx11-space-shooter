@@ -54,6 +54,7 @@ private:
 	void Render();
 	void renderEntity(Entity& entity);
 	void renderEntityBound(Entity& entity);
+	void DrawHUD();
 
 	void Clear();
 
@@ -68,6 +69,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 	std::unique_ptr<StarField> m_starField;
+	std::unique_ptr<DirectX::SpriteFont> m_font;
 
 	std::unique_ptr<DX::DebugBatchType> m_batch;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugInputLayout;
@@ -95,6 +97,9 @@ private:
 	std::map<char*, ModelData> m_modelData;
 
 	DirectX::SimpleMath::Vector3 m_playerAccel = {};
+
+	DirectX::SimpleMath::Vector2 m_hudScorePosition = {};
+	int m_playerScore = 0;
 
 	// Rendering loop timer.
 	DX::StepTimer m_timer;
