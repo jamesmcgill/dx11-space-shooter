@@ -271,12 +271,7 @@ Game::performCollisionTests()
 
 	auto& player = m_state.entities[PLAYERS_IDX];
 
-	auto defaultOnCollision = [](Entity& entity, Entity& testEntity) {
-		entity.isColliding = true;
-		testEntity.isColliding = true;
-	};
-
-	auto playerShotsOnEnemies = [&score = m_playerScore](Entity& entity, Entity& testEntity) {
+	auto onPlayerShotHitsEnemy = [&score = m_playerScore](Entity& entity, Entity& testEntity) {
 		entity.isColliding = true;
 		testEntity.isColliding = true;
 		entity.isAlive = false;
@@ -284,23 +279,43 @@ Game::performCollisionTests()
 		score += 10;
 	};
 
+	auto onShipsCollide = [&lives = m_playerLives](Entity& player, Entity& enemy) {
+		player.isColliding = true;
+		enemy.isColliding = true;
+
+		// TODO(James): respawn player
+		// player.isAlive = false;
+		enemy.isAlive = false;
+		--lives;
+	};
+
+	auto onEnemyShotHitsPlayer = [&lives = m_playerLives](Entity& player, Entity& enemy) {
+		player.isColliding = true;
+		enemy.isColliding = true;
+
+		// TODO(James): respawn player
+		// player.isAlive = false;
+		enemy.isAlive = false;
+		--lives;
+	};
+
+
 	// Pass 1 - Player				-> EnemyShots
-	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, defaultOnCollision);
+	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, onEnemyShotHitsPlayer);
 
 	// Pass 2 - Player				-> Enemies
-	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, defaultOnCollision);
+	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, onShipsCollide);
 
 	// Pass 3 - PlayerShots		-> Enemies
 	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
 	{
 		auto& srcEntity = m_state.entities[srcIdx];
-		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END, playerShotsOnEnemies);
+		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END, onPlayerShotHitsEnemy);
 	}
 }
 
 // TODO(James)
-// 1) Player death (lives)
-// 2) Main Menu (state changes!)
+// 1) Main Menu (state changes!)
 
 //------------------------------------------------------------------------------
 template<typename Func>
@@ -473,22 +488,37 @@ Game::renderEntityBound(Entity& entity)
 void
 Game::DrawHUD()
 {
-
-	std::wstring scoreString = fmt::format(L"Score: {}", m_playerScore);
-
-	XMVECTOR dimensions = m_font->MeasureString(scoreString.c_str());
-	Vector2 fontOrigin = {
-		(XMVectorGetX(dimensions) / 2.f), 0.0f };
-
 	m_spriteBatch->Begin();
 
-	m_font->DrawString(
-		m_spriteBatch.get(),
-		scoreString.c_str(),
-		m_hudScorePosition,
-		Colors::Yellow,
-		0.f,
-		fontOrigin);
+	{
+		std::wstring scoreString = fmt::format(L"Score: {}", m_playerScore);
+		XMVECTOR dimensions = m_font->MeasureString(scoreString.c_str());
+		Vector2 fontOrigin = {
+			(XMVectorGetX(dimensions) / 2.f), 0.0f };
+
+		m_font->DrawString(
+			m_spriteBatch.get(),
+			scoreString.c_str(),
+			m_hudScorePosition,
+			Colors::Yellow,
+			0.f,
+			fontOrigin);
+	}
+
+
+	{
+		std::wstring livesString = fmt::format(L"Lives: {}", m_playerLives);
+		XMVECTOR dimensions = m_font->MeasureString(livesString.c_str());
+		Vector2 fontOrigin = {	0.0f, XMVectorGetY(dimensions) };
+
+		m_font->DrawString(
+			m_spriteBatch.get(),
+			livesString.c_str(),
+			m_hudLivesPosition,
+			Colors::Yellow,
+			0.f,
+			fontOrigin);
+	}
 
 	m_spriteBatch->End();
 }
@@ -669,6 +699,10 @@ Game::CreateWindowSizeDependentResources()
 	auto size = m_deviceResources->GetOutputSize();
 	m_hudScorePosition.x = size.right / 2.f;
 	m_hudScorePosition.y = static_cast<float>(size.top);
+
+	m_hudLivesPosition.x = 0.0f;
+	m_hudLivesPosition.y = static_cast<float>(size.bottom);
+
 }
 
 void

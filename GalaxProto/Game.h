@@ -99,7 +99,9 @@ private:
 	DirectX::SimpleMath::Vector3 m_playerAccel = {};
 
 	DirectX::SimpleMath::Vector2 m_hudScorePosition = {};
+	DirectX::SimpleMath::Vector2 m_hudLivesPosition = {};
 	int m_playerScore = 0;
+	int m_playerLives = 5;
 
 	// Rendering loop timer.
 	DX::StepTimer m_timer;
