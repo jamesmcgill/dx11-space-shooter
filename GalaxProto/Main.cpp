@@ -58,7 +58,7 @@ wWinMain(
 
 		// Create window
 		int w, h;
-		g_game->GetDefaultSize(w, h);
+		g_game->getDefaultSize(w, h);
 
 		RECT rc;
 		rc.top		= 0;
@@ -94,7 +94,7 @@ wWinMain(
 
 		GetClientRect(hwnd, &rc);
 
-		g_game->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
+		g_game->initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
 	}
 
 	// Main message loop
@@ -107,7 +107,7 @@ wWinMain(
 		}
 		else
 		{
-			g_game->Tick();
+			g_game->tick();
 		}
 	}
 
@@ -144,19 +144,19 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (wParam == SIZE_MINIMIZED) {
 				if (!s_minimized) {
 					s_minimized = true;
-					if (!s_in_suspend && game) game->OnSuspending();
+					if (!s_in_suspend && game) game->onSuspending();
 					s_in_suspend = true;
 				}
 			}
 			else if (s_minimized)
 			{
 				s_minimized = false;
-				if (s_in_suspend && game) game->OnResuming();
+				if (s_in_suspend && game) game->onResuming();
 				s_in_suspend = false;
 			}
 			else if (!s_in_sizemove && game)
 			{
-				game->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+				game->onWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
 			}
 			break;
 
@@ -170,7 +170,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				RECT rc;
 				GetClientRect(hWnd, &rc);
 
-				game->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
+				game->onWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
 			}
 			break;
 
@@ -186,11 +186,11 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (game) {
 				Keyboard::ProcessMessage(message, wParam, lParam);
 				if (wParam) {
-					game->OnActivated();
+					game->onActivated();
 				}
 				else
 				{
-					game->OnDeactivated();
+					game->onDeactivated();
 				}
 			}
 			break;
@@ -199,13 +199,13 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (wParam)
 			{
 				case PBT_APMQUERYSUSPEND:
-					if (!s_in_suspend && game) game->OnSuspending();
+					if (!s_in_suspend && game) game->onSuspending();
 					s_in_suspend = true;
 					return TRUE;
 
 				case PBT_APMRESUMESUSPEND:
 					if (!s_minimized) {
-						if (s_in_suspend && game) game->OnResuming();
+						if (s_in_suspend && game) game->onResuming();
 						s_in_suspend = false;
 					}
 					return TRUE;
@@ -232,7 +232,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 					int width	= 800;
 					int height = 600;
-					if (game) game->GetDefaultSize(width, height);
+					if (game) game->getDefaultSize(width, height);
 
 					ShowWindow(hWnd, SW_SHOWNORMAL);
 

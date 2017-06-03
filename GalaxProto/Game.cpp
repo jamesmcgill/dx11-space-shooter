@@ -50,15 +50,15 @@ Game::Game()
 
 // Initialize the Direct3D resources required to run.
 void
-Game::Initialize(HWND window, int width, int height)
+Game::initialize(HWND window, int width, int height)
 {
 	m_deviceResources->SetWindow(window, width, height);
 
 	m_deviceResources->CreateDeviceResources();
-	CreateDeviceDependentResources();
+	createDeviceDependentResources();
 
 	m_deviceResources->CreateWindowSizeDependentResources();
-	CreateWindowSizeDependentResources();
+	createWindowSizeDependentResources();
 
 	// TODO: Change the timer settings if you want something other than the
 	// default variable timestep mode. e.g. for 60 FPS fixed timestep update
@@ -72,20 +72,20 @@ Game::Initialize(HWND window, int width, int height)
 #pragma region Frame Update
 // Executes the basic game loop.
 void
-Game::Tick()
+Game::tick()
 {
-	m_timer.Tick([&]() { Update(m_timer); });
+	m_timer.Tick([&]() { update(m_timer); });
 
-	Render();
+	render();
 }
 
 //------------------------------------------------------------------------------
 // Updates the world.
 //------------------------------------------------------------------------------
 void
-Game::Update(DX::StepTimer const& timer)
+Game::update(const DX::StepTimer& timer)
 {
-	HandleInput(timer);
+	handleInput(timer);
 
 	// float elapsedTimeS = float(timer.GetElapsedSeconds());
 	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
@@ -135,7 +135,7 @@ Game::Update(DX::StepTimer const& timer)
 
 //------------------------------------------------------------------------------
 void
-Game::HandleInput(DX::StepTimer const& timer)
+Game::handleInput(const DX::StepTimer& timer)
 {
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
@@ -195,7 +195,7 @@ Game::HandleInput(DX::StepTimer const& timer)
 
 //------------------------------------------------------------------------------
 void
-Game::performPhysicsUpdate(DX::StepTimer const& timer)
+Game::performPhysicsUpdate(const DX::StepTimer& timer)
 {
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 
@@ -314,9 +314,6 @@ Game::performCollisionTests()
 	}
 }
 
-// TODO(James)
-// 1) Main Menu (state changes!)
-
 //------------------------------------------------------------------------------
 template<typename Func>
 void
@@ -358,16 +355,19 @@ Game::collisionTestEntity(
 #pragma endregion
 
 #pragma region Frame Render
+
+//------------------------------------------------------------------------------
 // Draws the scene.
+//------------------------------------------------------------------------------
 void
-Game::Render()
+Game::render()
 {
 	// Don't try to render anything before the first Update.
 	if (m_timer.GetFrameCount() == 0) {
 		return;
 	}
 
-	Clear();
+	clear();
 
 	m_deviceResources->PIXBeginEvent(L"Render");
 	auto context = m_deviceResources->GetD3DDeviceContext();
@@ -407,7 +407,7 @@ Game::Render()
 
 	m_batch->End();
 
-	DrawHUD();
+	drawHUD();
 
 	m_deviceResources->PIXEndEvent();
 
@@ -486,7 +486,7 @@ Game::renderEntityBound(Entity& entity)
 
 //------------------------------------------------------------------------------
 void
-Game::DrawHUD()
+Game::drawHUD()
 {
 	m_spriteBatch->Begin();
 
@@ -525,8 +525,9 @@ Game::DrawHUD()
 
 //------------------------------------------------------------------------------
 // Helper method to clear the back buffers.
+//------------------------------------------------------------------------------
 void
-Game::Clear()
+Game::clear()
 {
 	m_deviceResources->PIXBeginEvent(L"Clear");
 
@@ -546,62 +547,76 @@ Game::Clear()
 
 	m_deviceResources->PIXEndEvent();
 }
+
+//------------------------------------------------------------------------------
 #pragma endregion
 
 #pragma region Message Handlers
+//------------------------------------------------------------------------------
 // Message handlers
+//------------------------------------------------------------------------------
 void
-Game::OnActivated()
+Game::onActivated()
 {
 	// TODO: Game is becoming active window.
 }
 
+//------------------------------------------------------------------------------
 void
-Game::OnDeactivated()
+Game::onDeactivated()
 {
 	// TODO: Game is becoming background window.
 }
 
+//------------------------------------------------------------------------------
 void
-Game::OnSuspending()
+Game::onSuspending()
 {
 	// TODO: Game is being power-suspended (or minimized).
 }
 
+//------------------------------------------------------------------------------
 void
-Game::OnResuming()
+Game::onResuming()
 {
 	m_timer.ResetElapsedTime();
 
 	// TODO: Game is being power-resumed (or returning from minimize).
 }
 
+//------------------------------------------------------------------------------
 void
-Game::OnWindowSizeChanged(int width, int height)
+Game::onWindowSizeChanged(int width, int height)
 {
 	if (!m_deviceResources->WindowSizeChanged(width, height)) return;
 
-	CreateWindowSizeDependentResources();
+	createWindowSizeDependentResources();
 
 	m_starField->setWindowSize(width, height);
 
 	// TODO: Game window is being resized.
 }
 
+//------------------------------------------------------------------------------
 // Properties
+//------------------------------------------------------------------------------
 void
-Game::GetDefaultSize(int& width, int& height) const
+Game::getDefaultSize(int& width, int& height) const
 {
 	// TODO: Change to desired default window size (note minimum size is 320x200).
 	width	= 1280;
 	height = 720;
 }
+
+//------------------------------------------------------------------------------
 #pragma endregion
 
 #pragma region Direct3D Resources
+//------------------------------------------------------------------------------
 // These are the resources that depend on the device.
+//------------------------------------------------------------------------------
 void
-Game::CreateDeviceDependentResources()
+Game::createDeviceDependentResources()
 {
 	auto device	= m_deviceResources->GetD3DDevice();
 	auto context = m_deviceResources->GetD3DDeviceContext();
@@ -678,9 +693,11 @@ Game::CreateDeviceDependentResources()
 	}
 }
 
+//------------------------------------------------------------------------------
 // Allocate all memory resources that change on a window SizeChanged event.
+//------------------------------------------------------------------------------
 void
-Game::CreateWindowSizeDependentResources()
+Game::createWindowSizeDependentResources()
 {
 	RECT outputSize = m_deviceResources->GetOutputSize();
 
@@ -702,9 +719,9 @@ Game::CreateWindowSizeDependentResources()
 
 	m_hudLivesPosition.x = 0.0f;
 	m_hudLivesPosition.y = static_cast<float>(size.bottom);
-
 }
 
+//------------------------------------------------------------------------------
 void
 Game::OnDeviceLost()
 {
@@ -727,11 +744,15 @@ Game::OnDeviceLost()
 	m_states.reset();
 }
 
+//------------------------------------------------------------------------------
 void
 Game::OnDeviceRestored()
 {
-	CreateDeviceDependentResources();
+	createDeviceDependentResources();
 
-	CreateWindowSizeDependentResources();
+	createWindowSizeDependentResources();
 }
+
+//------------------------------------------------------------------------------
 #pragma endregion
+

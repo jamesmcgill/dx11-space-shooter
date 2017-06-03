@@ -19,29 +19,29 @@ public:
 	Game();
 
 	// Initialization and management
-	void Initialize(HWND window, int width, int height);
+	void initialize(HWND window, int width, int height);
 
 	// Basic game loop
-	void Tick();
+	void tick();
 
 	// IDeviceNotify
 	virtual void OnDeviceLost() override;
 	virtual void OnDeviceRestored() override;
 
 	// Messages
-	void OnActivated();
-	void OnDeactivated();
-	void OnSuspending();
-	void OnResuming();
-	void OnWindowSizeChanged(int width, int height);
+	void onActivated();
+	void onDeactivated();
+	void onSuspending();
+	void onResuming();
+	void onWindowSizeChanged(int width, int height);
 
 	// Properties
-	void GetDefaultSize(int& width, int& height) const;
+	void getDefaultSize(int& width, int& height) const;
 
 private:
-	void Update(DX::StepTimer const& timer);
-	void HandleInput(DX::StepTimer const& timer);
-	void performPhysicsUpdate(DX::StepTimer const& timer);
+	void update(const DX::StepTimer& timer);
+	void handleInput(const DX::StepTimer& timer);
+	void performPhysicsUpdate(const DX::StepTimer& timer);
 	void performCollisionTests();
 
 	template <typename Func>
@@ -51,15 +51,15 @@ private:
 		const size_t rangeOnePastEndIdx,
 		Func onCollision);
 
-	void Render();
+	void render();
 	void renderEntity(Entity& entity);
 	void renderEntityBound(Entity& entity);
-	void DrawHUD();
+	void drawHUD();
 
-	void Clear();
+	void clear();
 
-	void CreateDeviceDependentResources();
-	void CreateWindowSizeDependentResources();
+	void createDeviceDependentResources();
+	void createWindowSizeDependentResources();
 
 	// Device resources.
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;
