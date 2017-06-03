@@ -592,8 +592,6 @@ Game::onWindowSizeChanged(int width, int height)
 
 	createWindowSizeDependentResources();
 
-	m_starField->setWindowSize(width, height);
-
 	// TODO: Game window is being resized.
 }
 
@@ -713,12 +711,11 @@ Game::createWindowSizeDependentResources()
 	m_starField->setWindowSize(outputSize.right, outputSize.bottom);
 
 	// Position HUD
-	auto size = m_deviceResources->GetOutputSize();
-	m_hudScorePosition.x = size.right / 2.f;
-	m_hudScorePosition.y = static_cast<float>(size.top);
+	m_hudScorePosition.x = outputSize.right / 2.f;
+	m_hudScorePosition.y = static_cast<float>(outputSize.top);
 
 	m_hudLivesPosition.x = 0.0f;
-	m_hudLivesPosition.y = static_cast<float>(size.bottom);
+	m_hudLivesPosition.y = static_cast<float>(outputSize.bottom);
 }
 
 //------------------------------------------------------------------------------
