@@ -1,12 +1,14 @@
 #pragma once
-#include <pch.h>
+#include "pch.h"
 
+//------------------------------------------------------------------------------
 struct ModelData
 {
 	std::unique_ptr<DirectX::Model> model;
 	DirectX::BoundingSphere bound;
 };
 
+//------------------------------------------------------------------------------
 // Entities Partitioned by type
 static const size_t NUM_PLAYERS = 1;
 static const size_t PLAYERS_IDX = 0;
@@ -29,6 +31,7 @@ static const size_t NUM_ENTITIES = ENEMIES_END;
 static const size_t BALLISTIC_IDX = 0;
 static const size_t BALLISTIC_END = ENEMIES_IDX;
 
+//------------------------------------------------------------------------------
 struct Entity
 {
 	DirectX::SimpleMath::Vector3 position = {};
@@ -39,10 +42,5 @@ struct Entity
 	bool isAlive													= false;
 };
 
-struct GameState
-{
-	size_t nextPlayerShotIdx = PLAYER_SHOTS_IDX;
-	size_t nextEnemyShotIdx	= ENEMY_SHOTS_IDX;
-	size_t nextEnemyIdx			 = ENEMIES_IDX;
-	Entity entities[NUM_ENTITIES];
-};
+//------------------------------------------------------------------------------
+

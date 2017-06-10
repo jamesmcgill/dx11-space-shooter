@@ -45,8 +45,8 @@ constexpr float SHOT_SPEED									= 20.0f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 //------------------------------------------------------------------------------
-GameMaster::GameMaster(GameState& gameState)
-		: m_state(gameState)
+GameMaster::GameMaster(AppContext& context)
+		: m_context(context)
 		, m_currentLevel(0)
 		, m_nextEventWaveIdx(0)
 		, m_activeWaveIdx(0)
@@ -75,14 +75,14 @@ GameMaster::update(const DX::StepTimer& timer)
 		for (int i = 0; i < numShips; ++i)
 		{
 			// Spawn enemy
-			auto& newEnemy = m_state.entities[m_state.nextEnemyIdx];
-			m_enemyToWaveMap[m_state.nextEnemyIdx - ENEMIES_IDX]
+			auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
+			m_enemyToWaveMap[m_context.nextEnemyIdx - ENEMIES_IDX]
 				= &level.waves[m_nextEventWaveIdx];
 			newEnemy.isAlive		= true;
 			newEnemy.birthTimeS = totalTimeS + delayS;
-			m_state.nextEnemyIdx++;
-			if (m_state.nextEnemyIdx >= ENEMIES_END) {
-				m_state.nextEnemyIdx = ENEMIES_IDX;
+			m_context.nextEnemyIdx++;
+			if (m_context.nextEnemyIdx >= ENEMIES_END) {
+				m_context.nextEnemyIdx = ENEMIES_IDX;
 			}
 			delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
 		}
@@ -104,12 +104,12 @@ GameMaster::update(const DX::StepTimer& timer)
 	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
 		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 		{
-			if (m_state.entities[i].isAlive) {
+			if (m_context.entities[i].isAlive) {
 				emitShot(
-					m_state.entities[i],
+					m_context.entities[i],
 					-1.0f,
 					-SHOT_SPEED,
-					m_state.nextEnemyShotIdx,
+					m_context.nextEnemyShotIdx,
 					ENEMY_SHOTS_IDX,
 					ENEMY_SHOTS_END);
 				break;
@@ -120,7 +120,7 @@ GameMaster::update(const DX::StepTimer& timer)
 	int countAlive = 0;
 	for (size_t i = 0; i < NUM_ENTITIES; ++i)
 	{
-		if (m_state.entities[i].isAlive) {
+		if (m_context.entities[i].isAlive) {
 			++countAlive;
 		}
 	}
@@ -153,7 +153,7 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		auto& e = m_state.entities[i];
+		auto& e = m_context.entities[i];
 		if (!e.isAlive) {
 			continue;
 		}
@@ -193,7 +193,7 @@ GameMaster::emitShot(
 	const size_t minEntityIdx,
 	const size_t maxEntityIdxPlusOne)
 {
-	auto& newShot		= m_state.entities[shotEntityIdx];
+	auto& newShot		= m_context.entities[shotEntityIdx];
 	newShot.isAlive = true;
 	newShot.position
 		= emitter.position + emitter.model->bound.Center
@@ -211,10 +211,10 @@ void
 GameMaster::emitPlayerShot()
 {
 	emitShot(
-		m_state.entities[PLAYERS_IDX],
+		m_context.entities[PLAYERS_IDX],
 		1.0f,
 		SHOT_SPEED,
-		m_state.nextPlayerShotIdx,
+		m_context.nextPlayerShotIdx,
 		PLAYER_SHOTS_IDX,
 		PLAYER_SHOTS_END);
 }

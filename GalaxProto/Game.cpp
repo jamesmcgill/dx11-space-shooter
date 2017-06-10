@@ -1,63 +1,44 @@
-//
-// Game.cpp
-//
-
 #include "pch.h"
 #include "Game.h"
 #include "DebugDraw.h"
-#include "fmt/format.h"
 
 extern void ExitGame();
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
-
 using Microsoft::WRL::ComPtr;
-
-//------------------------------------------------------------------------------
-constexpr float ROTATION_DEGREES_PER_SECOND = 45.f;
-constexpr float CAMERA_SPEED_X							= 1.0f;
-constexpr float CAMERA_SPEED_Y							= 1.0f;
-
-constexpr float PLAYER_SPEED				= 200.0f;
-constexpr float PLAYER_FRICTION			= 60.0f;
-constexpr float PLAYER_MAX_VELOCITY = 20.0f;
-constexpr float PLAYER_MIN_VELOCITY = 0.3f;
-
-constexpr float CAMERA_DIST = 40.5f;
-
 //------------------------------------------------------------------------------
 Game::Game()
-		: m_keyboard(std::make_unique<Keyboard>())
-		, m_kbTracker(std::make_unique<Keyboard::KeyboardStateTracker>())
-		, m_rotationRadiansPS(XMConvertToRadians(ROTATION_DEGREES_PER_SECOND))
-		, m_gameMaster(m_state)
+		: m_appResources(m_appContext)
+		, m_gameLogic(m_appContext, m_appResources)
+		, m_appStates(m_appContext, m_appResources, m_gameLogic)
 {
-	m_deviceResources = std::make_unique<DX::DeviceResources>();
-	m_deviceResources->RegisterDeviceNotify(this);
+	m_appResources.m_deviceResources = std::make_unique<DX::DeviceResources>();
+	m_appResources.m_deviceResources->RegisterDeviceNotify(this);
 
-	m_modelLocations["PLAYER"] = L"assets/player.sdkmesh";
-	m_modelLocations["SHOT"]	 = L"assets/shot.sdkmesh";
+	m_appResources.modelLocations["PLAYER"] = L"assets/player.sdkmesh";
+	m_appResources.modelLocations["SHOT"]		= L"assets/shot.sdkmesh";
 
 	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
-
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_state.entities[i].isAlive	= true;
-		m_state.entities[i].position = PLAYER_START_POS;
+		m_appContext.entities[i].isAlive	= true;
+		m_appContext.entities[i].position = PLAYER_START_POS;
 	}
 }
 
+//------------------------------------------------------------------------------
 // Initialize the Direct3D resources required to run.
+//------------------------------------------------------------------------------
 void
 Game::initialize(HWND window, int width, int height)
 {
-	m_deviceResources->SetWindow(window, width, height);
+	m_appResources.m_deviceResources->SetWindow(window, width, height);
 
-	m_deviceResources->CreateDeviceResources();
+	m_appResources.m_deviceResources->CreateDeviceResources();
 	createDeviceDependentResources();
 
-	m_deviceResources->CreateWindowSizeDependentResources();
+	m_appResources.m_deviceResources->CreateWindowSizeDependentResources();
 	createWindowSizeDependentResources();
 
 	// TODO: Change the timer settings if you want something other than the
@@ -70,7 +51,9 @@ Game::initialize(HWND window, int width, int height)
 }
 
 #pragma region Frame Update
+//------------------------------------------------------------------------------
 // Executes the basic game loop.
+//------------------------------------------------------------------------------
 void
 Game::tick()
 {
@@ -80,275 +63,16 @@ Game::tick()
 }
 
 //------------------------------------------------------------------------------
-// Updates the world.
-//------------------------------------------------------------------------------
 void
 Game::update(const DX::StepTimer& timer)
 {
-	handleInput(timer);
+	auto kbState = m_appResources.m_keyboard->GetState();
+	m_appResources.kbTracker.Update(kbState);
 
-	// float elapsedTimeS = float(timer.GetElapsedSeconds());
-	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
+	const auto& currentState = m_appStates.currentState();
+	currentState->handleInput(timer);
 
-	// CAMERA
-	auto& player = m_state.entities[PLAYERS_IDX];
-	assert(player.model);
-	const auto& atP							 = player.position + player.model->bound.Center;
-	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
-	static const XMVECTORF32 at	= {atP.x, atP.y, atP.z, 0.0f};
-	static const XMVECTORF32 up	= {0.0f, 1.0f, 0.0f, 0.0f};
-
-	XMVECTOR eyePos = ::XMVectorSubtract(eye, at);
-
-	float radiansX = static_cast<float>(fmod(m_cameraRotationX, XM_2PI));
-	eyePos				 = ::XMVector3Rotate(
-		eyePos, XMQuaternionRotationMatrix(XMMatrixRotationX(radiansX)));
-
-	float radiansY = static_cast<float>(fmod(m_cameraRotationY, XM_2PI));
-	eyePos				 = ::XMVector3Rotate(
-		eyePos, XMQuaternionRotationMatrix(XMMatrixRotationY(radiansY)));
-
-	eyePos = ::XMVectorAdd(eyePos, at);
-
-	m_view = XMMatrixLookAtRH(eyePos, at, up);
-
-#if 0
-	// Implicit Model Rotation
-	double totalRotation = totalTimeS * m_rotationRadiansPS;
-	float radians				 = static_cast<float>(fmod(totalRotation, XM_2PI));
-
-	m_world = Matrix::CreateTranslation(m_modelBound.Center).Invert()
-						* Matrix::CreateFromYawPitchRoll(XM_PI - 0.5f, radians, -XM_PI / 2)
-						* Matrix::CreateTranslation(
-								m_state.entities[0].m_position + m_modelBound.Center);
-
-#else
-
-	m_gameMaster.update(timer);
-	performPhysicsUpdate(timer);
-	performCollisionTests();
-
-#endif
-
-	m_starField->update(timer);
-}
-
-//------------------------------------------------------------------------------
-void
-Game::handleInput(const DX::StepTimer& timer)
-{
-	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
-
-	// Handle Keyboard Input
-	auto kbState = m_keyboard->GetState();
-	m_kbTracker->Update(kbState);
-
-	if (kbState.Escape) {
-		ExitGame();
-	}
-
-	if (kbState.W) {
-		m_cameraRotationX -= elapsedTimeS * CAMERA_SPEED_X;
-	}
-	else if (kbState.S)
-	{
-		m_cameraRotationX += elapsedTimeS * CAMERA_SPEED_X;
-	}
-
-	if (kbState.A) {
-		m_cameraRotationY -= elapsedTimeS * CAMERA_SPEED_Y;
-	}
-	else if (kbState.D)
-	{
-		m_cameraRotationY += elapsedTimeS * CAMERA_SPEED_Y;
-	}
-
-	m_playerAccel = Vector3();
-	if (kbState.Up) {
-		m_playerAccel.y = 1.0f;
-	}
-	else if (kbState.Down)
-	{
-		m_playerAccel.y = -1.0f;
-	}
-
-	if (kbState.Left) {
-		m_playerAccel.x = -1.0f;
-	}
-	else if (kbState.Right)
-	{
-		m_playerAccel.x = 1.0f;
-	}
-
-	if (m_playerAccel.x != 0.0f && m_playerAccel.y != 0.0f) {
-		const float UNIT_DIAGONAL_LENGTH = 0.7071067811865475f;
-		m_playerAccel *= UNIT_DIAGONAL_LENGTH;
-	}
-
-	if (
-		m_kbTracker->IsKeyPressed(Keyboard::LeftControl)
-		|| m_kbTracker->IsKeyPressed(Keyboard::Space))
-	{
-		m_gameMaster.emitPlayerShot();
-	}
-}
-
-//------------------------------------------------------------------------------
-void
-Game::performPhysicsUpdate(const DX::StepTimer& timer)
-{
-	float elapsedTimeS = float(timer.GetElapsedSeconds());
-
-	// Player input forces
-	auto& player = m_state.entities[PLAYERS_IDX];
-	m_playerAccel *= PLAYER_SPEED;
-
-	Vector3 frictionNormal = -player.velocity;
-	frictionNormal.Normalize();
-	m_playerAccel += PLAYER_FRICTION * frictionNormal;
-
-	// Ballistic entities
-	for (size_t i = BALLISTIC_IDX; i < BALLISTIC_END; ++i)
-	{
-		const bool isPlayer = (i < PLAYERS_END);
-		auto& e							= m_state.entities[i];
-
-		// Integrate Position
-		const Vector3& accel = (isPlayer) ? m_playerAccel : Vector3();
-
-		e.position = 0.5f * accel * (elapsedTimeS * elapsedTimeS)
-								 + e.velocity * elapsedTimeS + e.position;
-		e.velocity = accel * elapsedTimeS + e.velocity;
-
-		if (isPlayer) {
-			auto slide = [&incident = e.velocity](Vector3 normal) {
-				return incident - 1.0f * incident.Dot(normal) * normal;
-			};
-
-			const Vector3 PLAYER_MAX_POSITION = { 16.0f, 9.0f, 0.0f };
-			const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
-
-			// Limit position
-			if (e.position.x < -PLAYER_MAX_POSITION.x) {
-				e.position.x = -PLAYER_MAX_POSITION.x;
-				e.velocity = slide(Vector3(1.0f, 0.0f, 0.0f));
-			}
-			else if (e.position.x > PLAYER_MAX_POSITION.x) {
-				e.position.x = PLAYER_MAX_POSITION.x;
-				e.velocity = slide(Vector3(-1.0f, 0.0f, 0.0f));
-			}
-			if (e.position.y < -PLAYER_MAX_POSITION.y) {
-				e.position.y = -PLAYER_MAX_POSITION.y;
-				e.velocity = slide(Vector3(0.0f, 1.0f, 0.0f));
-			}
-			else if (e.position.y > PLAYER_MAX_POSITION.y) {
-				e.position.y = PLAYER_MAX_POSITION.y;
-				e.velocity = slide(Vector3(0.0f, -1.0f, 0.0f));
-			}
-
-			// Clamp velocity
-			float velocityMagnitude = e.velocity.Length();
-			if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
-				e.velocity.Normalize();
-				e.velocity *= PLAYER_MAX_VELOCITY;
-			}
-			else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
-			{
-				e.velocity = Vector3();
-			}
-		}
-	}
-}
-
-//------------------------------------------------------------------------------
-void
-Game::performCollisionTests()
-{
-	for (size_t i = 0; i < NUM_ENTITIES; ++i)
-	{
-		m_state.entities[i].isColliding = false;
-	}
-
-	auto& player = m_state.entities[PLAYERS_IDX];
-
-	auto onPlayerShotHitsEnemy = [&score = m_playerScore](Entity& entity, Entity& testEntity) {
-		entity.isColliding = true;
-		testEntity.isColliding = true;
-		entity.isAlive = false;
-		testEntity.isAlive = false;
-		score += 10;
-	};
-
-	auto onShipsCollide = [&lives = m_playerLives](Entity& player, Entity& enemy) {
-		player.isColliding = true;
-		enemy.isColliding = true;
-
-		// TODO(James): respawn player
-		// player.isAlive = false;
-		enemy.isAlive = false;
-		--lives;
-	};
-
-	auto onEnemyShotHitsPlayer = [&lives = m_playerLives](Entity& player, Entity& enemy) {
-		player.isColliding = true;
-		enemy.isColliding = true;
-
-		// TODO(James): respawn player
-		// player.isAlive = false;
-		enemy.isAlive = false;
-		--lives;
-	};
-
-
-	// Pass 1 - Player				-> EnemyShots
-	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, onEnemyShotHitsPlayer);
-
-	// Pass 2 - Player				-> Enemies
-	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, onShipsCollide);
-
-	// Pass 3 - PlayerShots		-> Enemies
-	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
-	{
-		auto& srcEntity = m_state.entities[srcIdx];
-		collisionTestEntity(srcEntity, ENEMIES_IDX, ENEMIES_END, onPlayerShotHitsEnemy);
-	}
-}
-
-//------------------------------------------------------------------------------
-template<typename Func>
-void
-Game::collisionTestEntity(
-	Entity& entity,
-	const size_t rangeStartIdx,
-	const size_t rangeOnePastEndIdx,
-	Func onCollision)
-{
-	if (!entity.isAlive) {
-		return;
-	}
-
-	// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
-	assert(entity.model);
-	auto& srcBound = entity.model->bound;
-	auto srcCenter = entity.position + srcBound.Center;
-
-	for (size_t testIdx = rangeStartIdx; testIdx < rangeOnePastEndIdx;
-			 ++testIdx)
-	{
-		assert(m_state.entities[testIdx].model);
-		auto& testEntity = m_state.entities[testIdx];
-		if (!testEntity.isAlive) {
-			continue;
-		}
-
-		auto& testBound = testEntity.model->bound;
-		auto testCenter = testEntity.position + testBound.Center;
-
-		auto distance = (srcCenter - testCenter).Length();
-		if (distance <= (srcBound.Radius + testBound.Radius)) {
-			onCollision(entity, testEntity);
-		}
-	}
+	currentState->tick(timer);
 }
 
 //------------------------------------------------------------------------------
@@ -369,158 +93,53 @@ Game::render()
 
 	clear();
 
-	m_deviceResources->PIXBeginEvent(L"Render");
-	auto context = m_deviceResources->GetD3DDeviceContext();
-	// auto device = m_deviceResources->GetD3DDevice();
+	m_appResources.m_deviceResources->PIXBeginEvent(L"Render");
+	auto context = m_appResources.m_deviceResources->GetD3DDeviceContext();
+	// auto device = m_appResources.m_deviceResources->GetD3DDevice();
 
 	// TODO: Add your rendering code here.
-	m_spriteBatch->Begin();
-	m_starField->render(*m_spriteBatch);
-	m_spriteBatch->End();
+	m_appResources.m_spriteBatch->Begin();
+	m_appResources.starField->render(*m_appResources.m_spriteBatch);
+	m_appResources.m_spriteBatch->End();
 
-	for (auto& entity : m_state.entities)
+	for (auto& entity : m_appContext.entities)
 	{
 		if (entity.isAlive) {
-			renderEntity(entity);
+			m_gameLogic.renderEntity(entity);
 		}
 	}
 
 	// Debug Drawing
-	context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
-	context->OMSetDepthStencilState(m_states->DepthNone(), 0);
-	context->RSSetState(m_states->CullNone());
+	context->OMSetBlendState(
+		m_appResources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
+	context->OMSetDepthStencilState(m_appResources.m_states->DepthNone(), 0);
+	context->RSSetState(m_appResources.m_states->CullNone());
 
-	m_debugEffect->SetView(m_view);
-	m_debugEffect->SetProjection(m_proj);
-	m_debugEffect->Apply(context);
-	context->IASetInputLayout(m_debugInputLayout.Get());
+	m_appResources.m_debugEffect->SetView(m_appContext.view);
+	m_appResources.m_debugEffect->SetProjection(m_appContext.proj);
+	m_appResources.m_debugEffect->Apply(context);
+	context->IASetInputLayout(m_appResources.m_debugInputLayout.Get());
 
-	m_batch->Begin();
-	for (auto& entity : m_state.entities)
+	m_appResources.m_batch->Begin();
+	for (auto& entity : m_appContext.entities)
 	{
 		if (entity.isAlive) {
-			renderEntityBound(entity);
+			m_gameLogic.renderEntityBound(entity);
 		}
 	}
+	m_appResources.gameMaster.debugRender(m_appResources.m_batch.get());
+	m_appResources.m_batch->End();
 
-	m_gameMaster.debugRender(m_batch.get());
+	m_appResources.m_spriteBatch->Begin();
+	m_gameLogic.drawHUD();
+	//m_appResources.menuManager->render(
+	//	m_appResources.m_font.get(), m_appResources.m_spriteBatch.get());
+	m_appResources.m_spriteBatch->End();
 
-	m_batch->End();
-
-	drawHUD();
-
-	m_deviceResources->PIXEndEvent();
+	m_appResources.m_deviceResources->PIXEndEvent();
 
 	// Show the new frame.
-	m_deviceResources->Present();
-}
-
-//------------------------------------------------------------------------------
-void
-Game::renderEntity(Entity& entity)
-{
-	// TODO(James): Use <notnullable> to enforce assertion
-	assert(entity.model);
-	const auto& modelData		= entity.model;
-	const auto& boundCenter = entity.model->bound.Center;
-
-	Matrix world = Matrix::CreateTranslation(boundCenter).Invert()
-								 * Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, XM_PI)
-								 * Matrix::CreateTranslation(entity.position + boundCenter);
-
-	modelData->model->Draw(
-		m_deviceResources->GetD3DDeviceContext(), *m_states, world, m_view, m_proj);
-
-#if 0
-	// DEBUG BOUND
-	Matrix boundWorld = Matrix::CreateTranslation(entity.position + boundCenter);
-	boundWorld.m[0][0] *= modelData->bound.Radius;
-	boundWorld.m[1][1] *= modelData->bound.Radius;
-	boundWorld.m[2][2] *= modelData->bound.Radius;
-
-	Vector4 color = entity.isColliding ? Vector4(1.0f, 0.0f, 0.0f, 0.4f)
-																		 : Vector4(0.0f, 1.0f, 0.0f, 0.4f);
-	m_debugBoundEffect->SetColorAndAlpha(color);
-
-	m_debugBoundEffect->SetView(m_view);
-	m_debugBoundEffect->SetProjection(m_proj);
-	m_debugBoundEffect->SetWorld(boundWorld);
-	m_debugBoundEffect->Apply(context);
-
-	context->OMSetBlendState(m_states->AlphaBlend(), Colors::White, 0xFFFFFFFF);
-	context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
-	context->RSSetState(m_states->CullNone());
-
-	m_debugBound->Draw(
-		m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
-#endif
-}
-
-//------------------------------------------------------------------------------
-void
-Game::renderEntityBound(Entity& entity)
-{
-	// TODO(James): Use <notnullable> to enforce assertion
-	assert(entity.model);
-	// const auto& modelData = entity.model;
-
-	auto bound	 = entity.model->bound;
-	bound.Center = bound.Center + entity.position;
-	DX::Draw(
-		m_batch.get(), bound, (entity.isColliding) ? Colors::Red : Colors::Lime);
-
-	// Matrix world = Matrix::CreateTranslation(entity.position + boundCenter);
-	// world.m[0][0] *= modelData->bound.Radius;
-	// world.m[1][1] *= modelData->bound.Radius;
-	// world.m[2][2] *= modelData->bound.Radius;
-
-	// DEBUG BOUND
-	// Vector4 color = entity.isColliding ? Vector4(1.0f, 0.0f, 0.0f, 0.4f)
-	//																	 : Vector4(0.0f, 1.0f, 0.0f, 0.4f);
-	// m_debugEffect->SetColorAndAlpha(color);
-	// m_debugBoundEffect->SetWorld(world);
-
-	// m_debugBound->Draw(
-	//	m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
-}
-
-//------------------------------------------------------------------------------
-void
-Game::drawHUD()
-{
-	m_spriteBatch->Begin();
-
-	{
-		std::wstring scoreString = fmt::format(L"Score: {}", m_playerScore);
-		XMVECTOR dimensions = m_font->MeasureString(scoreString.c_str());
-		Vector2 fontOrigin = {
-			(XMVectorGetX(dimensions) / 2.f), 0.0f };
-
-		m_font->DrawString(
-			m_spriteBatch.get(),
-			scoreString.c_str(),
-			m_hudScorePosition,
-			Colors::Yellow,
-			0.f,
-			fontOrigin);
-	}
-
-
-	{
-		std::wstring livesString = fmt::format(L"Lives: {}", m_playerLives);
-		XMVECTOR dimensions = m_font->MeasureString(livesString.c_str());
-		Vector2 fontOrigin = {	0.0f, XMVectorGetY(dimensions) };
-
-		m_font->DrawString(
-			m_spriteBatch.get(),
-			livesString.c_str(),
-			m_hudLivesPosition,
-			Colors::Yellow,
-			0.f,
-			fontOrigin);
-	}
-
-	m_spriteBatch->End();
+	m_appResources.m_deviceResources->Present();
 }
 
 //------------------------------------------------------------------------------
@@ -529,12 +148,12 @@ Game::drawHUD()
 void
 Game::clear()
 {
-	m_deviceResources->PIXBeginEvent(L"Clear");
+	m_appResources.m_deviceResources->PIXBeginEvent(L"Clear");
 
 	// Clear the views.
-	auto context			= m_deviceResources->GetD3DDeviceContext();
-	auto renderTarget = m_deviceResources->GetRenderTargetView();
-	auto depthStencil = m_deviceResources->GetDepthStencilView();
+	auto context			= m_appResources.m_deviceResources->GetD3DDeviceContext();
+	auto renderTarget = m_appResources.m_deviceResources->GetRenderTargetView();
+	auto depthStencil = m_appResources.m_deviceResources->GetDepthStencilView();
 
 	context->ClearRenderTargetView(renderTarget, Colors::Black);
 	context->ClearDepthStencilView(
@@ -542,10 +161,10 @@ Game::clear()
 	context->OMSetRenderTargets(1, &renderTarget, depthStencil);
 
 	// Set the viewport.
-	auto viewport = m_deviceResources->GetScreenViewport();
+	auto viewport = m_appResources.m_deviceResources->GetScreenViewport();
 	context->RSSetViewports(1, &viewport);
 
-	m_deviceResources->PIXEndEvent();
+	m_appResources.m_deviceResources->PIXEndEvent();
 }
 
 //------------------------------------------------------------------------------
@@ -588,7 +207,8 @@ Game::onResuming()
 void
 Game::onWindowSizeChanged(int width, int height)
 {
-	if (!m_deviceResources->WindowSizeChanged(width, height)) return;
+	if (!m_appResources.m_deviceResources->WindowSizeChanged(width, height))
+		return;
 
 	createWindowSizeDependentResources();
 
@@ -616,54 +236,64 @@ Game::getDefaultSize(int& width, int& height) const
 void
 Game::createDeviceDependentResources()
 {
-	auto device	= m_deviceResources->GetD3DDevice();
-	auto context = m_deviceResources->GetD3DDeviceContext();
+	auto device	= m_appResources.m_deviceResources->GetD3DDevice();
+	auto context = m_appResources.m_deviceResources->GetD3DDeviceContext();
 
-	m_states = std::make_unique<CommonStates>(m_deviceResources->GetD3DDevice());
-	m_debugEffect = std::make_unique<BasicEffect>(device);
-	m_debugEffect->SetVertexColorEnabled(true);
+	m_appResources.m_states = std::make_unique<CommonStates>(
+		m_appResources.m_deviceResources->GetD3DDevice());
+	m_appResources.m_debugEffect = std::make_unique<BasicEffect>(device);
+	m_appResources.m_debugEffect->SetVertexColorEnabled(true);
 
-	m_effectFactory = std::make_unique<EffectFactory>(device);
+	m_appResources.m_effectFactory = std::make_unique<EffectFactory>(device);
 
 	IEffectFactory::EffectInfo info;
-	info.ambientColor	= {0.0f, 1.0f, 0.0f};
-	m_debugBoundEffect = std::static_pointer_cast<BasicEffect>(
-		m_effectFactory->CreateEffect(info, context));
-	m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
+	info.ambientColor									= {0.0f, 1.0f, 0.0f};
+	m_appResources.m_debugBoundEffect = std::static_pointer_cast<BasicEffect>(
+		m_appResources.m_effectFactory->CreateEffect(info, context));
+	m_appResources.m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
 	// m_debugBoundEffect->SetLightingEnabled(false);
 
-	m_spriteBatch = std::make_unique<SpriteBatch>(context);
+	m_appResources.m_spriteBatch = std::make_unique<SpriteBatch>(context);
 
 	DX::ThrowIfFailed(CreateDDSTextureFromFile(
-		device, L"assets/star.dds", nullptr, m_texture.ReleaseAndGetAddressOf()));
-	m_starField = std::make_unique<StarField>(m_texture.Get());
+		device,
+		L"assets/star.dds",
+		nullptr,
+		m_appResources.m_texture.ReleaseAndGetAddressOf()));
+	m_appResources.starField
+		= std::make_unique<StarField>(m_appResources.m_texture.Get());
+	m_appResources.menuManager = std::make_unique<MenuManager>();
 
-	m_font = std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
+	m_appResources.m_font
+		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
 
-	m_batch = std::make_unique<DX::DebugBatchType>(context);
+	m_appResources.m_batch = std::make_unique<DX::DebugBatchType>(context);
 	{
 		void const* shaderByteCode;
 		size_t byteCodeLength;
-		m_debugEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+		m_appResources.m_debugEffect->GetVertexShaderBytecode(
+			&shaderByteCode, &byteCodeLength);
 
 		DX::ThrowIfFailed(device->CreateInputLayout(
 			VertexPositionColor::InputElements,
 			VertexPositionColor::InputElementCount,
 			shaderByteCode,
 			byteCodeLength,
-			m_debugInputLayout.ReleaseAndGetAddressOf()));
+			m_appResources.m_debugInputLayout.ReleaseAndGetAddressOf()));
 	}
 
-	m_debugBound = GeometricPrimitive::CreateSphere(context, 2.0f);
-	m_debugBound->CreateInputLayout(
-		m_debugBoundEffect.get(), &m_debugBoundInputLayout);
+	m_appResources.m_debugBound = GeometricPrimitive::CreateSphere(context, 2.0f);
+	m_appResources.m_debugBound->CreateInputLayout(
+		m_appResources.m_debugBoundEffect.get(),
+		&m_appResources.m_debugBoundInputLayout);
 
 	// Load the models
-	for (const auto& res : m_modelLocations)
+	for (const auto& res : m_appResources.modelLocations)
 	{
-		auto& data = m_modelData[res.first];
-		data.model = Model::CreateFromSDKMESH(device, res.second, *m_effectFactory);
-		data.bound = {};
+		auto& data = m_appResources.modelData[res.first];
+		data.model = Model::CreateFromSDKMESH(
+			device, res.second, *m_appResources.m_effectFactory);
+		data.bound				= {};
 		data.bound.Radius = 0.0f;
 		for (const auto& mesh : data.model->meshes)
 		{
@@ -675,19 +305,19 @@ Game::createDeviceDependentResources()
 	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_state.entities[i].model = &m_modelData["PLAYER"];
+		m_appContext.entities[i].model = &m_appResources.modelData["PLAYER"];
 	}
 	for (size_t i = PLAYER_SHOTS_IDX; i < PLAYER_SHOTS_END; ++i)
 	{
-		m_state.entities[i].model = &m_modelData["SHOT"];
+		m_appContext.entities[i].model = &m_appResources.modelData["SHOT"];
 	}
 	for (size_t i = ENEMY_SHOTS_IDX; i < ENEMY_SHOTS_END; ++i)
 	{
-		m_state.entities[i].model = &m_modelData["SHOT"];
+		m_appContext.entities[i].model = &m_appResources.modelData["SHOT"];
 	}
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		m_state.entities[i].model = &m_modelData["PLAYER"];
+		m_appContext.entities[i].model = &m_appResources.modelData["PLAYER"];
 	}
 }
 
@@ -697,48 +327,51 @@ Game::createDeviceDependentResources()
 void
 Game::createWindowSizeDependentResources()
 {
-	RECT outputSize = m_deviceResources->GetOutputSize();
+	RECT outputSize = m_appResources.m_deviceResources->GetOutputSize();
 
 	const float fovAngleY = 30.0f * XM_PI / 180.0f;
 
 	float aspectRatio = float(outputSize.right - outputSize.left)
 											/ (outputSize.bottom - outputSize.top);
 
-	m_view = Matrix::Identity;
-	m_proj = Matrix::CreatePerspectiveFieldOfView(
+	m_appContext.view = Matrix::Identity;
+	m_appContext.proj = Matrix::CreatePerspectiveFieldOfView(
 		fovAngleY, aspectRatio, 0.01f, 100.f);
 
-	m_starField->setWindowSize(outputSize.right, outputSize.bottom);
+	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
+	m_appResources.menuManager->setWindowSize(
+		outputSize.right, outputSize.bottom);
 
 	// Position HUD
-	m_hudScorePosition.x = outputSize.right / 2.f;
-	m_hudScorePosition.y = static_cast<float>(outputSize.top);
+	m_appContext.hudScorePosition.x = outputSize.right / 2.f;
+	m_appContext.hudScorePosition.y = static_cast<float>(outputSize.top);
 
-	m_hudLivesPosition.x = 0.0f;
-	m_hudLivesPosition.y = static_cast<float>(outputSize.bottom);
+	m_appContext.hudLivesPosition.x = 0.0f;
+	m_appContext.hudLivesPosition.y = static_cast<float>(outputSize.bottom);
 }
 
 //------------------------------------------------------------------------------
 void
 Game::OnDeviceLost()
 {
-	for (auto& modelData : m_modelData)
+	for (auto& modelData : m_appResources.modelData)
 	{
 		modelData.second.model.reset();
 	}
 
-	m_debugBound.reset();
-	m_debugBoundInputLayout.Reset();
-	m_debugBoundEffect.reset();
-	m_effectFactory.reset();
-	m_debugEffect.reset();
+	m_appResources.m_debugBound.reset();
+	m_appResources.m_debugBoundInputLayout.Reset();
+	m_appResources.m_debugBoundEffect.reset();
+	m_appResources.m_effectFactory.reset();
+	m_appResources.m_debugEffect.reset();
 
-	m_font.reset();
-	m_starField.reset();
-	m_batch.reset();
-	m_spriteBatch.reset();
-	m_texture.Reset();
-	m_states.reset();
+	m_appResources.m_font.reset();
+	m_appResources.starField.reset();
+	m_appResources.menuManager.reset();
+	m_appResources.m_batch.reset();
+	m_appResources.m_spriteBatch.reset();
+	m_appResources.m_texture.Reset();
+	m_appResources.m_states.reset();
 }
 
 //------------------------------------------------------------------------------
@@ -752,4 +385,3 @@ Game::OnDeviceRestored()
 
 //------------------------------------------------------------------------------
 #pragma endregion
-

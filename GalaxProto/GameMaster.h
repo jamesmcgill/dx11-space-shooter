@@ -2,6 +2,7 @@
 #include <pch.h>
 #include "StepTimer.h"
 #include "Entity.h"
+#include "AppContext.h"
 #include <vector>
 #include <array>
 
@@ -34,7 +35,7 @@ struct Level
 class GameMaster
 {
 public:
-	GameMaster(GameState& gameState);
+	GameMaster(AppContext& context);
 	void update(const DX::StepTimer& timer);
 	void performPhysicsUpdate(const DX::StepTimer& timer);
 
@@ -53,7 +54,7 @@ public:
 private:
 	std::array<const EnemyWaveInstance*, NUM_ENEMIES> m_enemyToWaveMap;
 
-	GameState& m_state;
+	AppContext& m_context;
 	size_t m_currentLevel;
 	float m_nextEventTimeS;
 	size_t m_nextEventWaveIdx;

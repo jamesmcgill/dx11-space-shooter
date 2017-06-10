@@ -11,6 +11,9 @@
     <Filter Include="fmt">
       <UniqueIdentifier>{a442010c-d978-4aa6-8ac1-aa3cc413c51d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AppStates">
+      <UniqueIdentifier>{00cffc13-b446-4f4f-9ca5-93636dc0ffcc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -29,6 +32,19 @@
       <Filter>fmt</Filter>
     </ClInclude>
     <ClInclude Include="MenuManager.h" />
+    <ClInclude Include="AppStates\MainMenuState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="AppStates\IAppState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="AppStates\GamePlayState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="AppResources.h" />
+    <ClInclude Include="AppContext.h" />
+    <ClInclude Include="GameLogic.h" />
+    <ClInclude Include="AppStates\AppStates.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -45,6 +61,14 @@
       <Filter>fmt</Filter>
     </ClCompile>
     <ClCompile Include="MenuManager.cpp" />
+    <ClCompile Include="AppStates\MainMenuState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
+    <ClCompile Include="AppStates\GamePlayState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic.cpp" />
+    <ClCompile Include="AppStates\AppStates.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

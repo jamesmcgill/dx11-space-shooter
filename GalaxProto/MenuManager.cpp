@@ -40,8 +40,8 @@ static const std::vector<Menu> s_menus = {
 };
 
 //------------------------------------------------------------------------------
-const XMVECTOR HIGHLIGHT_COLOR = { 1.0f, 1.0f, 0.0f };
-const XMVECTOR NORMAL_COLOR = { 1.0f, 1.0f, 1.0f };
+const XMVECTOR HIGHLIGHT_COLOR = {1.0f, 1.0f, 0.0f};
+const XMVECTOR NORMAL_COLOR		 = {1.0f, 1.0f, 1.0f};
 
 //------------------------------------------------------------------------------
 void
@@ -68,8 +68,8 @@ MenuManager::render(
 	// ####  ----
 	//       ####
 	float fontHeight = XMVectorGetY(font->MeasureString(L"XXX"));
-	float padding		 = fontHeight;
-	Vector2 pos			 = {m_screenHeight / 2.0f, 0.0f};
+	float padding		 = fontHeight * 0.5f;
+	Vector2 pos			 = {m_screenWidth / 2.0f, 0.0f};
 
 	if (currentMenu.buttons.size() % 2 != 0) {
 		float halfRows = (currentMenu.buttons.size() - 1) / 2.0f;
