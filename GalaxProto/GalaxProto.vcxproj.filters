@@ -44,7 +44,12 @@
     <ClInclude Include="AppResources.h" />
     <ClInclude Include="AppContext.h" />
     <ClInclude Include="GameLogic.h" />
-    <ClInclude Include="AppStates\AppStates.h" />
+    <ClInclude Include="AppStates\AppStates.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="AppStates\PauseMenuState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -68,7 +73,12 @@
       <Filter>AppStates</Filter>
     </ClCompile>
     <ClCompile Include="GameLogic.cpp" />
-    <ClCompile Include="AppStates\AppStates.cpp" />
+    <ClCompile Include="AppStates\AppStates.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
+    <ClCompile Include="AppStates\PauseMenuState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "AppStates.h"
-#include "MainMenuState.h"
+#include "PauseMenuState.h"
 #include "AppResources.h"
 #include "GameLogic.h"
 
@@ -14,7 +14,7 @@ extern void ExitGame();
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::handleInput(const DX::StepTimer& timer)
+PauseMenuState::handleInput(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
@@ -40,14 +40,11 @@ MainMenuState::handleInput(const DX::StepTimer& timer)
 	{
 		Command cmd = menus->selectCurrentButton();
 		switch (cmd) {
-			case Command::PlaySingle:
-			case Command::PlayMulti:
+			case Command::ResumeGame:
 				m_states.changeState(&m_states.playing);
 				break;
-
-			//case Command::ViewScores:
-			case Command::QuitApp:
-				ExitGame();
+			case Command::EndGame:
+				m_states.changeState(&m_states.menu);
 				break;
 		}
 	}
@@ -55,59 +52,60 @@ MainMenuState::handleInput(const DX::StepTimer& timer)
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::update(const DX::StepTimer& timer)
+PauseMenuState::update(const DX::StepTimer& timer)
 {
-	m_resources.starField->update(timer);
 	m_resources.menuManager->update(timer);
 }
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::render()
+PauseMenuState::render()
 {
 	m_resources.m_spriteBatch->Begin();
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 	m_resources.m_spriteBatch->End();
 
+	m_gameLogic.render();
+
 	m_resources.m_spriteBatch->Begin();
-		m_resources.menuManager->render(
+	m_resources.menuManager->render(
 		m_resources.m_font.get(), m_resources.m_spriteBatch.get());
 	m_resources.m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::load()
+PauseMenuState::load()
 {
-	// TRACE("MainMenuState::load()");
+	// TRACE("PauseMenuState::load()");
 }
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::unload()
+PauseMenuState::unload()
 {
-	// TRACE("MainMenuState::unload()");
+	// TRACE("PauseMenuState::unload()");
 }
 
 //------------------------------------------------------------------------------
 bool
-MainMenuState::isLoaded() const
+PauseMenuState::isLoaded() const
 {
 	return false;
 }
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::enter()
+PauseMenuState::enter()
 {
-	// TRACE("MainMenuState::enter()");
+	// TRACE("PauseMenuState::enter()");
 }
 
 //------------------------------------------------------------------------------
 void
-MainMenuState::exit()
+PauseMenuState::exit()
 {
-	// TRACE("MainMenuState::exit()");
+	// TRACE("PauseMenuState::exit()");
 }
 
 //------------------------------------------------------------------------------

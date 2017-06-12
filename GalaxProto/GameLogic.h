@@ -20,7 +20,9 @@ public:
 	{
 	}
 
-	void tick(const DX::StepTimer& timer);
+	void update(const DX::StepTimer& timer);
+	void render();
+
 	void performPhysicsUpdate(const DX::StepTimer& timer);
 	void performCollisionTests();
 

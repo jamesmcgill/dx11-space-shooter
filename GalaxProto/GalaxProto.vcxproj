@@ -162,6 +162,7 @@
     <ClInclude Include="AppStates\GamePlayState.h" />
     <ClInclude Include="AppStates\IAppState.h" />
     <ClInclude Include="AppStates\MainMenuState.h" />
+    <ClInclude Include="AppStates\PauseMenuState.h" />
     <ClInclude Include="DebugDraw.h" />
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="Entity.h" />
@@ -180,6 +181,7 @@
     <ClCompile Include="AppStates\AppStates.cpp" />
     <ClCompile Include="AppStates\GamePlayState.cpp" />
     <ClCompile Include="AppStates\MainMenuState.cpp" />
+    <ClCompile Include="AppStates\PauseMenuState.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="Entity.cpp" />

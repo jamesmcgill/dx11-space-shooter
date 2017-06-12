@@ -4,9 +4,10 @@
 //------------------------------------------------------------------------------
 AppStates::AppStates(
 	AppContext& context, AppResources& resources, GameLogic& logic)
-		: menu(std::make_unique<MainMenuState>(*this, context, resources, logic))
-		, playing(std::make_unique<GamePlayState>(*this, context, resources, logic))
-		, m_currentState(playing.get())
+		: menu(*this, context, resources, logic)
+		, playing(*this, context, resources, logic)
+		, paused(*this, context, resources, logic)
+		, m_currentState(&menu)
 {
 	loadAndEnterState();
 }

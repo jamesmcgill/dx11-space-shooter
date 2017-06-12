@@ -4,13 +4,16 @@
 
 #include "AppStates/MainMenuState.h"
 #include "AppStates/GamePlayState.h"
+#include "AppStates/PauseMenuState.h"
 
 //------------------------------------------------------------------------------
 class AppStates
 {
 public:
-	std::unique_ptr<MainMenuState> menu;
-	std::unique_ptr<GamePlayState> playing;
+	// Available States
+	MainMenuState menu;
+	GamePlayState playing;
+	PauseMenuState paused;
 
 public:
 	AppStates(AppContext& context, AppResources& resources, GameLogic& logic);

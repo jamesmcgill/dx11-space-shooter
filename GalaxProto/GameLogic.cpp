@@ -18,7 +18,7 @@ constexpr float CAMERA_DIST					= 40.5f;
 
 //------------------------------------------------------------------------------
 void
-GameLogic::tick(const DX::StepTimer& timer)
+GameLogic::update(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
@@ -64,6 +64,41 @@ GameLogic::tick(const DX::StepTimer& timer)
 	performCollisionTests();
 
 #endif
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::render()
+{
+	auto dc = m_resources.m_deviceResources->GetD3DDeviceContext();
+
+	for (auto& entity : m_context.entities)
+	{
+		if (entity.isAlive) {
+			renderEntity(entity);
+		}
+	}
+
+	// Debug Drawing
+	dc->OMSetBlendState(
+		m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
+	dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
+	dc->RSSetState(m_resources.m_states->CullNone());
+
+	m_resources.m_debugEffect->SetView(m_context.view);
+	m_resources.m_debugEffect->SetProjection(m_context.proj);
+	m_resources.m_debugEffect->Apply(dc);
+	dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
+
+	m_resources.m_batch->Begin();
+	for (auto& entity : m_context.entities)
+	{
+		if (entity.isAlive) {
+			renderEntityBound(entity);
+		}
+	}
+	gameMaster.debugRender(m_resources.m_batch.get());
+	m_resources.m_batch->End();
 }
 
 //------------------------------------------------------------------------------
