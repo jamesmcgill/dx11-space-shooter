@@ -15,8 +15,8 @@ using namespace DirectX::SimpleMath;
 extern void ExitGame();
 
 //------------------------------------------------------------------------------
-constexpr float CAMERA_SPEED_X = 1.0f;
-constexpr float CAMERA_SPEED_Y = 1.0f;
+constexpr float CAMERA_SPEED_X			 = 1.0f;
+constexpr float CAMERA_SPEED_Y			 = 1.0f;
 constexpr float UNIT_DIAGONAL_LENGTH = 0.7071067811865475f;
 
 //------------------------------------------------------------------------------
@@ -29,7 +29,6 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 
 	if (kbState.Escape) {
 		m_states.changeState(&m_states.paused);
-		//ExitGame();
 	}
 
 	if (kbState.W) {
@@ -97,8 +96,6 @@ GamePlayState::render()
 
 	m_resources.m_spriteBatch->Begin();
 	m_gameLogic.drawHUD();
-	// m_resources.menuManager->render(
-	//	m_resources.m_font.get(), m_resources.m_spriteBatch.get());
 	m_resources.m_spriteBatch->End();
 }
 
@@ -106,14 +103,14 @@ GamePlayState::render()
 void
 GamePlayState::load()
 {
-//	TRACE("GamePlayState::load()");
+	//	TRACE("GamePlayState::load()");
 }
 
 //------------------------------------------------------------------------------
 void
 GamePlayState::unload()
 {
-//	TRACE("GamePlayState::unload()");
+	//	TRACE("GamePlayState::unload()");
 }
 
 //------------------------------------------------------------------------------
@@ -127,14 +124,14 @@ GamePlayState::isLoaded() const
 void
 GamePlayState::enter()
 {
-//	TRACE("GamePlayState::enter()");
+	//	TRACE("GamePlayState::enter()");
 }
 
 //------------------------------------------------------------------------------
 void
 GamePlayState::exit()
 {
-//	TRACE("GamePlayState::exit()");
+	//	TRACE("GamePlayState::exit()");
 }
 
 //------------------------------------------------------------------------------

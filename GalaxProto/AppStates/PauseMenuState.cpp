@@ -13,12 +13,21 @@ using namespace DirectX;
 extern void ExitGame();
 
 //------------------------------------------------------------------------------
+static const std::vector<MenuManager::MenuButton> s_pauseMenuButtons = {
+	{L"Resume", Command::ResumeGame}, {L"End Current Game", Command::EndGame},
+};
+
+static const std::vector<MenuManager::Menu> s_menus = {
+	{s_pauseMenuButtons},
+};
+
+//------------------------------------------------------------------------------
 void
 PauseMenuState::handleInput(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
-	auto& kb = m_resources.kbTracker;
+	auto& kb		= m_resources.kbTracker;
 	auto& menus = m_resources.menuManager;
 
 	if (kb.IsKeyPressed(Keyboard::Escape)) {
@@ -29,17 +38,19 @@ PauseMenuState::handleInput(const DX::StepTimer& timer)
 
 	if (kb.IsKeyPressed(Keyboard::Up)) {
 		menus->focusPrevButton();
-	} else if (kb.IsKeyPressed(Keyboard::Down)) {
+	}
+	else if (kb.IsKeyPressed(Keyboard::Down))
+	{
 		menus->focusNextButton();
 	}
 
 	if (
-		kb.IsKeyPressed(Keyboard::LeftControl)
-		|| kb.IsKeyPressed(Keyboard::Space)
+		kb.IsKeyPressed(Keyboard::LeftControl) || kb.IsKeyPressed(Keyboard::Space)
 		|| kb.IsKeyPressed(Keyboard::Enter))
 	{
 		Command cmd = menus->selectCurrentButton();
-		switch (cmd) {
+		switch (cmd)
+		{
 			case Command::ResumeGame:
 				m_states.changeState(&m_states.playing);
 				break;
@@ -99,6 +110,7 @@ void
 PauseMenuState::enter()
 {
 	// TRACE("PauseMenuState::enter()");
+	m_resources.menuManager->loadMenus(&s_menus);
 }
 
 //------------------------------------------------------------------------------

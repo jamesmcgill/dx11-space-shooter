@@ -9,7 +9,6 @@ AppStates::AppStates(
 		, paused(*this, context, resources, logic)
 		, m_currentState(&menu)
 {
-	loadAndEnterState();
 }
 
 //------------------------------------------------------------------------------

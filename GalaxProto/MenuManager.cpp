@@ -6,42 +6,33 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-struct MenuButton
-{
-	std::wstring text;
-	Command command;
-	size_t gotoMenuIdx = 0;
-};
-
-struct Menu
-{
-	const std::vector<MenuButton> buttons;
-	const size_t previousMenuIdx = static_cast<size_t>(-1);
-};
-
-//------------------------------------------------------------------------------
-static const std::vector<MenuButton> s_mainMenuButtons = {
-	{L"Play Single Player", Command::PlaySingle},
-	{L"Play Multi Player", Command::PlayMulti},
-	{L"View Hi-Scores", Command::ViewScores},
-	{L"Quit", Command::GotoMenu, 1},
-};
-
-static const std::vector<MenuButton> s_confirmQuitButtons = {
-	{L"Return", Command::GotoMenu}, {L"Quit", Command::QuitApp},
-};
-
-static const std::vector<MenuButton> s_pauseMenuButtons = {
-	{L"Resume", Command::ResumeGame}, {L"End Current Game", Command::EndGame},
-};
-
-static const std::vector<Menu> s_menus = {
-	{s_mainMenuButtons}, {s_confirmQuitButtons, 0}, {s_pauseMenuButtons},
+static const std::vector<MenuManager::Menu> s_nullMenu = {
+	{
+		{
+			{L"Null", Command::QuitApp},
+		},
+	},
 };
 
 //------------------------------------------------------------------------------
 const XMVECTOR HIGHLIGHT_COLOR = {1.0f, 1.0f, 0.0f};
 const XMVECTOR NORMAL_COLOR		 = {1.0f, 1.0f, 1.0f};
+
+//------------------------------------------------------------------------------
+MenuManager::MenuManager()
+		: m_activeMenus(&s_nullMenu)
+{
+}
+
+//------------------------------------------------------------------------------
+void
+MenuManager::loadMenus(std::vector<MenuManager::Menu> const* menus)
+{
+	assert(menus);
+	assert((*menus).size());
+
+	m_activeMenus = menus;
+}
 
 //------------------------------------------------------------------------------
 void
@@ -55,8 +46,10 @@ void
 MenuManager::render(
 	DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 {
-	assert(m_currentMenuIdx < s_menus.size());
-	auto& currentMenu = s_menus[m_currentMenuIdx];
+	auto& menus = *m_activeMenus;
+
+	assert(m_currentMenuIdx < menus.size());
+	auto& currentMenu = menus[m_currentMenuIdx];
 
 	// Button Layout
 	//
@@ -71,17 +64,15 @@ MenuManager::render(
 	float padding		 = fontHeight * 0.5f;
 	Vector2 pos			 = {m_screenWidth / 2.0f, 0.0f};
 
-	if (currentMenu.buttons.size() % 2 != 0) {
-		float halfRows = (currentMenu.buttons.size() - 1) / 2.0f;
-		pos.y					 = (m_screenHeight / 2) - ((halfRows - 0.5f) * fontHeight)
-						- (halfRows * padding);
-	}
-	else
-	{
-		float halfRows = currentMenu.buttons.size() / 2.0f;
-		pos.y					 = (m_screenHeight / 2) - (halfRows * fontHeight)
-						- ((halfRows - 0.5f) * padding);
-	}
+	float numRowsAboveCenter
+		= (currentMenu.buttons.size() % 2 == 0)
+				? currentMenu.buttons.size() / 2.0f
+				: ((currentMenu.buttons.size() + 1) / 2.0f) - 0.5f;
+	float numPaddingRowsAbove = numRowsAboveCenter - 0.5f;
+
+	// Screen center - text rows - padding rows
+	pos.y = (m_screenHeight / 2) - (numRowsAboveCenter * fontHeight)
+					- (numPaddingRowsAbove * padding);
 
 	// Render Menu
 	for (size_t i = 0; i < currentMenu.buttons.size(); ++i)
@@ -123,8 +114,10 @@ MenuManager::isRootMenu() const
 void
 MenuManager::focusNextButton()
 {
-	assert(m_currentMenuIdx < s_menus.size());
-	auto& currentMenu = s_menus[m_currentMenuIdx];
+	auto& menus = *m_activeMenus;
+
+	assert(m_currentMenuIdx < menus.size());
+	auto& currentMenu = menus[m_currentMenuIdx];
 	++m_selectedButtonIdx;
 
 	if (m_selectedButtonIdx >= currentMenu.buttons.size()) {
@@ -136,8 +129,10 @@ MenuManager::focusNextButton()
 void
 MenuManager::focusPrevButton()
 {
-	assert(m_currentMenuIdx < s_menus.size());
-	auto& currentMenu = s_menus[m_currentMenuIdx];
+	auto& menus = *m_activeMenus;
+
+	assert(m_currentMenuIdx < menus.size());
+	auto& currentMenu = menus[m_currentMenuIdx];
 
 	if (m_selectedButtonIdx > 0) {
 		--m_selectedButtonIdx;
@@ -152,8 +147,10 @@ MenuManager::focusPrevButton()
 Command
 MenuManager::selectCurrentButton()
 {
-	assert(m_currentMenuIdx < s_menus.size());
-	auto& currentMenu = s_menus[m_currentMenuIdx];
+	auto& menus = *m_activeMenus;
+
+	assert(m_currentMenuIdx < menus.size());
+	auto& currentMenu = menus[m_currentMenuIdx];
 
 	assert(m_selectedButtonIdx < currentMenu.buttons.size());
 	auto& currentButton = currentMenu.buttons[m_selectedButtonIdx];
@@ -174,8 +171,9 @@ MenuManager::selectCurrentButton()
 void
 MenuManager::prevMenu()
 {
-	assert(m_currentMenuIdx < s_menus.size());
-	auto& currentMenu = s_menus[m_currentMenuIdx];
+	auto& menus = *m_activeMenus;
+	assert(m_currentMenuIdx < menus.size());
+	auto& currentMenu = menus[m_currentMenuIdx];
 
 	if (currentMenu.previousMenuIdx != -1) {
 		m_selectedButtonIdx = 0;
