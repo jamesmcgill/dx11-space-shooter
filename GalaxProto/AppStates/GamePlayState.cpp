@@ -88,15 +88,17 @@ GamePlayState::update(const DX::StepTimer& timer)
 void
 GamePlayState::render()
 {
-	m_resources.m_spriteBatch->Begin();
-	m_resources.starField->render(*m_resources.m_spriteBatch);
-	m_resources.m_spriteBatch->End();
+	auto& spriteBatch = m_resources.m_spriteBatch;
+
+	spriteBatch->Begin();
+	m_resources.starField->render(*spriteBatch);
+	spriteBatch->End();
 
 	m_gameLogic.render();
 
-	m_resources.m_spriteBatch->Begin();
+	spriteBatch->Begin();
 	m_gameLogic.drawHUD();
-	m_resources.m_spriteBatch->End();
+	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -125,6 +127,10 @@ void
 GamePlayState::enter()
 {
 	//	TRACE("GamePlayState::enter()");
+	if (m_states.previousState() != &m_states.paused) {
+		m_gameLogic.gameMaster.reset();
+		m_resources.m_timer.ResetTotalTimer();
+	}
 }
 
 //------------------------------------------------------------------------------

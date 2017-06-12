@@ -83,14 +83,15 @@ MainMenuState::update(const DX::StepTimer& timer)
 void
 MainMenuState::render()
 {
-	m_resources.m_spriteBatch->Begin();
-	m_resources.starField->render(*m_resources.m_spriteBatch);
-	m_resources.m_spriteBatch->End();
+	auto& spriteBatch = m_resources.m_spriteBatch;
 
-	m_resources.m_spriteBatch->Begin();
-	m_resources.menuManager->render(
-		m_resources.m_font.get(), m_resources.m_spriteBatch.get());
-	m_resources.m_spriteBatch->End();
+	spriteBatch->Begin();
+	m_resources.starField->render(*spriteBatch);
+	spriteBatch->End();
+
+	spriteBatch->Begin();
+	m_resources.menuManager->render(m_resources.m_font.get(), spriteBatch.get());
+	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------

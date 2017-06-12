@@ -17,12 +17,14 @@ public:
 
 public:
 	AppStates(AppContext& context, AppResources& resources, GameLogic& logic);
-	IAppState* currentState();
+	IAppState* currentState() const;
+	IAppState* previousState() const;
 	void changeState(IAppState* newState);
 
 private:
 	void loadAndEnterState();
 	IAppState* m_currentState;
+	IAppState* m_previousState = nullptr;
 };
 
 //------------------------------------------------------------------------------

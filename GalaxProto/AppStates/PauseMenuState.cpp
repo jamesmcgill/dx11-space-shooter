@@ -110,6 +110,7 @@ void
 PauseMenuState::enter()
 {
 	// TRACE("PauseMenuState::enter()");
+	m_resources.m_timer.PauseTotalTimer(true);
 	m_resources.menuManager->loadMenus(&s_menus);
 }
 
@@ -117,6 +118,7 @@ PauseMenuState::enter()
 void
 PauseMenuState::exit()
 {
+	m_resources.m_timer.PauseTotalTimer(false);
 	// TRACE("PauseMenuState::exit()");
 }
 

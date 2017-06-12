@@ -45,6 +45,9 @@ namespace DX
         // Get total time since the start of the program.
         uint64_t GetTotalTicks() const						{ return m_totalTicks; }
         double GetTotalSeconds() const						{ return TicksToSeconds(m_totalTicks); }
+        void PauseTotalTimer(bool pause)					{ m_isTotalTicksPaused = pause; }
+        bool IsTotalTimerPaused() const						{ return m_isTotalTicksPaused; }
+        void ResetTotalTimer()										{ m_totalTicks = 0; }
 
         // Get total number of updates since start of the program.
         uint32_t GetFrameCount() const						{ return m_frameCount; }
@@ -132,7 +135,7 @@ namespace DX
                 while (m_leftOverTicks >= m_targetElapsedTicks)
                 {
                     m_elapsedTicks = m_targetElapsedTicks;
-                    m_totalTicks += m_targetElapsedTicks;
+                    m_totalTicks += (m_isTotalTicksPaused) ? 0 : m_targetElapsedTicks;
                     m_leftOverTicks -= m_targetElapsedTicks;
                     m_frameCount++;
 
@@ -143,7 +146,7 @@ namespace DX
             {
                 // Variable timestep update logic.
                 m_elapsedTicks = timeDelta;
-                m_totalTicks += timeDelta;
+                m_totalTicks += (m_isTotalTicksPaused) ? 0 : timeDelta;
                 m_leftOverTicks = 0;
                 m_frameCount++;
 
@@ -184,5 +187,7 @@ namespace DX
         // Members for configuring fixed timestep mode.
         bool m_isFixedTimeStep;
         uint64_t m_targetElapsedTicks;
+
+        bool m_isTotalTicksPaused = false;
     };
 }

@@ -58,21 +58,21 @@ Game::initialize(HWND window, int width, int height)
 void
 Game::tick()
 {
-	m_timer.Tick([&]() { update(m_timer); });
+	m_appResources.m_timer.Tick([&]() { update(); });
 
 	render();
 }
 
 //------------------------------------------------------------------------------
 void
-Game::update(const DX::StepTimer& timer)
+Game::update()
 {
 	auto kbState = m_appResources.m_keyboard->GetState();
 	m_appResources.kbTracker.Update(kbState);
 
 	const auto& currentState = m_appStates.currentState();
-	currentState->handleInput(timer);
-	currentState->update(timer);
+	currentState->handleInput(m_appResources.m_timer);
+	currentState->update(m_appResources.m_timer);
 }
 
 //------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ void
 Game::render()
 {
 	// Don't try to render anything before the first Update.
-	if (m_timer.GetFrameCount() == 0) {
+	if (m_appResources.m_timer.GetFrameCount() == 0) {
 		return;
 	}
 
@@ -156,7 +156,7 @@ Game::onSuspending()
 void
 Game::onResuming()
 {
-	m_timer.ResetElapsedTime();
+	m_appResources.m_timer.ResetElapsedTime();
 
 	// TODO: Game is being power-resumed (or returning from minimize).
 }

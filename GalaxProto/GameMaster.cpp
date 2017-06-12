@@ -51,11 +51,26 @@ GameMaster::GameMaster(AppContext& context)
 		, m_nextEventWaveIdx(0)
 		, m_activeWaveIdx(0)
 {
+	reset();
+}
+
+//------------------------------------------------------------------------------
+void GameMaster::reset() {
+	m_currentLevel = 0;
+	m_nextEventWaveIdx = 0;
+	m_activeWaveIdx = 0;
+
 	assert(!s_levels[m_currentLevel].waves.empty());
 	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;
 	for (auto& e : m_enemyToWaveMap)
 	{
 		e = nullptr;
+	}
+
+	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
+	{
+		m_context.entities[i].isAlive = false;
+		m_context.entities[i].isColliding = false;
 	}
 }
 

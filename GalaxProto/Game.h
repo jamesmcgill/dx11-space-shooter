@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include "StepTimer.h"
 #include "AppContext.h"
 #include "AppResources.h"
 #include "GameLogic.h"
@@ -36,7 +35,7 @@ public:
 	void getDefaultSize(int& width, int& height) const;
 
 private:
-	void update(const DX::StepTimer& timer);
+	void update();
 	void render();
 	void clear();
 
@@ -47,9 +46,6 @@ private:
 	AppResources m_appResources;
 	GameLogic m_gameLogic;
 	AppStates m_appStates;
-
-	// Rendering loop timer.
-	DX::StepTimer m_timer;
 };
 
 //------------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "StepTimer.h"
 #include "DeviceResources.h"
 #include "Entity.h"	// ModelData
 #include "Starfield.h"
@@ -8,6 +9,8 @@
 //------------------------------------------------------------------------------
 struct AppResources
 {
+	DX::StepTimer m_timer;
+
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;
 	std::unique_ptr<DirectX::Keyboard> m_keyboard;
 	DirectX::Keyboard::KeyboardStateTracker kbTracker;

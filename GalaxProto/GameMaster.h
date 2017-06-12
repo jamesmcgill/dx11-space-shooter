@@ -36,6 +36,7 @@ class GameMaster
 {
 public:
 	GameMaster(AppContext& context);
+	void reset();
 	void update(const DX::StepTimer& timer);
 	void performPhysicsUpdate(const DX::StepTimer& timer);
 

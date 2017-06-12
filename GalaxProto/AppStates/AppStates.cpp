@@ -13,10 +13,18 @@ AppStates::AppStates(
 
 //------------------------------------------------------------------------------
 IAppState*
-AppStates::currentState()
+AppStates::currentState() const
 {
 	assert(m_currentState);
 	return m_currentState;
+}
+
+//------------------------------------------------------------------------------
+IAppState*
+AppStates::previousState() const
+{
+	assert(m_previousState);
+	return m_previousState;
 }
 
 //------------------------------------------------------------------------------
@@ -25,6 +33,7 @@ AppStates::changeState(IAppState* newState)
 {
 	m_currentState->exit();
 
+	m_previousState = m_currentState;
 	m_currentState = newState;
 	loadAndEnterState();
 }
