@@ -1,9 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "DeviceResources.h"
-#include "GameMaster.h"
-#include "Starfield.h"
-#include "MenuManager.h"
 
 //------------------------------------------------------------------------------
 struct AppResources
@@ -26,15 +23,11 @@ struct AppResources
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugBoundInputLayout;
 	std::unique_ptr<DirectX::GeometricPrimitive> m_debugBound;
 
-	GameMaster gameMaster;
-	std::unique_ptr<StarField> starField;
-	std::unique_ptr<MenuManager> menuManager;
 	std::map<char*, wchar_t*> modelLocations;
 	std::map<char*, ModelData> modelData;
 
-	AppResources(AppContext& context)
+	AppResources()
 			: m_keyboard(std::make_unique<DirectX::Keyboard>())
-			, gameMaster(context)
 	{
 	}
 };

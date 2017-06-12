@@ -59,14 +59,14 @@ GameLogic::tick(const DX::StepTimer& timer)
 
 #else
 
-	m_resources.gameMaster.update(timer);
+	gameMaster.update(timer);
 	performPhysicsUpdate(timer);
 	performCollisionTests();
 
 #endif
 
-	m_resources.starField->update(timer);
-	m_resources.menuManager->update(timer);
+	starField->update(timer);
+	menuManager->update(timer);
 }
 
 //------------------------------------------------------------------------------

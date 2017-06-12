@@ -73,7 +73,7 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_resources.kbTracker.IsKeyPressed(Keyboard::LeftControl)
 		|| m_resources.kbTracker.IsKeyPressed(Keyboard::Space))
 	{
-		m_resources.gameMaster.emitPlayerShot();
+		m_gameLogic.gameMaster.emitPlayerShot();
 	}
 
 

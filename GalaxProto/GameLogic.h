@@ -1,4 +1,7 @@
 #pragma once
+#include "GameMaster.h"
+#include "Starfield.h"
+#include "MenuManager.h"
 
 namespace DX
 {
@@ -15,6 +18,7 @@ public:
 	GameLogic(AppContext& context, AppResources& resources)
 			: m_context(context)
 			, m_resources(resources)
+			, gameMaster(context)
 	{
 	}
 
@@ -36,6 +40,11 @@ public:
 private:
 	AppContext& m_context;
 	AppResources& m_resources;
+
+public:
+	GameMaster gameMaster;
+	std::unique_ptr<StarField> starField;
+	std::unique_ptr<MenuManager> menuManager;
 };
 
 //------------------------------------------------------------------------------

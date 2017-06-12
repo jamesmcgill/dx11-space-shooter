@@ -9,8 +9,7 @@ using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
 //------------------------------------------------------------------------------
 Game::Game()
-		: m_appResources(m_appContext)
-		, m_gameLogic(m_appContext, m_appResources)
+		: m_gameLogic(m_appContext, m_appResources)
 		, m_appStates(m_appContext, m_appResources, m_gameLogic)
 {
 	m_appResources.m_deviceResources = std::make_unique<DX::DeviceResources>();
@@ -99,7 +98,7 @@ Game::render()
 
 	// TODO: Add your rendering code here.
 	m_appResources.m_spriteBatch->Begin();
-	m_appResources.starField->render(*m_appResources.m_spriteBatch);
+	m_gameLogic.starField->render(*m_appResources.m_spriteBatch);
 	m_appResources.m_spriteBatch->End();
 
 	for (auto& entity : m_appContext.entities)
@@ -127,12 +126,12 @@ Game::render()
 			m_gameLogic.renderEntityBound(entity);
 		}
 	}
-	m_appResources.gameMaster.debugRender(m_appResources.m_batch.get());
+	m_gameLogic.gameMaster.debugRender(m_appResources.m_batch.get());
 	m_appResources.m_batch->End();
 
 	m_appResources.m_spriteBatch->Begin();
 	m_gameLogic.drawHUD();
-	//m_appResources.menuManager->render(
+	// m_appResources.menuManager->render(
 	//	m_appResources.m_font.get(), m_appResources.m_spriteBatch.get());
 	m_appResources.m_spriteBatch->End();
 
@@ -260,9 +259,9 @@ Game::createDeviceDependentResources()
 		L"assets/star.dds",
 		nullptr,
 		m_appResources.m_texture.ReleaseAndGetAddressOf()));
-	m_appResources.starField
+	m_gameLogic.starField
 		= std::make_unique<StarField>(m_appResources.m_texture.Get());
-	m_appResources.menuManager = std::make_unique<MenuManager>();
+	m_gameLogic.menuManager = std::make_unique<MenuManager>();
 
 	m_appResources.m_font
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
@@ -338,9 +337,8 @@ Game::createWindowSizeDependentResources()
 	m_appContext.proj = Matrix::CreatePerspectiveFieldOfView(
 		fovAngleY, aspectRatio, 0.01f, 100.f);
 
-	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
-	m_appResources.menuManager->setWindowSize(
-		outputSize.right, outputSize.bottom);
+	m_gameLogic.starField->setWindowSize(outputSize.right, outputSize.bottom);
+	m_gameLogic.menuManager->setWindowSize(outputSize.right, outputSize.bottom);
 
 	// Position HUD
 	m_appContext.hudScorePosition.x = outputSize.right / 2.f;
@@ -366,8 +364,8 @@ Game::OnDeviceLost()
 	m_appResources.m_debugEffect.reset();
 
 	m_appResources.m_font.reset();
-	m_appResources.starField.reset();
-	m_appResources.menuManager.reset();
+	m_gameLogic.starField.reset();
+	m_gameLogic.menuManager.reset();
 	m_appResources.m_batch.reset();
 	m_appResources.m_spriteBatch.reset();
 	m_appResources.m_texture.Reset();
