@@ -27,7 +27,8 @@ public:
 	}
 
 	virtual void handleInput(const DX::StepTimer& timer) = 0;
-	virtual void tick(const DX::StepTimer& timer)				 = 0;
+	virtual void update(const DX::StepTimer& timer)			 = 0;
+	virtual void render()																 = 0;
 
 	virtual void load()						= 0;
 	virtual void unload()					= 0;

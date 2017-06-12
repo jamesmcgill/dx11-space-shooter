@@ -1,7 +1,5 @@
 #pragma once
 #include "GameMaster.h"
-#include "Starfield.h"
-#include "MenuManager.h"
 
 namespace DX
 {
@@ -43,8 +41,6 @@ private:
 
 public:
 	GameMaster gameMaster;
-	std::unique_ptr<StarField> starField;
-	std::unique_ptr<MenuManager> menuManager;
 };
 
 //------------------------------------------------------------------------------

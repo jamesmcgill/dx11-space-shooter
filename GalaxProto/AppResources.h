@@ -1,6 +1,9 @@
 #pragma once
 #include "pch.h"
 #include "DeviceResources.h"
+#include "Entity.h"	// ModelData
+#include "Starfield.h"
+#include "MenuManager.h"
 
 //------------------------------------------------------------------------------
 struct AppResources
@@ -22,6 +25,9 @@ struct AppResources
 	std::shared_ptr<DirectX::BasicEffect> m_debugBoundEffect;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugBoundInputLayout;
 	std::unique_ptr<DirectX::GeometricPrimitive> m_debugBound;
+
+	std::unique_ptr<StarField> starField;
+	std::unique_ptr<MenuManager> menuManager;
 
 	std::map<char*, wchar_t*> modelLocations;
 	std::map<char*, ModelData> modelData;

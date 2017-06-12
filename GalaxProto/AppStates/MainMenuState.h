@@ -16,7 +16,8 @@ public:
 	}
 
 	void handleInput(const DX::StepTimer& timer) override;
-	void tick(const DX::StepTimer& timer) override;
+	void update(const DX::StepTimer& timer) override;
+	void render() override;
 
 	void load() override;
 	void unload() override;

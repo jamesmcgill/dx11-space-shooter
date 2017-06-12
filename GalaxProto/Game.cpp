@@ -70,8 +70,7 @@ Game::update(const DX::StepTimer& timer)
 
 	const auto& currentState = m_appStates.currentState();
 	currentState->handleInput(timer);
-
-	currentState->tick(timer);
+	currentState->update(timer);
 }
 
 //------------------------------------------------------------------------------
@@ -93,51 +92,9 @@ Game::render()
 	clear();
 
 	m_appResources.m_deviceResources->PIXBeginEvent(L"Render");
-	auto context = m_appResources.m_deviceResources->GetD3DDeviceContext();
-	// auto device = m_appResources.m_deviceResources->GetD3DDevice();
-
-	// TODO: Add your rendering code here.
-	m_appResources.m_spriteBatch->Begin();
-	m_gameLogic.starField->render(*m_appResources.m_spriteBatch);
-	m_appResources.m_spriteBatch->End();
-
-	for (auto& entity : m_appContext.entities)
-	{
-		if (entity.isAlive) {
-			m_gameLogic.renderEntity(entity);
-		}
-	}
-
-	// Debug Drawing
-	context->OMSetBlendState(
-		m_appResources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
-	context->OMSetDepthStencilState(m_appResources.m_states->DepthNone(), 0);
-	context->RSSetState(m_appResources.m_states->CullNone());
-
-	m_appResources.m_debugEffect->SetView(m_appContext.view);
-	m_appResources.m_debugEffect->SetProjection(m_appContext.proj);
-	m_appResources.m_debugEffect->Apply(context);
-	context->IASetInputLayout(m_appResources.m_debugInputLayout.Get());
-
-	m_appResources.m_batch->Begin();
-	for (auto& entity : m_appContext.entities)
-	{
-		if (entity.isAlive) {
-			m_gameLogic.renderEntityBound(entity);
-		}
-	}
-	m_gameLogic.gameMaster.debugRender(m_appResources.m_batch.get());
-	m_appResources.m_batch->End();
-
-	m_appResources.m_spriteBatch->Begin();
-	m_gameLogic.drawHUD();
-	// m_appResources.menuManager->render(
-	//	m_appResources.m_font.get(), m_appResources.m_spriteBatch.get());
-	m_appResources.m_spriteBatch->End();
-
+	m_appStates.currentState()->render();
 	m_appResources.m_deviceResources->PIXEndEvent();
 
-	// Show the new frame.
 	m_appResources.m_deviceResources->Present();
 }
 
@@ -259,9 +216,9 @@ Game::createDeviceDependentResources()
 		L"assets/star.dds",
 		nullptr,
 		m_appResources.m_texture.ReleaseAndGetAddressOf()));
-	m_gameLogic.starField
+	m_appResources.starField
 		= std::make_unique<StarField>(m_appResources.m_texture.Get());
-	m_gameLogic.menuManager = std::make_unique<MenuManager>();
+	m_appResources.menuManager = std::make_unique<MenuManager>();
 
 	m_appResources.m_font
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
@@ -337,8 +294,8 @@ Game::createWindowSizeDependentResources()
 	m_appContext.proj = Matrix::CreatePerspectiveFieldOfView(
 		fovAngleY, aspectRatio, 0.01f, 100.f);
 
-	m_gameLogic.starField->setWindowSize(outputSize.right, outputSize.bottom);
-	m_gameLogic.menuManager->setWindowSize(outputSize.right, outputSize.bottom);
+	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
+	m_appResources.menuManager->setWindowSize(outputSize.right, outputSize.bottom);
 
 	// Position HUD
 	m_appContext.hudScorePosition.x = outputSize.right / 2.f;
@@ -364,8 +321,8 @@ Game::OnDeviceLost()
 	m_appResources.m_debugEffect.reset();
 
 	m_appResources.m_font.reset();
-	m_gameLogic.starField.reset();
-	m_gameLogic.menuManager.reset();
+	m_appResources.starField.reset();
+	m_appResources.menuManager.reset();
 	m_appResources.m_batch.reset();
 	m_appResources.m_spriteBatch.reset();
 	m_appResources.m_texture.Reset();

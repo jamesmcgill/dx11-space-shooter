@@ -64,9 +64,6 @@ GameLogic::tick(const DX::StepTimer& timer)
 	performCollisionTests();
 
 #endif
-
-	starField->update(timer);
-	menuManager->update(timer);
 }
 
 //------------------------------------------------------------------------------
