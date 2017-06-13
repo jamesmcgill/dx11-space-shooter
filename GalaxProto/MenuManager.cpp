@@ -32,6 +32,8 @@ MenuManager::loadMenus(std::vector<MenuManager::Menu> const* menus)
 	assert((*menus).size());
 
 	m_activeMenus = menus;
+	m_currentMenuIdx = 0;
+	m_selectedButtonIdx = 0;
 }
 
 //------------------------------------------------------------------------------
