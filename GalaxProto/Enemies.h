@@ -32,10 +32,10 @@ struct Level
 };
 
 //------------------------------------------------------------------------------
-class GameMaster
+class Enemies
 {
 public:
-	GameMaster(AppContext& context);
+	Enemies(AppContext& context);
 	void reset();
 	void update(const DX::StepTimer& timer);
 	void performPhysicsUpdate(const DX::StepTimer& timer);

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "GameMaster.h"
+#include "Enemies.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -45,7 +45,7 @@ constexpr float SHOT_SPEED									= 20.0f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 //------------------------------------------------------------------------------
-GameMaster::GameMaster(AppContext& context)
+Enemies::Enemies(AppContext& context)
 		: m_context(context)
 		, m_currentLevel(0)
 		, m_nextEventWaveIdx(0)
@@ -55,7 +55,7 @@ GameMaster::GameMaster(AppContext& context)
 }
 
 //------------------------------------------------------------------------------
-void GameMaster::reset() {
+void Enemies::reset() {
 	m_currentLevel = 0;
 	m_nextEventWaveIdx = 0;
 	m_activeWaveIdx = 0;
@@ -70,7 +70,7 @@ void GameMaster::reset() {
 
 //------------------------------------------------------------------------------
 void
-GameMaster::update(const DX::StepTimer& timer)
+Enemies::update(const DX::StepTimer& timer)
 {
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
@@ -151,7 +151,7 @@ bezier(FLOAT t, FXMVECTOR startPos, FXMVECTOR endPos, FXMVECTOR control)
 
 //------------------------------------------------------------------------------
 void
-GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
+Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 {
 	// float elapsedTimeS = float(timer.GetElapsedSeconds());
 	float totalTimeS = static_cast<float>(timer.GetTotalSeconds());
@@ -196,7 +196,7 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 
 //------------------------------------------------------------------------------
 void
-GameMaster::emitShot(
+Enemies::emitShot(
 	const Entity& emitter,
 	const float yPosScale,
 	const float speed,
@@ -219,7 +219,7 @@ GameMaster::emitShot(
 
 //------------------------------------------------------------------------------
 void
-GameMaster::emitPlayerShot()
+Enemies::emitPlayerShot()
 {
 	emitShot(
 		m_context.entities[PLAYERS_IDX],
@@ -232,7 +232,7 @@ GameMaster::emitPlayerShot()
 
 //------------------------------------------------------------------------------
 void
-GameMaster::debugRender(DX::DebugBatchType* batch)
+Enemies::debugRender(DX::DebugBatchType* batch)
 {
 	std::set<const EnemyWaveInstance*> wavesToRender;
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)

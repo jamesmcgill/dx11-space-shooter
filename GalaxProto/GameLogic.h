@@ -1,5 +1,5 @@
 #pragma once
-#include "GameMaster.h"
+#include "Enemies.h"
 
 namespace DX
 {
@@ -38,7 +38,7 @@ private:
 	AppResources& m_resources;
 
 public:
-	GameMaster m_gameMaster;
+	Enemies m_gameMaster;
 };
 
 //------------------------------------------------------------------------------

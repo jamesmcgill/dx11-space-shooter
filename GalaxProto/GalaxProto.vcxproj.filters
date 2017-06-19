@@ -26,7 +26,6 @@
     </ClInclude>
     <ClInclude Include="Starfield.h" />
     <ClInclude Include="Entity.h" />
-    <ClInclude Include="GameMaster.h" />
     <ClInclude Include="DebugDraw.h" />
     <ClInclude Include="fmt\format.h">
       <Filter>fmt</Filter>
@@ -50,6 +49,7 @@
     <ClInclude Include="AppStates\PauseMenuState.h">
       <Filter>AppStates</Filter>
     </ClInclude>
+    <ClInclude Include="Enemies.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -60,7 +60,6 @@
     </ClCompile>
     <ClCompile Include="Starfield.cpp" />
     <ClCompile Include="Entity.cpp" />
-    <ClCompile Include="GameMaster.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="fmt\format.cc">
       <Filter>fmt</Filter>
@@ -79,6 +78,7 @@
     <ClCompile Include="AppStates\PauseMenuState.cpp">
       <Filter>AppStates</Filter>
     </ClCompile>
+    <ClCompile Include="Enemies.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

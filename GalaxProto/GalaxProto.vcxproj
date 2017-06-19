@@ -169,7 +169,7 @@
     <ClInclude Include="fmt\format.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameLogic.h" />
-    <ClInclude Include="GameMaster.h" />
+    <ClInclude Include="Enemies.h" />
     <ClInclude Include="AppResources.h" />
     <ClInclude Include="AppContext.h" />
     <ClInclude Include="MenuManager.h" />
@@ -188,7 +188,7 @@
     <ClCompile Include="fmt\format.cc" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameLogic.cpp" />
-    <ClCompile Include="GameMaster.cpp" />
+    <ClCompile Include="Enemies.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MenuManager.cpp" />
     <ClCompile Include="pch.cpp">
