@@ -13,13 +13,9 @@ struct Entity;
 class GameLogic
 {
 public:
-	GameLogic(AppContext& context, AppResources& resources)
-			: m_context(context)
-			, m_resources(resources)
-			, gameMaster(context)
-	{
-	}
+	GameLogic(AppContext& context, AppResources& resources);
 
+	void reset();
 	void update(const DX::StepTimer& timer);
 	void render();
 
@@ -42,7 +38,7 @@ private:
 	AppResources& m_resources;
 
 public:
-	GameMaster gameMaster;
+	GameMaster m_gameMaster;
 };
 
 //------------------------------------------------------------------------------

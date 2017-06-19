@@ -72,7 +72,7 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_resources.kbTracker.IsKeyPressed(Keyboard::LeftControl)
 		|| m_resources.kbTracker.IsKeyPressed(Keyboard::Space))
 	{
-		m_gameLogic.gameMaster.emitPlayerShot();
+		m_gameLogic.m_gameMaster.emitPlayerShot();
 	}
 }
 
@@ -128,7 +128,7 @@ GamePlayState::enter()
 {
 	//	TRACE("GamePlayState::enter()");
 	if (m_states.previousState() != &m_states.paused) {
-		m_gameLogic.gameMaster.reset();
+		m_gameLogic.reset();
 		m_resources.m_timer.ResetTotalTimer();
 	}
 }

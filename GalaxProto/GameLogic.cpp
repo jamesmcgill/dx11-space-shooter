@@ -16,6 +16,25 @@ constexpr float PLAYER_MAX_VELOCITY = 20.0f;
 constexpr float PLAYER_MIN_VELOCITY = 0.3f;
 constexpr float CAMERA_DIST					= 40.5f;
 
+
+//------------------------------------------------------------------------------
+GameLogic::GameLogic(AppContext& context, AppResources& resources)
+	: m_context(context)
+	, m_resources(resources)
+	, m_gameMaster(context)
+{}
+
+//------------------------------------------------------------------------------
+void GameLogic::reset() {
+	m_gameMaster.reset();
+
+	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
+	{
+		m_context.entities[i].isAlive = false;
+		m_context.entities[i].isColliding = false;
+	}
+}
+
 //------------------------------------------------------------------------------
 void
 GameLogic::update(const DX::StepTimer& timer)
@@ -59,7 +78,7 @@ GameLogic::update(const DX::StepTimer& timer)
 
 #else
 
-	gameMaster.update(timer);
+	m_gameMaster.update(timer);
 	performPhysicsUpdate(timer);
 	performCollisionTests();
 
@@ -97,7 +116,7 @@ GameLogic::render()
 			renderEntityBound(entity);
 		}
 	}
-	gameMaster.debugRender(m_resources.m_batch.get());
+	m_gameMaster.debugRender(m_resources.m_batch.get());
 	m_resources.m_batch->End();
 }
 

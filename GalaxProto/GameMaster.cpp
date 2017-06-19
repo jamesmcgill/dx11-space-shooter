@@ -66,12 +66,6 @@ void GameMaster::reset() {
 	{
 		e = nullptr;
 	}
-
-	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
-	{
-		m_context.entities[i].isAlive = false;
-		m_context.entities[i].isColliding = false;
-	}
 }
 
 //------------------------------------------------------------------------------
@@ -91,6 +85,7 @@ GameMaster::update(const DX::StepTimer& timer)
 		{
 			// Spawn enemy
 			auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
+			assert(m_enemyToWaveMap.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
 			m_enemyToWaveMap[m_context.nextEnemyIdx - ENEMIES_IDX]
 				= &level.waves[m_nextEventWaveIdx];
 			newEnemy.isAlive		= true;
@@ -172,6 +167,7 @@ GameMaster::performPhysicsUpdate(const DX::StepTimer& timer)
 		if (!e.isAlive) {
 			continue;
 		}
+		assert(m_enemyToWaveMap.size() > i - ENEMIES_IDX);
 		assert(m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr);
 		const EnemyWaveInstance& instance = *m_enemyToWaveMap[i - ENEMIES_IDX];
 
@@ -241,6 +237,7 @@ GameMaster::debugRender(DX::DebugBatchType* batch)
 	std::set<const EnemyWaveInstance*> wavesToRender;
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
+		assert(m_enemyToWaveMap.size() > i - ENEMIES_IDX);
 		if (m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr) {
 			wavesToRender.insert(m_enemyToWaveMap[i - ENEMIES_IDX]);
 		}
