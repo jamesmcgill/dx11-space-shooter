@@ -60,7 +60,7 @@ MainMenuState::handleInput(const DX::StepTimer& timer)
 		{
 			case Command::PlaySingle:
 			case Command::PlayMulti:
-				m_states.changeState(&m_states.playing);
+				m_states.changeState(&m_states.getReady);
 				break;
 
 			// case Command::ViewScores:

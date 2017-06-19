@@ -159,7 +159,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AppStates\AppStates.h" />
+    <ClInclude Include="AppStates\GameOverState.h" />
     <ClInclude Include="AppStates\GamePlayState.h" />
+    <ClInclude Include="AppStates\GetReadyState.h" />
     <ClInclude Include="AppStates\IAppState.h" />
     <ClInclude Include="AppStates\MainMenuState.h" />
     <ClInclude Include="AppStates\PauseMenuState.h" />
@@ -179,7 +181,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppStates\AppStates.cpp" />
+    <ClCompile Include="AppStates\GameOverState.cpp" />
     <ClCompile Include="AppStates\GamePlayState.cpp" />
+    <ClCompile Include="AppStates\GetReadyState.cpp" />
     <ClCompile Include="AppStates\MainMenuState.cpp" />
     <ClCompile Include="AppStates\PauseMenuState.cpp" />
     <ClCompile Include="DebugDraw.cpp" />

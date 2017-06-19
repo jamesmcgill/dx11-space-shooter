@@ -50,6 +50,12 @@
       <Filter>AppStates</Filter>
     </ClInclude>
     <ClInclude Include="Enemies.h" />
+    <ClInclude Include="AppStates\GameOverState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="AppStates\GetReadyState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -79,6 +85,12 @@
       <Filter>AppStates</Filter>
     </ClCompile>
     <ClCompile Include="Enemies.cpp" />
+    <ClCompile Include="AppStates\GameOverState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
+    <ClCompile Include="AppStates\GetReadyState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

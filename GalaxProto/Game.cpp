@@ -298,6 +298,8 @@ Game::createWindowSizeDependentResources()
 
 	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.menuManager->setWindowSize(outputSize.right, outputSize.bottom);
+	m_appResources.m_screenWidth = outputSize.right;
+	m_appResources.m_screenHeight = outputSize.bottom;
 
 	// Position HUD
 	m_appContext.hudScorePosition.x = outputSize.right / 2.f;
