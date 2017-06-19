@@ -10,79 +10,99 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-constexpr float PLAYER_SPEED				= 200.0f;
-constexpr float PLAYER_FRICTION			= 60.0f;
-constexpr float PLAYER_MAX_VELOCITY = 20.0f;
-constexpr float PLAYER_MIN_VELOCITY = 0.3f;
-constexpr float CAMERA_DIST					= 40.5f;
-
+constexpr float PLAYER_SPEED						 = 200.0f;
+constexpr float PLAYER_FRICTION					 = 60.0f;
+constexpr float PLAYER_MAX_VELOCITY			 = 20.0f;
+constexpr float PLAYER_MIN_VELOCITY			 = 0.3f;
+constexpr float CAMERA_DIST							 = 40.5f;
+constexpr float PLAYER_DEATH_TIME_S			 = 1.0f;
+constexpr float PLAYER_REVIVE_TIME_S		 = 2.0f;
+static const Vector3 PLAYER_MAX_POSITION = {16.0f, 9.0f, 0.0f};
+static const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
+static const Vector3 PLAYER_START_POS(0.0f, -PLAYER_MAX_POSITION.y, 0.0f);
 
 //------------------------------------------------------------------------------
 GameLogic::GameLogic(AppContext& context, AppResources& resources)
-	: m_context(context)
-	, m_resources(resources)
-	, m_enemies(context)
-{}
-
-//------------------------------------------------------------------------------
-void GameLogic::reset() {
-	m_enemies.reset();
-
-	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
-	{
-		m_context.entities[i].isAlive = false;
-		m_context.entities[i].isColliding = false;
-	}
+		: m_context(context)
+		, m_resources(resources)
+		, m_enemies(context)
+{
+	reset();
 }
 
 //------------------------------------------------------------------------------
 void
+GameLogic::reset()
+{
+	m_enemies.reset();
+
+	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
+	{
+		m_context.entities[i].isAlive			= false;
+		m_context.entities[i].isColliding = false;
+	}
+
+	auto& player			 = m_context.entities[PLAYERS_IDX];
+	player.isAlive		 = true;
+	player.isColliding = false;
+	player.position		 = PLAYER_START_POS;
+
+	m_context.playerScore = 0;
+	m_context.playerLives = INITIAL_NUM_PLAYER_LIVES;
+	m_context.playerState = PlayerState::Normal;
+
+	resetCamera();
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::resetCamera()
+{
+	const auto& atP							 = Vector3{0.0f, 0.0f, 0.0f};
+	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
+	static const XMVECTORF32 at	= {atP.x, atP.y, atP.z, 0.0f};
+	static const XMVECTORF32 up	= {0.0f, 1.0f, 0.0f, 0.0f};
+	m_context.view							 = XMMatrixLookAtRH(eye, at, up);
+}
+
+//------------------------------------------------------------------------------
+GameLogic::GameStatus
 GameLogic::update(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
-	// float elapsedTimeS = float(timer.GetElapsedSeconds());
+	float elapsedTimeS = float(timer.GetElapsedSeconds());
 	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
-
-	// CAMERA
-	auto& player = m_context.entities[PLAYERS_IDX];
-	assert(player.model);
-	const auto& atP							 = player.position + player.model->bound.Center;
-	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
-	static const XMVECTORF32 at	= {atP.x, atP.y, atP.z, 0.0f};
-	static const XMVECTORF32 up	= {0.0f, 1.0f, 0.0f, 0.0f};
-
-	XMVECTOR eyePos = ::XMVectorSubtract(eye, at);
-
-	float radiansX = static_cast<float>(fmod(m_context.cameraRotationX, XM_2PI));
-	eyePos				 = ::XMVector3Rotate(
-		eyePos, XMQuaternionRotationMatrix(XMMatrixRotationX(radiansX)));
-
-	float radiansY = static_cast<float>(fmod(m_context.cameraRotationY, XM_2PI));
-	eyePos				 = ::XMVector3Rotate(
-		eyePos, XMQuaternionRotationMatrix(XMMatrixRotationY(radiansY)));
-
-	eyePos = ::XMVectorAdd(eyePos, at);
-
-	m_context.view = XMMatrixLookAtRH(eyePos, at, up);
-
-#if 0
-	// Implicit Model Rotation
-	double totalRotation = totalTimeS * m_rotationRadiansPS;
-	float radians = static_cast<float>(fmod(totalRotation, XM_2PI));
-
-	m_world = Matrix::CreateTranslation(m_modelBound.Center).Invert()
-		* Matrix::CreateFromYawPitchRoll(XM_PI - 0.5f, radians, -XM_PI / 2)
-		* Matrix::CreateTranslation(
-			m_state.entities[0].m_position + m_modelBound.Center);
-
-#else
-
 	m_enemies.update(timer);
 	performPhysicsUpdate(timer);
-	performCollisionTests();
 
-#endif
+	switch (m_context.playerState)
+	{
+		case PlayerState::Normal:
+			performCollisionTests();
+			break;
+
+		case PlayerState::Dying:
+			if ((m_context.playerDeathTimerS -= elapsedTimeS) <= 0.0f) {
+				if (--m_context.playerLives > -1) {
+					m_context.playerState				 = PlayerState::Reviving;
+					m_context.playerReviveTimerS = PLAYER_REVIVE_TIME_S;
+				}
+				else
+				{
+					return GameStatus::GameOver;
+				}
+			}
+			break;
+
+		case PlayerState::Reviving:
+			if ((m_context.playerReviveTimerS -= elapsedTimeS) <= 0.0f) {
+				m_context.playerState = PlayerState::Normal;
+			}
+			break;
+	}
+
+	return GameStatus::Playing;
 }
 
 //------------------------------------------------------------------------------
@@ -91,16 +111,21 @@ GameLogic::render()
 {
 	auto dc = m_resources.m_deviceResources->GetD3DDeviceContext();
 
+	size_t idx = 0;
 	for (auto& entity : m_context.entities)
 	{
-		if (entity.isAlive) {
+		if (PLAYERS_IDX == idx) {
+			renderPlayerEntity(entity);
+		}
+		else if (entity.isAlive)
+		{
 			renderEntity(entity);
 		}
+		++idx;
 	}
 
 	// Debug Drawing
-	dc->OMSetBlendState(
-		m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
+	dc->OMSetBlendState(m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
 	dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
 	dc->RSSetState(m_resources.m_states->CullNone());
 
@@ -152,9 +177,6 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 			{
 				return incident - 1.0f * incident.Dot(normal) * normal;
 			};
-
-			const Vector3 PLAYER_MAX_POSITION = {16.0f, 9.0f, 0.0f};
-			const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
 
 			// Limit position
 			if (e.position.x < -PLAYER_MAX_POSITION.x) {
@@ -211,36 +233,21 @@ GameLogic::performCollisionTests()
 		score += 10;
 	};
 
-	auto onShipsCollide
-		= [& lives = m_context.playerLives](Entity & player, Entity & enemy)
+	auto onPlayerHit = [& context = m_context](Entity & player, Entity & enemy)
 	{
 		player.isColliding = true;
 		enemy.isColliding	= true;
 
-		// TODO(James): respawn player
-		// player.isAlive = false;
-		enemy.isAlive = false;
-		--lives;
-	};
-
-	auto onEnemyShotHitsPlayer
-		= [& lives = m_context.playerLives](Entity & player, Entity & enemy)
-	{
-		player.isColliding = true;
-		enemy.isColliding	= true;
-
-		// TODO(James): respawn player
-		// player.isAlive = false;
-		enemy.isAlive = false;
-		--lives;
+		enemy.isAlive							= false;
+		context.playerState				= PlayerState::Dying;
+		context.playerDeathTimerS = PLAYER_DEATH_TIME_S;
 	};
 
 	// Pass 1 - Player				-> EnemyShots
-	collisionTestEntity(
-		player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, onEnemyShotHitsPlayer);
+	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, onPlayerHit);
 
 	// Pass 2 - Player				-> Enemies
-	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, onShipsCollide);
+	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, onPlayerHit);
 
 	// Pass 3 - PlayerShots		-> Enemies
 	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
@@ -288,6 +295,33 @@ GameLogic::collisionTestEntity(
 }
 
 //------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+void
+GameLogic::renderPlayerEntity(Entity& entity)
+{
+	switch (m_context.playerState)
+	{
+		case PlayerState::Normal:
+			renderEntity(entity);
+			break;
+
+		case PlayerState::Dying:
+			// TODO(James): Render Player Death
+			break;
+
+		case PlayerState::Reviving:
+			// Flash the player every half second
+			if (
+				static_cast<int>(m_context.playerReviveTimerS * PLAYER_REVIVE_TIME_S)
+					% 2
+				!= 0)
+			{
+				renderEntity(entity);
+			}
+			break;
+	}
+}
 
 //------------------------------------------------------------------------------
 void

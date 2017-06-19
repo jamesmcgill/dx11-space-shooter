@@ -31,6 +31,12 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_states.changeState(&m_states.paused);
 	}
 
+	// Player Movement
+	m_context.playerAccel = Vector3();	// NB. Must be reset, even while dead.
+	if (m_context.playerState == PlayerState::Dying) {
+		return;
+	}
+
 	if (kbState.W) {
 		m_context.cameraRotationX -= elapsedTimeS * CAMERA_SPEED_X;
 	}
@@ -47,7 +53,6 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.cameraRotationY += elapsedTimeS * CAMERA_SPEED_Y;
 	}
 
-	m_context.playerAccel = Vector3();
 	if (kbState.Up) {
 		m_context.playerAccel.y = 1.0f;
 	}
@@ -81,7 +86,9 @@ void
 GamePlayState::update(const DX::StepTimer& timer)
 {
 	m_resources.starField->update(timer);
-	m_gameLogic.update(timer);
+	if (GameLogic::GameStatus::GameOver == m_gameLogic.update(timer)) {
+		m_states.changeState(&m_states.gameOver);
+	}
 }
 
 //------------------------------------------------------------------------------

@@ -24,19 +24,18 @@ static const EnemyWave wave2 = {path2, 3, 0};
 static const EnemyWave wave3 = {path1, 5, 0};
 static const EnemyWave wave4 = {path2, 5, 0};
 
-static const EnemyWaveInstance waveInstance1{wave1, 3.0f};
-static const EnemyWaveInstance waveInstance2{wave2, 5.0f};
-static const EnemyWaveInstance waveInstance3{wave3, 10.0f};
-static const EnemyWaveInstance waveInstance4{wave4, 14.0f};
-static const EnemyWaveInstance waveInstance5{wave1, 20.0f};
-static const EnemyWaveInstance waveInstance6{wave2, 25.0f};
-
-static const Level level1 = {{waveInstance1,
-															waveInstance2,
-															waveInstance3,
-															waveInstance4,
-															waveInstance5,
-															waveInstance6}};
+static const Level level1 = {{
+	EnemyWaveInstance{wave1, 3.0f},
+	EnemyWaveInstance{wave2, 5.0f},
+	EnemyWaveInstance{wave3, 10.0f},
+	EnemyWaveInstance{wave4, 14.0f},
+	EnemyWaveInstance{wave1, 20.0f},
+	EnemyWaveInstance{wave2, 25.0f},
+	EnemyWaveInstance{wave3, 30.0f},
+	EnemyWaveInstance{wave4, 35.0f},
+	EnemyWaveInstance{wave1, 40.0f},
+	EnemyWaveInstance{wave2, 45.0f},
+}};
 
 static const std::vector<Level> s_levels = {{level1}};
 
@@ -55,10 +54,12 @@ Enemies::Enemies(AppContext& context)
 }
 
 //------------------------------------------------------------------------------
-void Enemies::reset() {
-	m_currentLevel = 0;
+void
+Enemies::reset()
+{
+	m_currentLevel		 = 0;
 	m_nextEventWaveIdx = 0;
-	m_activeWaveIdx = 0;
+	m_activeWaveIdx		 = 0;
 
 	assert(!s_levels[m_currentLevel].waves.empty());
 	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;

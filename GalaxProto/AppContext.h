@@ -2,6 +2,16 @@
 #include "Entity.h"
 
 //------------------------------------------------------------------------------
+enum class PlayerState
+{
+	Normal,
+	Dying,
+	Reviving,
+};
+
+constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
+
+//------------------------------------------------------------------------------
 struct AppContext
 {
 	DirectX::SimpleMath::Matrix view;
@@ -20,7 +30,10 @@ struct AppContext
 	DirectX::SimpleMath::Vector2 hudScorePosition = {};
 	DirectX::SimpleMath::Vector2 hudLivesPosition = {};
 	int playerScore																= 0;
-	int playerLives																= 5;
+	int playerLives																= INITIAL_NUM_PLAYER_LIVES;
+	PlayerState playerState = PlayerState::Normal;
+	float playerDeathTimerS = 0.0f;
+	float playerReviveTimerS = 0.0f;
 };
 
 //------------------------------------------------------------------------------

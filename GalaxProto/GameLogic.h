@@ -13,10 +13,16 @@ struct Entity;
 class GameLogic
 {
 public:
+	enum class GameStatus {
+		Playing,
+		GameOver,
+	};
+
 	GameLogic(AppContext& context, AppResources& resources);
 
 	void reset();
-	void update(const DX::StepTimer& timer);
+	void resetCamera();
+	GameStatus update(const DX::StepTimer& timer);
 	void render();
 
 	void performPhysicsUpdate(const DX::StepTimer& timer);
@@ -29,6 +35,7 @@ public:
 		const size_t rangeOnePastEndIdx,
 		Func onCollision);
 
+	void renderPlayerEntity(Entity & entity);
 	void renderEntity(Entity& entity);
 	void renderEntityBound(Entity& entity);
 	void drawHUD();
