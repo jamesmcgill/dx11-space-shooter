@@ -38,7 +38,7 @@ private:
 	AppResources& m_resources;
 
 public:
-	Enemies m_gameMaster;
+	Enemies m_enemies;
 };
 
 //------------------------------------------------------------------------------
