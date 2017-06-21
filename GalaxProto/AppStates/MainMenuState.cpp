@@ -15,7 +15,7 @@ extern void ExitGame();
 //------------------------------------------------------------------------------
 static const std::vector<MenuManager::MenuButton> s_mainMenuButtons = {
 	{L"Play Single Player", Command::PlaySingle},
-	{L"Play Multi Player", Command::PlayMulti},
+	{L"Play Two Players", Command::PlayTwoPlayers},
 	{L"View Hi-Scores", Command::ViewScores},
 	{L"Quit", Command::GotoMenu, 1},
 };
@@ -59,7 +59,7 @@ MainMenuState::handleInput(const DX::StepTimer& timer)
 		switch (cmd)
 		{
 			case Command::PlaySingle:
-			case Command::PlayMulti:
+			case Command::PlayTwoPlayers:
 				m_states.changeState(&m_states.getReady);
 				break;
 

@@ -48,7 +48,7 @@ Game::initialize(HWND window, int width, int height)
 	m_timer.SetTargetElapsedSeconds(1.0 / 60);
 	*/
 
-	m_appStates.changeState(&m_appStates.menu);
+	m_appStates.changeState(&m_appStates.playing);
 }
 
 #pragma region Frame Update
@@ -220,6 +220,11 @@ Game::createDeviceDependentResources()
 		m_appResources.m_texture.ReleaseAndGetAddressOf()));
 	m_appResources.starField
 		= std::make_unique<StarField>(m_appResources.m_texture.Get());
+
+	m_appResources.explosions
+		= std::make_unique<Explosions>(m_appContext, m_appResources.m_texture.Get());
+	
+
 	m_appResources.menuManager = std::make_unique<MenuManager>();
 
 	m_appResources.m_font
@@ -297,6 +302,7 @@ Game::createWindowSizeDependentResources()
 		fovAngleY, aspectRatio, 0.01f, 100.f);
 
 	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
+	m_appResources.explosions->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.menuManager->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.m_screenWidth = outputSize.right;
 	m_appResources.m_screenHeight = outputSize.bottom;
@@ -326,6 +332,7 @@ Game::OnDeviceLost()
 
 	m_appResources.m_font.reset();
 	m_appResources.starField.reset();
+	m_appResources.explosions.reset();
 	m_appResources.menuManager.reset();
 	m_appResources.m_batch.reset();
 	m_appResources.m_spriteBatch.reset();

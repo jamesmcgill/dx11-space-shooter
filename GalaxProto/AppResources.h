@@ -4,6 +4,7 @@
 #include "DeviceResources.h"
 #include "Entity.h"	// ModelData
 #include "Starfield.h"
+#include "Explosions.h"
 #include "MenuManager.h"
 
 //------------------------------------------------------------------------------
@@ -33,6 +34,7 @@ struct AppResources
 	std::unique_ptr<DirectX::GeometricPrimitive> m_debugBound;
 
 	std::unique_ptr<StarField> starField;
+	std::unique_ptr<Explosions> explosions;
 	std::unique_ptr<MenuManager> menuManager;
 
 	std::map<char*, wchar_t*> modelLocations;

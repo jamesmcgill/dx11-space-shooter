@@ -79,7 +79,7 @@ GameLogic::update(const DX::StepTimer& timer)
 	switch (m_context.playerState)
 	{
 		case PlayerState::Normal:
-			performCollisionTests();
+			//performCollisionTests();
 			break;
 
 		case PlayerState::Dying:

@@ -56,6 +56,7 @@
     <ClInclude Include="AppStates\GetReadyState.h">
       <Filter>AppStates</Filter>
     </ClInclude>
+    <ClInclude Include="Explosions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -91,6 +92,7 @@
     <ClCompile Include="AppStates\GetReadyState.cpp">
       <Filter>AppStates</Filter>
     </ClCompile>
+    <ClCompile Include="Explosions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Starfield.h"
+#include "StepTimer.h"
 
 const float ZBOUNDMIN = 1.0f;
 const float ZBOUNDMAX = 8.5f;

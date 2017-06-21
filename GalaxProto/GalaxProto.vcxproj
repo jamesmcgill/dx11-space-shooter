@@ -168,6 +168,7 @@
     <ClInclude Include="DebugDraw.h" />
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="Explosions.h" />
     <ClInclude Include="fmt\format.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameLogic.h" />
@@ -189,6 +190,7 @@
     <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Explosions.cpp" />
     <ClCompile Include="fmt\format.cc" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameLogic.cpp" />

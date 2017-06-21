@@ -19,7 +19,7 @@ enum class Command
 {
 	// Menu Navigation
 	PlaySingle,
-	PlayMulti,
+	PlayTwoPlayers,
 	ViewScores,
 	GotoMenu,
 
