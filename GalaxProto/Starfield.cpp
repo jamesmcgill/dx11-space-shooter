@@ -24,7 +24,7 @@ StarField::StarField(ID3D11ShaderResourceView* texture)
 		resource->GetType(&dim);
 
 		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
-			throw std::exception("ScrollingBackground expects a Texture2D");
+			throw std::exception("StarField expects a Texture2D");
 		}
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> tex2D;

@@ -143,6 +143,16 @@ GameLogic::render()
 	}
 	m_enemies.debugRender(m_resources.m_batch.get());
 	m_resources.m_batch->End();
+
+	// Explosions & HUD
+	CommonStates states(m_resources.m_deviceResources->GetD3DDevice());
+	auto& spriteBatch = m_resources.m_spriteBatch;
+	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
+
+	m_resources.explosions->render(*spriteBatch);
+	drawHUD();
+
+	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------

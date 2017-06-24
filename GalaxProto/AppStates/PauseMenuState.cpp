@@ -72,16 +72,19 @@ PauseMenuState::update(const DX::StepTimer& timer)
 void
 PauseMenuState::render()
 {
-	m_resources.m_spriteBatch->Begin();
-	m_resources.starField->render(*m_resources.m_spriteBatch);
-	m_resources.m_spriteBatch->End();
+	auto& spriteBatch = m_resources.m_spriteBatch;
+
+	spriteBatch->Begin();
+	m_resources.starField->render(*spriteBatch);
+	spriteBatch->End();
 
 	m_gameLogic.render();
 
 	m_resources.m_spriteBatch->Begin();
 	m_resources.menuManager->render(
 		m_resources.m_font.get(), m_resources.m_spriteBatch.get());
-	m_resources.m_spriteBatch->End();
+	spriteBatch->End();
+
 }
 
 //------------------------------------------------------------------------------

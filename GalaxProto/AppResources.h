@@ -20,7 +20,8 @@ struct AppResources
 	DirectX::Keyboard::KeyboardStateTracker kbTracker;
 
 	std::unique_ptr<DirectX::CommonStates> m_states;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_starTexture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_explosionTexture;
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> m_font;
 

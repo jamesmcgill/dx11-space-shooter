@@ -111,11 +111,6 @@ GamePlayState::render()
 	spriteBatch->End();
 
 	m_gameLogic.render();
-
-	spriteBatch->Begin();
-	m_resources.explosions->render(*spriteBatch);
-	m_gameLogic.drawHUD();
-	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------

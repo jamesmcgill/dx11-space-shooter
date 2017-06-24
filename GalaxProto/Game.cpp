@@ -217,13 +217,17 @@ Game::createDeviceDependentResources()
 		device,
 		L"assets/star.dds",
 		nullptr,
-		m_appResources.m_texture.ReleaseAndGetAddressOf()));
+		m_appResources.m_starTexture.ReleaseAndGetAddressOf()));
 	m_appResources.starField
-		= std::make_unique<StarField>(m_appResources.m_texture.Get());
+		= std::make_unique<StarField>(m_appResources.m_starTexture.Get());
 
-	m_appResources.explosions
-		= std::make_unique<Explosions>(m_appContext, m_appResources.m_texture.Get());
-	
+	DX::ThrowIfFailed(CreateDDSTextureFromFile(
+		device,
+		L"assets/explosion.dds",
+		nullptr,
+		m_appResources.m_explosionTexture.ReleaseAndGetAddressOf()));
+	m_appResources.explosions = std::make_unique<Explosions>(
+		m_appContext, m_appResources.m_explosionTexture.Get());
 
 	m_appResources.menuManager = std::make_unique<MenuManager>();
 
@@ -303,8 +307,9 @@ Game::createWindowSizeDependentResources()
 
 	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.explosions->setWindowSize(outputSize.right, outputSize.bottom);
-	m_appResources.menuManager->setWindowSize(outputSize.right, outputSize.bottom);
-	m_appResources.m_screenWidth = outputSize.right;
+	m_appResources.menuManager->setWindowSize(
+		outputSize.right, outputSize.bottom);
+	m_appResources.m_screenWidth	= outputSize.right;
 	m_appResources.m_screenHeight = outputSize.bottom;
 
 	// Position HUD
@@ -336,7 +341,8 @@ Game::OnDeviceLost()
 	m_appResources.menuManager.reset();
 	m_appResources.m_batch.reset();
 	m_appResources.m_spriteBatch.reset();
-	m_appResources.m_texture.Reset();
+	m_appResources.m_explosionTexture.Reset();
+	m_appResources.m_starTexture.Reset();
 	m_appResources.m_states.reset();
 }
 
