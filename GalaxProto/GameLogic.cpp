@@ -79,7 +79,7 @@ GameLogic::update(const DX::StepTimer& timer)
 	switch (m_context.playerState)
 	{
 		case PlayerState::Normal:
-			//performCollisionTests();
+			performCollisionTests();
 			break;
 
 		case PlayerState::Dying:
@@ -99,6 +99,7 @@ GameLogic::update(const DX::StepTimer& timer)
 			if ((m_context.playerReviveTimerS -= elapsedTimeS) <= 0.0f) {
 				m_context.playerState = PlayerState::Normal;
 			}
+			performCollisionTests();
 			break;
 	}
 
@@ -233,9 +234,13 @@ GameLogic::performCollisionTests()
 
 	auto& player = m_context.entities[PLAYERS_IDX];
 
-	auto onPlayerShotHitsEnemy
-		= [& score = m_context.playerScore](Entity & entity, Entity & testEntity)
+	auto onPlayerShotHitsEnemy =
+		[& score		 = m_context.playerScore,
+		 &explosions = m_resources.explosions](Entity & entity, Entity & testEntity)
 	{
+		auto pos = entity.position + entity.model->bound.Center;
+		explosions->emit(pos, Vector3());
+
 		entity.isColliding		 = true;
 		testEntity.isColliding = true;
 		entity.isAlive				 = false;
@@ -243,8 +248,13 @@ GameLogic::performCollisionTests()
 		score += 10;
 	};
 
-	auto onPlayerHit = [& context = m_context](Entity & player, Entity & enemy)
+	auto onPlayerHit =
+		[& context	 = m_context,
+		 &explosions = m_resources.explosions](Entity & player, Entity & enemy)
 	{
+		auto pos = player.position + player.model->bound.Center;
+		explosions->emit(pos, Vector3());
+
 		player.isColliding = true;
 		enemy.isColliding	= true;
 
@@ -253,19 +263,24 @@ GameLogic::performCollisionTests()
 		context.playerDeathTimerS = PLAYER_DEATH_TIME_S;
 	};
 
-	// Pass 1 - Player				-> EnemyShots
-	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, onPlayerHit);
-
-	// Pass 2 - Player				-> Enemies
-	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, onPlayerHit);
-
-	// Pass 3 - PlayerShots		-> Enemies
+	// Pass 1 - PlayerShots		-> Enemies
 	for (size_t srcIdx = PLAYER_SHOTS_IDX; srcIdx < PLAYER_SHOTS_END; ++srcIdx)
 	{
 		auto& srcEntity = m_context.entities[srcIdx];
 		collisionTestEntity(
 			srcEntity, ENEMIES_IDX, ENEMIES_END, onPlayerShotHitsEnemy);
 	}
+
+	// Player is invulnerable, no more collision tests
+	if (m_context.playerState == PlayerState::Reviving) {
+		return;
+	}
+
+	// Pass 2 - Player				-> Enemies
+	collisionTestEntity(player, ENEMIES_IDX, ENEMIES_END, onPlayerHit);
+
+	// Pass 3 - Player				-> EnemyShots
+	collisionTestEntity(player, ENEMY_SHOTS_IDX, ENEMY_SHOTS_END, onPlayerHit);
 }
 
 //------------------------------------------------------------------------------

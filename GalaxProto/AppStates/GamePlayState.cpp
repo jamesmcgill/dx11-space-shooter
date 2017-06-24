@@ -31,16 +31,14 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_states.changeState(&m_states.paused);
 	}
 
-
 	if (m_resources.kbTracker.IsKeyPressed(Keyboard::E)) {
-		auto pos = m_context.entities[PLAYERS_IDX].position + m_context.entities[PLAYERS_IDX].model->bound.Center;
+		auto pos = m_context.entities[PLAYERS_IDX].position
+							 + m_context.entities[PLAYERS_IDX].model->bound.Center;
 		m_resources.explosions->emit(pos, Vector3());
 	}
 
-
-
 	// Player Movement
-	m_context.playerAccel = Vector3();	// NB. Must be reset, even while dead.
+	m_context.playerAccel = Vector3();		// NB. Must be reset, even while dead.
 	if (m_context.playerState == PlayerState::Dying) {
 		return;
 	}
