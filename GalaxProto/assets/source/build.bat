@@ -5,6 +5,7 @@ set SRC_DIR=%~dp0
 :: Output files will be created in the parent directory of this batch file
 cd ..
 %SRC_DIR%\texconv.exe %SRC_DIR%\star.png -pmalpha -m 1 -f BC3_UNORM -y
+%SRC_DIR%\texconv.exe %SRC_DIR%\explosion.png -pmalpha -m 1 -f BC3_UNORM -y
 %SRC_DIR%\meshconvert.exe -n -c -sdkmesh %SRC_DIR%\player.obj -y
 %SRC_DIR%\meshconvert.exe -n -c -sdkmesh %SRC_DIR%\shot.obj -y
 %SRC_DIR%\MakeSpriteFont.exe "Verdana" verdana32.spritefont /FontSize:32
