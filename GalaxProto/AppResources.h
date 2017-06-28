@@ -6,6 +6,7 @@
 #include "Starfield.h"
 #include "Explosions.h"
 #include "MenuManager.h"
+#include "ScoreBoard.h"
 
 //------------------------------------------------------------------------------
 struct AppResources
@@ -37,6 +38,7 @@ struct AppResources
 	std::unique_ptr<StarField> starField;
 	std::unique_ptr<Explosions> explosions;
 	std::unique_ptr<MenuManager> menuManager;
+	std::unique_ptr<ScoreBoard> scoreBoard;
 
 	std::map<char*, wchar_t*> modelLocations;
 	std::map<char*, ModelData> modelData;

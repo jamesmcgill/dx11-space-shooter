@@ -7,6 +7,7 @@
 #include "AppStates/GamePlayState.h"
 #include "AppStates/GameOverState.h"
 #include "AppStates/PauseMenuState.h"
+#include "AppStates/ShowScoresState.h"
 
 //------------------------------------------------------------------------------
 class AppStates
@@ -18,6 +19,7 @@ public:
 	GamePlayState playing;
 	GameOverState gameOver;
 	PauseMenuState paused;
+	ShowScoresState showingScores;
 
 public:
 	AppStates(AppContext& context, AppResources& resources, GameLogic& logic);

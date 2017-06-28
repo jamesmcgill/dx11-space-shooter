@@ -3,10 +3,10 @@
 #include "IAppState.h"
 
 //------------------------------------------------------------------------------
-class MainMenuState : public IAppState
+class ShowScoresState : public IAppState
 {
 public:
-	MainMenuState(
+	ShowScoresState(
 		AppStates& states,
 		AppContext& context,
 		AppResources& resources,
@@ -27,7 +27,6 @@ public:
 	void exit() override;
 
 private:
-	void resetTimer();
 	float m_timeoutS = 0.0f;
 };
 

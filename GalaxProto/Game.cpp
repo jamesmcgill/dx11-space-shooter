@@ -230,6 +230,9 @@ Game::createDeviceDependentResources()
 		m_appContext, m_appResources.m_explosionTexture.Get());
 
 	m_appResources.menuManager = std::make_unique<MenuManager>();
+	m_appResources.scoreBoard = std::make_unique<ScoreBoard>();
+	m_appResources.scoreBoard->loadFromFile();
+
 
 	m_appResources.m_font
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
@@ -309,6 +312,9 @@ Game::createWindowSizeDependentResources()
 	m_appResources.explosions->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.menuManager->setWindowSize(
 		outputSize.right, outputSize.bottom);
+	m_appResources.scoreBoard->setWindowSize(
+		outputSize.right, outputSize.bottom);
+
 	m_appResources.m_screenWidth	= outputSize.right;
 	m_appResources.m_screenHeight = outputSize.bottom;
 
@@ -338,6 +344,7 @@ Game::OnDeviceLost()
 	m_appResources.m_font.reset();
 	m_appResources.starField.reset();
 	m_appResources.explosions.reset();
+	m_appResources.scoreBoard.reset();
 	m_appResources.menuManager.reset();
 	m_appResources.m_batch.reset();
 	m_appResources.m_spriteBatch.reset();

@@ -9,6 +9,7 @@ AppStates::AppStates(
 		, playing(*this, context, resources, logic)
 		, gameOver(*this, context, resources, logic)
 		, paused(*this, context, resources, logic)
+		, showingScores(*this, context, resources, logic)
 		, m_currentState(&menu)
 {
 }

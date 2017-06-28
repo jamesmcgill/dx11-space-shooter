@@ -57,6 +57,10 @@
       <Filter>AppStates</Filter>
     </ClInclude>
     <ClInclude Include="Explosions.h" />
+    <ClInclude Include="AppStates\ShowScoresState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="ScoreBoard.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -93,6 +97,10 @@
       <Filter>AppStates</Filter>
     </ClCompile>
     <ClCompile Include="Explosions.cpp" />
+    <ClCompile Include="AppStates\ShowScoresState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
+    <ClCompile Include="ScoreBoard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
