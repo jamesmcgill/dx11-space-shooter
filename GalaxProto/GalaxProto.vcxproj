@@ -165,6 +165,7 @@
     <ClInclude Include="AppStates\IAppState.h" />
     <ClInclude Include="AppStates\MainMenuState.h" />
     <ClInclude Include="AppStates\PauseMenuState.h" />
+    <ClInclude Include="AppStates\ScoreEntryState.h" />
     <ClInclude Include="AppStates\ShowScoresState.h" />
     <ClInclude Include="DebugDraw.h" />
     <ClInclude Include="DeviceResources.h" />
@@ -189,6 +190,7 @@
     <ClCompile Include="AppStates\GetReadyState.cpp" />
     <ClCompile Include="AppStates\MainMenuState.cpp" />
     <ClCompile Include="AppStates\PauseMenuState.cpp" />
+    <ClCompile Include="AppStates\ScoreEntryState.cpp" />
     <ClCompile Include="AppStates\ShowScoresState.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="DeviceResources.cpp" />

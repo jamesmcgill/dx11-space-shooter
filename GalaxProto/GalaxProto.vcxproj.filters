@@ -61,6 +61,9 @@
       <Filter>AppStates</Filter>
     </ClInclude>
     <ClInclude Include="ScoreBoard.h" />
+    <ClInclude Include="AppStates\ScoreEntryState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -101,6 +104,9 @@
       <Filter>AppStates</Filter>
     </ClCompile>
     <ClCompile Include="ScoreBoard.cpp" />
+    <ClCompile Include="AppStates\ScoreEntryState.cpp">
+      <Filter>AppStates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

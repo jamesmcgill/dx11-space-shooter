@@ -21,6 +21,8 @@ static const Vector3 PLAYER_MAX_POSITION = {16.0f, 9.0f, 0.0f};
 static const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
 static const Vector3 PLAYER_START_POS(0.0f, -PLAYER_MAX_POSITION.y, 0.0f);
 
+constexpr int POINTS_PER_KILL = 1000;
+
 //------------------------------------------------------------------------------
 GameLogic::GameLogic(AppContext& context, AppResources& resources)
 		: m_context(context)
@@ -245,7 +247,7 @@ GameLogic::performCollisionTests()
 		testEntity.isColliding = true;
 		entity.isAlive				 = false;
 		testEntity.isAlive		 = false;
-		score += 10;
+		score += POINTS_PER_KILL;
 	};
 
 	auto onPlayerHit =

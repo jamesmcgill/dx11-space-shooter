@@ -29,9 +29,16 @@ GameOverState::update(const DX::StepTimer& timer)
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
 	m_resources.starField->update(timer);
+
 	m_timeoutS -= elapsedTimeS;
 	if (m_timeoutS <= 0.0f) {
-		m_states.changeState(&m_states.menu);
+		if (m_resources.scoreBoard->isHiScore(m_context.playerScore)) {
+			m_states.changeState(&m_states.enteringScore);
+		}
+		else
+		{
+			m_states.changeState(&m_states.menu);
+		}
 	}
 }
 
