@@ -9,6 +9,7 @@ using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
 
 //------------------------------------------------------------------------------
+static const std::wstring MODEL_PATH = L"assets/";
 static const std::wstring AUDIO_PATH = L"assets/audio/";
 
 //------------------------------------------------------------------------------
@@ -27,8 +28,12 @@ Game::Game()
 #endif
 	m_appResources.audioEngine = std::make_unique<AudioEngine>(eflags);
 
-	m_appResources.modelLocations["PLAYER"] = L"assets/player.sdkmesh";
-	m_appResources.modelLocations["SHOT"]		= L"assets/shot.sdkmesh";
+	// Setup Resource Names
+	auto setModelPath = [&](ModelResource res, wchar_t* path) {
+		m_appResources.modelLocations[res] = MODEL_PATH + path;
+	};
+	setModelPath(ModelResource::Player, L"player.sdkmesh");
+	setModelPath(ModelResource::Shot, L"shot.sdkmesh");
 
 	auto setAudioPath = [&](AudioResource res, wchar_t* path) {
 		m_appResources.soundEffectLocations[res] = AUDIO_PATH + path;
@@ -284,8 +289,9 @@ Game::createDeviceDependentResources()
 	for (const auto& res : m_appResources.modelLocations)
 	{
 		auto& data = m_appResources.modelData[res.first];
+		auto& path = res.second;
 		data.model = Model::CreateFromSDKMESH(
-			device, res.second, *m_appResources.m_effectFactory);
+			device, path.c_str(), *m_appResources.m_effectFactory);
 		data.bound				= {};
 		data.bound.Radius = 0.0f;
 		for (const auto& mesh : data.model->meshes)
@@ -307,19 +313,23 @@ Game::createDeviceDependentResources()
 	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_appContext.entities[i].model = &m_appResources.modelData["PLAYER"];
+		m_appContext.entities[i].model
+			= &m_appResources.modelData[ModelResource::Player];
 	}
 	for (size_t i = PLAYER_SHOTS_IDX; i < PLAYER_SHOTS_END; ++i)
 	{
-		m_appContext.entities[i].model = &m_appResources.modelData["SHOT"];
+		m_appContext.entities[i].model
+			= &m_appResources.modelData[ModelResource::Shot];
 	}
 	for (size_t i = ENEMY_SHOTS_IDX; i < ENEMY_SHOTS_END; ++i)
 	{
-		m_appContext.entities[i].model = &m_appResources.modelData["SHOT"];
+		m_appContext.entities[i].model
+			= &m_appResources.modelData[ModelResource::Shot];
 	}
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		m_appContext.entities[i].model = &m_appResources.modelData["PLAYER"];
+		m_appContext.entities[i].model
+			= &m_appResources.modelData[ModelResource::Player];
 	}
 }
 

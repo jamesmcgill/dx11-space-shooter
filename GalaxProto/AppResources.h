@@ -8,6 +8,11 @@
 #include "MenuManager.h"
 #include "ScoreBoard.h"
 //------------------------------------------------------------------------------
+enum class ModelResource {
+	Player,
+	Shot,
+};
+
 enum class AudioResource {
 	GameStart,
 	GameOver,
@@ -50,8 +55,8 @@ struct AppResources
 	std::unique_ptr<MenuManager> menuManager;
 	std::unique_ptr<ScoreBoard> scoreBoard;
 
-	std::map<char*, wchar_t*> modelLocations;
-	std::map<char*, ModelData> modelData;
+	std::map<ModelResource, std::wstring> modelLocations;
+	std::map<ModelResource, ModelData> modelData;
 
 	std::map<AudioResource, std::wstring> soundEffectLocations;
 	std::map<AudioResource, std::unique_ptr<DirectX::SoundEffect>> soundEffects;
