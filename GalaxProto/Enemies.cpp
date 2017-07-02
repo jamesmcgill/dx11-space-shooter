@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Enemies.h"
+#include "AppContext.h"
+#include "AppResources.h"
+#include "StepTimer.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -44,8 +47,9 @@ constexpr float SHOT_SPEED									= 20.0f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 //------------------------------------------------------------------------------
-Enemies::Enemies(AppContext& context)
+Enemies::Enemies(AppContext& context, AppResources& resources)
 		: m_context(context)
+		, m_resources(resources)
 		, m_currentLevel(0)
 		, m_nextEventWaveIdx(0)
 		, m_activeWaveIdx(0)
@@ -123,6 +127,7 @@ Enemies::update(const DX::StepTimer& timer)
 					m_context.nextEnemyShotIdx,
 					ENEMY_SHOTS_IDX,
 					ENEMY_SHOTS_END);
+				m_resources.soundEffects[AudioResource::EnemyShot]->Play();
 				break;
 			}
 		}
@@ -229,6 +234,8 @@ Enemies::emitPlayerShot()
 		m_context.nextPlayerShotIdx,
 		PLAYER_SHOTS_IDX,
 		PLAYER_SHOTS_END);
+
+	m_resources.soundEffects[AudioResource::PlayerShot]->Play();
 }
 
 //------------------------------------------------------------------------------

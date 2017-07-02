@@ -6,7 +6,7 @@
 #pragma once
 
 #include <WinSDKVer.h>
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x0602
 #include <SDKDDKVer.h>
 
 // Use the C++ standard templated min/max
@@ -48,6 +48,7 @@
 #include "SpriteFont.h"
 #include "DDSTextureLoader.h"
 #include "DebugDraw.h"
+#include "Audio.h"
 
 #include <algorithm>
 #include <exception>
@@ -55,6 +56,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <array>
 #include <map>
 
 #include <stdio.h>

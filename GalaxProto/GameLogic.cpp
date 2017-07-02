@@ -27,7 +27,7 @@ constexpr int POINTS_PER_KILL = 1000;
 GameLogic::GameLogic(AppContext& context, AppResources& resources)
 		: m_context(context)
 		, m_resources(resources)
-		, m_enemies(context)
+		, m_enemies(context, resources)
 {
 	reset();
 }
@@ -237,25 +237,33 @@ GameLogic::performCollisionTests()
 	auto& player = m_context.entities[PLAYERS_IDX];
 
 	auto onPlayerShotHitsEnemy =
-		[& score		 = m_context.playerScore,
-		 &explosions = m_resources.explosions](Entity & entity, Entity & testEntity)
+		[	&score				= m_context.playerScore,
+			&explosions		= m_resources.explosions,
+			&soundEffects	= m_resources.soundEffects](Entity& shot, Entity& testEntity)
 	{
-		auto pos = entity.position + entity.model->bound.Center;
+		auto pos = shot.position + shot.model->bound.Center;
 		explosions->emit(pos, Vector3());
+		soundEffects[AudioResource::EnemyExplode]->Play();
 
-		entity.isColliding		 = true;
+		shot.isColliding			 = true;
 		testEntity.isColliding = true;
-		entity.isAlive				 = false;
+		shot.isAlive					 = false;
 		testEntity.isAlive		 = false;
 		score += POINTS_PER_KILL;
 	};
 
 	auto onPlayerHit =
-		[& context	 = m_context,
-		 &explosions = m_resources.explosions](Entity & player, Entity & enemy)
+		[	&context			= m_context,
+			&explosions		= m_resources.explosions,
+			&soundEffects	= m_resources.soundEffects](Entity & player, Entity & enemy)
 	{
 		auto pos = player.position + player.model->bound.Center;
 		explosions->emit(pos, Vector3());
+		soundEffects[AudioResource::PlayerExplode]->Play();
+
+		pos = enemy.position + enemy.model->bound.Center;
+		explosions->emit(pos, Vector3());
+		soundEffects[AudioResource::EnemyExplode]->Play();
 
 		player.isColliding = true;
 		enemy.isColliding	= true;

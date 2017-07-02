@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppStates.h"
 #include "GameOverState.h"
+#include "AppContext.h"
 #include "AppResources.h"
 #include "GameLogic.h"
 
@@ -91,6 +92,7 @@ GameOverState::enter()
 {
 	// TRACE("GameOverState::enter()");
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
+	m_resources.soundEffects[AudioResource::GameOver]->Play();
 }
 
 //------------------------------------------------------------------------------

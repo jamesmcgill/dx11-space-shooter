@@ -79,6 +79,7 @@ GetReadyState::enter()
 {
 	// TRACE("GetReadyState::enter()");
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
+	m_resources.soundEffects[AudioResource::GameStart]->Play();
 }
 
 //------------------------------------------------------------------------------

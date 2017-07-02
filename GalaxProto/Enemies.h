@@ -1,10 +1,12 @@
 #pragma once
-#include <pch.h>
-#include "StepTimer.h"
-#include "Entity.h"
-#include "AppContext.h"
-#include <vector>
-#include <array>
+
+#include "Entity.h"	// NUM_ENEMIES
+
+namespace DX {
+	class StepTimer;
+};
+struct AppContext;
+struct AppResources;
 
 //------------------------------------------------------------------------------
 struct Waypoint
@@ -35,7 +37,7 @@ struct Level
 class Enemies
 {
 public:
-	Enemies(AppContext& context);
+	Enemies(AppContext& context, AppResources& resources);
 	void reset();
 	void update(const DX::StepTimer& timer);
 	void performPhysicsUpdate(const DX::StepTimer& timer);
@@ -56,6 +58,7 @@ private:
 	std::array<const EnemyWaveInstance*, NUM_ENEMIES> m_enemyToWaveMap;
 
 	AppContext& m_context;
+	AppResources& m_resources;
 	size_t m_currentLevel;
 	float m_nextEventTimeS;
 	size_t m_nextEventWaveIdx;

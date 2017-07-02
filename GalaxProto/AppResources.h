@@ -7,6 +7,15 @@
 #include "Explosions.h"
 #include "MenuManager.h"
 #include "ScoreBoard.h"
+//------------------------------------------------------------------------------
+enum class AudioResource {
+	GameStart,
+	GameOver,
+	PlayerShot,
+	EnemyShot,
+	PlayerExplode,
+	EnemyExplode,
+};
 
 //------------------------------------------------------------------------------
 struct AppResources
@@ -19,6 +28,7 @@ struct AppResources
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;
 	std::unique_ptr<DirectX::Keyboard> m_keyboard;
 	DirectX::Keyboard::KeyboardStateTracker kbTracker;
+	std::unique_ptr<DirectX::AudioEngine> audioEngine;
 
 	std::unique_ptr<DirectX::CommonStates> m_states;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_starTexture;
@@ -42,6 +52,9 @@ struct AppResources
 
 	std::map<char*, wchar_t*> modelLocations;
 	std::map<char*, ModelData> modelData;
+
+	std::map<AudioResource, std::wstring> soundEffectLocations;
+	std::map<AudioResource, std::unique_ptr<DirectX::SoundEffect>> soundEffects;
 
 	AppResources()
 			: m_keyboard(std::make_unique<DirectX::Keyboard>())

@@ -7,6 +7,10 @@ extern void ExitGame();
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
+
+//------------------------------------------------------------------------------
+static const std::wstring AUDIO_PATH = L"assets/audio/";
+
 //------------------------------------------------------------------------------
 Game::Game()
 		: m_gameLogic(m_appContext, m_appResources)
@@ -15,8 +19,26 @@ Game::Game()
 	m_appResources.m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_appResources.m_deviceResources->RegisterDeviceNotify(this);
 
+	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+	AUDIO_ENGINE_FLAGS eflags = AudioEngine_Default;
+#ifdef _DEBUG
+	eflags = eflags | AudioEngine_Debug;
+#endif
+	m_appResources.audioEngine = std::make_unique<AudioEngine>(eflags);
+
 	m_appResources.modelLocations["PLAYER"] = L"assets/player.sdkmesh";
 	m_appResources.modelLocations["SHOT"]		= L"assets/shot.sdkmesh";
+
+	auto setAudioPath = [&](AudioResource res, wchar_t* path) {
+		m_appResources.soundEffectLocations[res] = AUDIO_PATH + path;
+	};
+	setAudioPath(AudioResource::GameStart, L"begin.wav");
+	setAudioPath(AudioResource::GameOver, L"gameover.wav");
+	setAudioPath(AudioResource::PlayerShot, L"playershot.wav");
+	setAudioPath(AudioResource::EnemyShot, L"enemyshot.wav");
+	setAudioPath(AudioResource::PlayerExplode, L"playerexplode.wav");
+	setAudioPath(AudioResource::EnemyExplode, L"enemyexplode.wav");
 
 	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
@@ -69,6 +91,8 @@ Game::update()
 {
 	auto kbState = m_appResources.m_keyboard->GetState();
 	m_appResources.kbTracker.Update(kbState);
+
+	m_appResources.audioEngine->Update();
 
 	const auto& currentState = m_appStates.currentState();
 	currentState->handleInput(m_appResources.m_timer);
@@ -230,9 +254,8 @@ Game::createDeviceDependentResources()
 		m_appContext, m_appResources.m_explosionTexture.Get());
 
 	m_appResources.menuManager = std::make_unique<MenuManager>();
-	m_appResources.scoreBoard = std::make_unique<ScoreBoard>();
+	m_appResources.scoreBoard	= std::make_unique<ScoreBoard>();
 	m_appResources.scoreBoard->loadFromFile();
-
 
 	m_appResources.m_font
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
@@ -270,6 +293,15 @@ Game::createDeviceDependentResources()
 			BoundingSphere::CreateMerged(
 				data.bound, mesh->boundingSphere, data.bound);
 		}
+	}
+
+	// Load the audio effects
+	for (const auto& res : m_appResources.soundEffectLocations)
+	{
+		auto& effect = m_appResources.soundEffects[res.first];
+		auto& path	 = res.second;
+		effect			 = std::make_unique<SoundEffect>(
+			m_appResources.audioEngine.get(), path.c_str());
 	}
 
 	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
@@ -312,8 +344,7 @@ Game::createWindowSizeDependentResources()
 	m_appResources.explosions->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.menuManager->setWindowSize(
 		outputSize.right, outputSize.bottom);
-	m_appResources.scoreBoard->setWindowSize(
-		outputSize.right, outputSize.bottom);
+	m_appResources.scoreBoard->setWindowSize(outputSize.right, outputSize.bottom);
 
 	m_appResources.m_screenWidth	= outputSize.right;
 	m_appResources.m_screenHeight = outputSize.bottom;
