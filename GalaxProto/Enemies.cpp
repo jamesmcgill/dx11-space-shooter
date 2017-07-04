@@ -9,12 +9,75 @@ using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
 static const std::vector<Waypoint> path1 = {
+	{Vector3(-30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+	{Vector3(20.0f, 10.0f, 0.0f), Vector3(20.0f, 10.0f, 0.0f)},
+	{Vector3(20.0f, 18.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
+
+	{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-20.0f, 18.0f, 0.0f)},
+	{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
+	{Vector3(30.0f, -10.0f, 0.0f), Vector3(30.0f, -10.0f, 0.0f)},
+};
+
+static const std::vector<Waypoint> path1Reverse = {
+	{Vector3(30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+	{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-20.0f, 10.0f, 0.0f)},
+	{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
+
+	{Vector3(20.0f, 18.0f, 0.0f), Vector3(20.0f, 18.0f, 0.0f)},
+	{Vector3(20.0f, 10.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
+	{Vector3(-30.0f, -10.0f, 0.0f), Vector3(-30.0f, -10.0f, 0.0f)},
+};
+
+// Anti-clockwise circle
+static const std::vector<Waypoint>
+getPath2a()
+{
+	Vector3 START	= Vector3(5.0f, 20.0f, 0.0f);
+	Vector3 END		 = Vector3(-30.0f, 0.0f, 0.0f);
+	float radius	 = 5.0f;
+	Vector3 CENTER = Vector3(START.x + radius, END.y - radius, 0.0f);
+
+	return {
+		{START, Vector3()},
+		{CENTER + Vector3(-radius, 0.f, 0.f), CENTER + Vector3(-radius, 0.f, 0.f)},
+		{CENTER + Vector3(0.f, -radius, 0.0f),
+		 CENTER + Vector3(-radius, -radius, 0.f)},
+		{CENTER + Vector3(radius, 0.f, 0.f),
+		 CENTER + Vector3(radius, -radius, 0.f)},
+		{CENTER + Vector3(0.f, radius, 0.f), CENTER + Vector3(radius, radius, 0.f)},
+		{END, END},
+	};
+}
+
+// Clock-wise version of Path2A, shifted up
+static const std::vector<Waypoint>
+getPath2b()
+{
+	Vector3 START	= Vector3(-5.0f, 20.0f, 0.0f);
+	Vector3 END		 = Vector3(30.0f, 5.0f, 0.0f);
+	float radius	 = 5.0f;
+	Vector3 CENTER = Vector3(START.x - radius, END.y - radius, 0.0f);
+
+	return {
+		{START, Vector3()},
+		{CENTER + Vector3(radius, 0.f, 0.f), CENTER + Vector3(radius, 0.f, 0.f)},
+		{CENTER + Vector3(0.f, -radius, 0.0f),
+		 CENTER + Vector3(radius, -radius, 0.f)},
+		{CENTER + Vector3(-radius, 0.f, 0.f),
+		 CENTER + Vector3(-radius, -radius, 0.f)},
+		{CENTER + Vector3(0.f, radius, 0.f),
+		 CENTER + Vector3(-radius, radius, 0.f)},
+		{END, END},
+	};
+}
+
+static const std::vector<Waypoint> path91 = {
 	{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
 	{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)},
 	{Vector3(-10.0f, -10.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)},
 };
 
-static const std::vector<Waypoint> path2 = {
+static const std::vector<Waypoint> path92 = {
 	{Vector3(-10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
 	{Vector3(10.0f, 8.0f, 0.0f), Vector3(10.0f, 10.0f, 0.0f)},
 	{Vector3(-10.0f, 6.0f, 0.0f), Vector3(-10.0f, 8.0f, 0.0f)},
@@ -22,22 +85,22 @@ static const std::vector<Waypoint> path2 = {
 	{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
 };
 
-static const EnemyWave wave1 = {path1, 3, 0};
-static const EnemyWave wave2 = {path2, 3, 0};
-static const EnemyWave wave3 = {path1, 5, 0};
-static const EnemyWave wave4 = {path2, 5, 0};
+static const EnemyWaveSection section1 = {getPath2a(), 3, 0};
+static const EnemyWaveSection section2 = {getPath2b(), 3, 0};
+static const EnemyWaveSection section3 = {path1, 5, 0};
+static const EnemyWaveSection section4 = {path92, 5, 0};
 
 static const Level level1 = {{
-	EnemyWaveInstance{wave1, 3.0f},
-	EnemyWaveInstance{wave2, 5.0f},
-	EnemyWaveInstance{wave3, 10.0f},
-	EnemyWaveInstance{wave4, 14.0f},
-	EnemyWaveInstance{wave1, 20.0f},
-	EnemyWaveInstance{wave2, 25.0f},
-	EnemyWaveInstance{wave3, 30.0f},
-	EnemyWaveInstance{wave4, 35.0f},
-	EnemyWaveInstance{wave1, 40.0f},
-	EnemyWaveInstance{wave2, 45.0f},
+	EnemyWave{{section1, section2}, 3.0f},
+	// EnemyWave{{section2}, 5.0f},
+	// EnemyWave{{section3}, 10.0f},
+	// EnemyWave{{section4}, 14.0f},
+	// EnemyWave{{section1}, 20.0f},
+	// EnemyWave{{section2}, 25.0f},
+	// EnemyWave{{section3}, 30.0f},
+	// EnemyWave{{section4}, 35.0f},
+	// EnemyWave{{section1}, 40.0f},
+	// EnemyWave{{section2}, 45.0f},
 }};
 
 static const std::vector<Level> s_levels = {{level1}};
@@ -67,7 +130,7 @@ Enemies::reset()
 
 	assert(!s_levels[m_currentLevel].waves.empty());
 	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;
-	for (auto& e : m_enemyToWaveMap)
+	for (auto& e : m_entityIdxToWaypoints)
 	{
 		e = nullptr;
 	}
@@ -84,23 +147,27 @@ Enemies::update(const DX::StepTimer& timer)
 	auto& level = s_levels[m_currentLevel];
 	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS) {
 		// Spawn wave
-		auto& numShips = level.waves[m_nextEventWaveIdx].wave.numShips;
-		float delayS	 = 0.0f;
-		for (int i = 0; i < numShips; ++i)
+		for (auto& sec : level.waves[m_nextEventWaveIdx].sections)
 		{
-			// Spawn enemy
-			auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
-			assert(m_enemyToWaveMap.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
-			m_enemyToWaveMap[m_context.nextEnemyIdx - ENEMIES_IDX]
-				= &level.waves[m_nextEventWaveIdx];
-			newEnemy.isAlive		= true;
-			newEnemy.birthTimeS = totalTimeS + delayS;
-			m_context.nextEnemyIdx++;
-			if (m_context.nextEnemyIdx >= ENEMIES_END) {
-				m_context.nextEnemyIdx = ENEMIES_IDX;
-			}
-			delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
-		}
+			auto& numShips = sec.numShips;
+			float delayS	 = 0.0f;
+			for (int ship = 0; ship < numShips; ++ship)
+			{
+				// Spawn enemy
+				auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
+				assert(
+					m_entityIdxToWaypoints.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
+				m_entityIdxToWaypoints[m_context.nextEnemyIdx - ENEMIES_IDX]
+					= &sec.waypoints;
+				newEnemy.isAlive		= true;
+				newEnemy.birthTimeS = totalTimeS + delayS;
+				m_context.nextEnemyIdx++;
+				if (m_context.nextEnemyIdx >= ENEMIES_END) {
+					m_context.nextEnemyIdx = ENEMIES_IDX;
+				}
+				delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
+			}		 // ship
+		}			 // section
 
 		m_nextEventWaveIdx++;
 		if (m_nextEventWaveIdx < level.waves.size()) {
@@ -173,20 +240,20 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		if (!e.isAlive) {
 			continue;
 		}
-		assert(m_enemyToWaveMap.size() > i - ENEMIES_IDX);
-		assert(m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr);
-		const EnemyWaveInstance& instance = *m_enemyToWaveMap[i - ENEMIES_IDX];
+		assert(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
+		assert(m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr);
+		auto& waypoints = *m_entityIdxToWaypoints[i - ENEMIES_IDX];
 
 		const float aliveS = (totalTimeS - e.birthTimeS);
 		if (aliveS < 0.0f) {
-			e.position = instance.wave.waypoints[0].wayPoint;
+			e.position = waypoints[0].wayPoint;
 			continue;
 		}
 
 		// Enemy finished it's route
 		const size_t currentSegment
 			= static_cast<size_t>(floor(aliveS / SEGMENT_DURATION_S));
-		if (currentSegment >= instance.wave.waypoints.size() - 1) {
+		if (currentSegment >= waypoints.size() - 1) {
 			e.isAlive = false;
 			continue;
 		}
@@ -194,9 +261,9 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		const float t = fmod(aliveS, SEGMENT_DURATION_S) / SEGMENT_DURATION_S;
 		e.position		= bezier(
 			 t,
-			 instance.wave.waypoints[currentSegment].wayPoint,
-			 instance.wave.waypoints[currentSegment + 1].wayPoint,
-			 instance.wave.waypoints[currentSegment + 1].controlPoint);
+			 waypoints[currentSegment].wayPoint,
+			 waypoints[currentSegment + 1].wayPoint,
+			 waypoints[currentSegment + 1].controlPoint);
 	}
 }
 
@@ -242,12 +309,12 @@ Enemies::emitPlayerShot()
 void
 Enemies::debugRender(DX::DebugBatchType* batch)
 {
-	std::set<const EnemyWaveInstance*> wavesToRender;
+	std::set<const std::vector<Waypoint>*> waypointsToRender;
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		assert(m_enemyToWaveMap.size() > i - ENEMIES_IDX);
-		if (m_enemyToWaveMap[i - ENEMIES_IDX] != nullptr) {
-			wavesToRender.insert(m_enemyToWaveMap[i - ENEMIES_IDX]);
+		assert(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
+		if (m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr) {
+			waypointsToRender.insert(m_entityIdxToWaypoints[i - ENEMIES_IDX]);
 		}
 	}
 
@@ -255,9 +322,9 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
 	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
 
-	for (const auto& w : wavesToRender)
+	for (auto w : waypointsToRender)
 	{
-		const auto& waypoints = w->wave.waypoints;
+		const auto& waypoints = *w;
 		auto prevPoint				= waypoints[0].wayPoint;
 		for (size_t i = 1; i < waypoints.size(); ++i)
 		{

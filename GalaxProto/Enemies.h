@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Entity.h"	// NUM_ENEMIES
+#include "Entity.h"		 // NUM_ENEMIES
 
-namespace DX {
-	class StepTimer;
+namespace DX
+{
+class StepTimer;
 };
 struct AppContext;
 struct AppResources;
@@ -15,22 +16,22 @@ struct Waypoint
 	DirectX::SimpleMath::Vector3 controlPoint = {};
 };
 
-struct EnemyWave
+struct EnemyWaveSection
 {
 	const std::vector<Waypoint> waypoints;
 	const int numShips;
 	const int shipType;
 };
 
-struct EnemyWaveInstance
+struct EnemyWave
 {
-	const EnemyWave wave;
+	const std::vector<EnemyWaveSection> sections;
 	const float instanceTimeS;
 };
 
 struct Level
 {
-	const std::vector<EnemyWaveInstance> waves;
+	const std::vector<EnemyWave> waves;
 };
 
 //------------------------------------------------------------------------------
@@ -55,7 +56,9 @@ public:
 	void debugRender(DX::DebugBatchType* batch);
 
 private:
-	std::array<const EnemyWaveInstance*, NUM_ENEMIES> m_enemyToWaveMap;
+	using EntityIdxToWaypointsMap
+		= std::array<const std::vector<Waypoint>*, NUM_ENEMIES>;
+	EntityIdxToWaypointsMap m_entityIdxToWaypoints;
 
 	AppContext& m_context;
 	AppResources& m_resources;
