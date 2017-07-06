@@ -12,12 +12,12 @@ using namespace DirectX::SimpleMath;
 //------------------------------------------------------------------------------
 constexpr float PLAYER_SPEED						 = 200.0f;
 constexpr float PLAYER_FRICTION					 = 60.0f;
-constexpr float PLAYER_MAX_VELOCITY			 = 20.0f;
+constexpr float PLAYER_MAX_VELOCITY			 = 40.0f;
 constexpr float PLAYER_MIN_VELOCITY			 = 0.3f;
-constexpr float CAMERA_DIST							 = 40.5f;
+constexpr float CAMERA_DIST							 = 110.0f;
 constexpr float PLAYER_DEATH_TIME_S			 = 1.0f;
 constexpr float PLAYER_REVIVE_TIME_S		 = 2.0f;
-static const Vector3 PLAYER_MAX_POSITION = {16.0f, 9.0f, 0.0f};
+static const Vector3 PLAYER_MAX_POSITION = {45.0f, 27.0f, 0.0f};
 static const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
 static const Vector3 PLAYER_START_POS(0.0f, -PLAYER_MAX_POSITION.y, 0.0f);
 

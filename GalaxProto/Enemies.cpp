@@ -106,7 +106,7 @@ static const Level level1 = {{
 static const std::vector<Level> s_levels = {{level1}};
 
 //------------------------------------------------------------------------------
-constexpr float SHOT_SPEED									= 20.0f;
+constexpr float SHOT_SPEED									= 40.0f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 //------------------------------------------------------------------------------
