@@ -348,7 +348,7 @@ Game::createWindowSizeDependentResources()
 
 	m_appContext.view = Matrix::Identity;
 	m_appContext.proj = Matrix::CreatePerspectiveFieldOfView(
-		fovAngleY, aspectRatio, 0.01f, 100.f);
+		fovAngleY, aspectRatio, 0.01f, 300.f);
 
 	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
 	m_appResources.explosions->setWindowSize(outputSize.right, outputSize.bottom);
@@ -365,6 +365,8 @@ Game::createWindowSizeDependentResources()
 
 	m_appContext.hudLivesPosition.x = 0.0f;
 	m_appContext.hudLivesPosition.y = static_cast<float>(outputSize.bottom);
+
+	m_gameLogic.resetCamera();
 }
 
 //------------------------------------------------------------------------------
