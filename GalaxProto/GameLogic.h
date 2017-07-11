@@ -36,7 +36,7 @@ public:
 		Func onCollision);
 
 	void renderPlayerEntity(Entity & entity);
-	void renderEntity(Entity& entity);
+	void renderEntity(Entity& entity, float orientation = 0.0f);
 	void renderEntityBound(Entity& entity);
 	void drawHUD();
 

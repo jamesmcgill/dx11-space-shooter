@@ -338,7 +338,7 @@ GameLogic::renderPlayerEntity(Entity& entity)
 	switch (m_context.playerState)
 	{
 		case PlayerState::Normal:
-			renderEntity(entity);
+			renderEntity(entity, XM_PI);
 			break;
 
 		case PlayerState::Dying:
@@ -352,7 +352,7 @@ GameLogic::renderPlayerEntity(Entity& entity)
 					% 2
 				!= 0)
 			{
-				renderEntity(entity);
+				renderEntity(entity, XM_PI);
 			}
 			break;
 	}
@@ -360,7 +360,7 @@ GameLogic::renderPlayerEntity(Entity& entity)
 
 //------------------------------------------------------------------------------
 void
-GameLogic::renderEntity(Entity& entity)
+GameLogic::renderEntity(Entity& entity, float orientation)
 {
 	// TODO(James): Use <notnullable> to enforce assertion
 	assert(entity.model);
@@ -368,7 +368,7 @@ GameLogic::renderEntity(Entity& entity)
 	const auto& boundCenter = entity.model->bound.Center;
 
 	Matrix world = Matrix::CreateTranslation(boundCenter).Invert()
-								 * Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, XM_PI)
+								 * Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, orientation)
 								 * Matrix::CreateTranslation(entity.position + boundCenter);
 
 	modelData->model->Draw(
