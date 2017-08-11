@@ -22,7 +22,7 @@ static const size_t NUM_ENEMY_SHOTS = 10;
 static const size_t ENEMY_SHOTS_IDX = PLAYER_SHOTS_END;
 static const size_t ENEMY_SHOTS_END = ENEMY_SHOTS_IDX + NUM_ENEMY_SHOTS;
 
-static const size_t NUM_ENEMIES = 10;
+static const size_t NUM_ENEMIES = 60;
 static const size_t ENEMIES_IDX = ENEMY_SHOTS_END;
 static const size_t ENEMIES_END = ENEMIES_IDX + NUM_ENEMIES;
 

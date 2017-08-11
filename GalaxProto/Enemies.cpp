@@ -8,6 +8,52 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
+static const std::vector<Waypoint>
+getDebugPath(float xPos)
+{
+	const float yStart = 20.0f;
+	const float yEnd	 = -15.0f;
+	const int ySteps	 = 10;
+	const float yStep	= (yEnd - yStart) / ySteps;
+	float xOscillate	 = -2.0f;
+
+	std::vector<Waypoint> ret;
+	ret.reserve(ySteps);
+	float yPos = yStart;
+	for (int i = 0; i < ySteps; ++i)
+	{
+		ret.emplace_back(Waypoint{{xPos, yPos, 0.0f},
+															{xPos + xOscillate, yPos - (yStep / 2), 0.0f}});
+		yPos += yStep;
+		xOscillate = -xOscillate;
+	}
+
+	return ret;
+}
+
+static const Level
+getDebugLevel()
+{
+	const int baseEnemyIdx = static_cast<int>(ModelResource::Enemy1);
+	const int numEnemyTypes
+		= (static_cast<int>(ModelResource::Enemy9) - baseEnemyIdx) + 1;
+
+	const float xStart = -25.0f;
+	const float xRange = xStart * -2;
+	const float xStep = (numEnemyTypes > 1) ? xRange / (numEnemyTypes - 1) : 0.0f;
+
+	std::vector<EnemyWaveSection> sections;
+	for (int i = 0; i < numEnemyTypes; ++i)
+	{
+		ModelResource res = static_cast<ModelResource>(baseEnemyIdx + i);
+		const float xPos	= xStart + (xStep * i);
+		sections.emplace_back(EnemyWaveSection{getDebugPath(xPos), 1, res});
+	}
+
+	return Level{{EnemyWave{sections, 3.0f}}};
+}
+
+//------------------------------------------------------------------------------
 static const std::vector<Waypoint> path1 = {
 	{Vector3(-30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
 	{Vector3(20.0f, 10.0f, 0.0f), Vector3(20.0f, 10.0f, 0.0f)},
@@ -85,16 +131,18 @@ static const std::vector<Waypoint> path92 = {
 	{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
 };
 
-static const EnemyWaveSection section1 = {getPath2a(), 3, 0};
-static const EnemyWaveSection section2 = {getPath2b(), 3, 0};
-static const EnemyWaveSection section3 = {path1, 5, 0};
-static const EnemyWaveSection section4 = {path92, 5, 0};
+static const EnemyWaveSection section1
+	= {getPath2a(), 3, ModelResource::Enemy9};
+static const EnemyWaveSection section2
+	= {getPath2b(), 3, ModelResource::Enemy2};
+static const EnemyWaveSection section3 = {path1, 5, ModelResource::Enemy3};
+static const EnemyWaveSection section4 = {path92, 5, ModelResource::Player};
 
 static const Level level1 = {{
 	EnemyWave{{section1, section2}, 3.0f},
-	// EnemyWave{{section2}, 5.0f},
-	// EnemyWave{{section3}, 10.0f},
-	// EnemyWave{{section4}, 14.0f},
+	EnemyWave{{section2}, 5.0f},
+	EnemyWave{{section3}, 10.0f},
+	EnemyWave{{section4}, 14.0f},
 	// EnemyWave{{section1}, 20.0f},
 	// EnemyWave{{section2}, 25.0f},
 	// EnemyWave{{section3}, 30.0f},
@@ -103,7 +151,8 @@ static const Level level1 = {{
 	// EnemyWave{{section2}, 45.0f},
 }};
 
-static const std::vector<Level> s_levels = {{level1}};
+static std::vector<Level> s_debugLevels = { { getDebugLevel() } };
+static std::vector<Level> s_levels = {{ level1 }};
 
 //------------------------------------------------------------------------------
 constexpr float SHOT_SPEED									= 40.0f;
@@ -134,6 +183,12 @@ Enemies::reset()
 	{
 		e = nullptr;
 	}
+
+	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
+	{
+		m_context.entities[i].isAlive = false;
+		m_context.entities[i].isColliding = false;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -161,6 +216,7 @@ Enemies::update(const DX::StepTimer& timer)
 					= &sec.waypoints;
 				newEnemy.isAlive		= true;
 				newEnemy.birthTimeS = totalTimeS + delayS;
+				newEnemy.model			= &m_resources.modelData[sec.model];
 				m_context.nextEnemyIdx++;
 				if (m_context.nextEnemyIdx >= ENEMIES_END) {
 					m_context.nextEnemyIdx = ENEMIES_IDX;
@@ -341,5 +397,11 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 			prevPoint = point;
 		}
 	}
+}
+
+//------------------------------------------------------------------------------
+void Enemies::debugLevel()
+{
+	s_levels.swap(s_debugLevels);
 }
 //------------------------------------------------------------------------------

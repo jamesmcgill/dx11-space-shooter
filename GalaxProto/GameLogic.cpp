@@ -14,7 +14,7 @@ constexpr float PLAYER_SPEED						 = 200.0f;
 constexpr float PLAYER_FRICTION					 = 60.0f;
 constexpr float PLAYER_MAX_VELOCITY			 = 40.0f;
 constexpr float PLAYER_MIN_VELOCITY			 = 0.3f;
-constexpr float CAMERA_DIST							 = 110.0f;
+constexpr float CAMERA_DIST							 = 80.0f;
 constexpr float PLAYER_DEATH_TIME_S			 = 1.0f;
 constexpr float PLAYER_REVIVE_TIME_S		 = 2.0f;
 static const Vector3 PLAYER_MAX_POSITION = {45.0f, 27.0f, 0.0f};
@@ -128,24 +128,27 @@ GameLogic::render()
 	}
 
 	// Debug Drawing
-	dc->OMSetBlendState(m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
-	dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
-	dc->RSSetState(m_resources.m_states->CullNone());
-
-	m_resources.m_debugEffect->SetView(m_context.view);
-	m_resources.m_debugEffect->SetProjection(m_context.proj);
-	m_resources.m_debugEffect->Apply(dc);
-	dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
-
-	m_resources.m_batch->Begin();
-	for (auto& entity : m_context.entities)
+	if (m_context.debugDraw)
 	{
-		if (entity.isAlive) {
-			renderEntityBound(entity);
+		dc->OMSetBlendState(m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
+		dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
+		dc->RSSetState(m_resources.m_states->CullNone());
+
+		m_resources.m_debugEffect->SetView(m_context.view);
+		m_resources.m_debugEffect->SetProjection(m_context.proj);
+		m_resources.m_debugEffect->Apply(dc);
+		dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
+
+		m_resources.m_batch->Begin();
+		for (auto& entity : m_context.entities)
+		{
+			if (entity.isAlive) {
+				renderEntityBound(entity);
+			}
 		}
+		m_enemies.debugRender(m_resources.m_batch.get());
+		m_resources.m_batch->End();
 	}
-	m_enemies.debugRender(m_resources.m_batch.get());
-	m_resources.m_batch->End();
 
 	// Explosions & HUD
 	CommonStates states(m_resources.m_deviceResources->GetD3DDevice());
@@ -368,7 +371,7 @@ GameLogic::renderEntity(Entity& entity, float orientation)
 	const auto& boundCenter = entity.model->bound.Center;
 
 	Matrix world = Matrix::CreateTranslation(boundCenter).Invert()
-								 * Matrix::CreateFromYawPitchRoll(XM_PI, -XM_2PI, orientation)
+								 * Matrix::CreateFromYawPitchRoll(0.0f, 0.0f, orientation)
 								 * Matrix::CreateTranslation(entity.position + boundCenter);
 
 	modelData->model->Draw(

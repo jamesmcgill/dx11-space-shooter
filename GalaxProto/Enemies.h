@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entity.h"		 // NUM_ENEMIES
+#include "AppResources.h" // ModelResource
 
 namespace DX
 {
@@ -20,7 +21,7 @@ struct EnemyWaveSection
 {
 	const std::vector<Waypoint> waypoints;
 	const int numShips;
-	const int shipType;
+	const ModelResource model;
 };
 
 struct EnemyWave
@@ -54,6 +55,7 @@ public:
 	void emitPlayerShot();
 
 	void debugRender(DX::DebugBatchType* batch);
+	void debugLevel();
 
 private:
 	using EntityIdxToWaypointsMap

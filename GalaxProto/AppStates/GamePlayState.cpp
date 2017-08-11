@@ -31,10 +31,19 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_states.changeState(&m_states.paused);
 	}
 
+	// Debug options
 	if (m_resources.kbTracker.IsKeyPressed(Keyboard::E)) {
 		auto pos = m_context.entities[PLAYERS_IDX].position
 							 + m_context.entities[PLAYERS_IDX].model->bound.Center;
 		m_resources.explosions->emit(pos, Vector3());
+	}
+
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F2)) {
+		m_gameLogic.m_enemies.debugLevel();
+		m_gameLogic.reset();
+	}
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F3)) {
+		m_context.debugDraw = !m_context.debugDraw;
 	}
 
 	// Player Movement

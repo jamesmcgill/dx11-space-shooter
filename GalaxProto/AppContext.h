@@ -34,6 +34,8 @@ struct AppContext
 	PlayerState playerState = PlayerState::Normal;
 	float playerDeathTimerS = 0.0f;
 	float playerReviveTimerS = 0.0f;
+
+	bool debugDraw = false;
 };
 
 //------------------------------------------------------------------------------

@@ -34,6 +34,16 @@ Game::Game()
 	};
 	setModelPath(ModelResource::Player, L"player.sdkmesh");
 	setModelPath(ModelResource::Shot, L"shot.sdkmesh");
+	setModelPath(ModelResource::Enemy1, L"ship1.sdkmesh");
+	setModelPath(ModelResource::Enemy2, L"ship2.sdkmesh");
+	setModelPath(ModelResource::Enemy3, L"ship3.sdkmesh");
+	setModelPath(ModelResource::Enemy4, L"ship4.sdkmesh");
+	setModelPath(ModelResource::Enemy5, L"ship5.sdkmesh");
+	setModelPath(ModelResource::Enemy6, L"ship6.sdkmesh");
+	setModelPath(ModelResource::Enemy7, L"ship7.sdkmesh");
+	setModelPath(ModelResource::Enemy8, L"ship8.sdkmesh");
+	setModelPath(ModelResource::Enemy9, L"ship9.sdkmesh");
+
 
 	auto setAudioPath = [&](AudioResource res, wchar_t* path) {
 		m_appResources.soundEffectLocations[res] = AUDIO_PATH + path;
@@ -329,7 +339,7 @@ Game::createDeviceDependentResources()
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		m_appContext.entities[i].model
-			= &m_appResources.modelData[ModelResource::Player];
+			= &m_appResources.modelData[ModelResource::Enemy1];
 	}
 }
 
