@@ -370,11 +370,8 @@ Game::createWindowSizeDependentResources()
 	m_appResources.m_screenHeight = outputSize.bottom;
 
 	// Position HUD
-	m_appContext.hudScorePosition.x = outputSize.right / 2.f;
-	m_appContext.hudScorePosition.y = static_cast<float>(outputSize.top);
-
-	m_appContext.hudLivesPosition.x = 0.0f;
-	m_appContext.hudLivesPosition.y = static_cast<float>(outputSize.bottom);
+	m_gameLogic.updateUILives();
+	m_gameLogic.updateUIScore();
 
 	m_gameLogic.resetCamera();
 }

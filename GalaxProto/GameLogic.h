@@ -38,11 +38,18 @@ public:
 	void renderPlayerEntity(Entity & entity);
 	void renderEntity(Entity& entity, float orientation = 0.0f);
 	void renderEntityBound(Entity& entity);
+
+	void updateUIScore();
+	void updateUILives();
+
 	void drawHUD();
+	void updateUIDebugVariables();
+	void drawDebugVariables();
 
 private:
 	AppContext& m_context;
 	AppResources& m_resources;
+	bool m_hudDirty = true;
 
 public:
 	Enemies m_enemies;

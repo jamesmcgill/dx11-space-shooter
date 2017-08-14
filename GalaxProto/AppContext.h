@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 #include "Entity.h"
 
 //------------------------------------------------------------------------------
@@ -10,6 +11,28 @@ enum class PlayerState
 };
 
 constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
+
+//------------------------------------------------------------------------------
+struct UIText {
+	DirectX::SimpleMath::Vector2 position;
+	DirectX::SimpleMath::Vector2 dimensions;
+	DirectX::SimpleMath::Vector2 origin;
+	std::wstring text;
+
+	void draw(
+		DirectX::XMVECTOR color,
+		DirectX::SpriteFont& font,
+		DirectX::SpriteBatch& spriteBatch)
+	{
+		font.DrawString(
+			&spriteBatch,
+			text.c_str(),
+			position,
+			color,
+			0.f,
+			origin);
+	}
+};
 
 //------------------------------------------------------------------------------
 struct AppContext
@@ -26,16 +49,27 @@ struct AppContext
 	Entity entities[NUM_ENTITIES];
 
 	DirectX::SimpleMath::Vector3 playerAccel = {};
-
-	DirectX::SimpleMath::Vector2 hudScorePosition = {};
-	DirectX::SimpleMath::Vector2 hudLivesPosition = {};
+	
 	int playerScore																= 0;
 	int playerLives																= INITIAL_NUM_PLAYER_LIVES;
 	PlayerState playerState = PlayerState::Normal;
 	float playerDeathTimerS = 0.0f;
 	float playerReviveTimerS = 0.0f;
 
+	UIText uiScore;
+	UIText uiLives;
+
 	bool debugDraw = false;
+	float playerSpeed = 200.0f;
+	float playerFriction = 60.0f;
+	float playerMaxVelocity = 40.0f;
+	float playerMinVelocity = 0.3f;
+	float cameraDistance = 80.0f;
+	UIText uiPlayerSpeed;
+	UIText uiPlayerFriction;
+	UIText uiPlayerMaxVelocity;
+	UIText uiPlayerMinVelocity;
+	UIText uiCameraDist;
 };
 
 //------------------------------------------------------------------------------

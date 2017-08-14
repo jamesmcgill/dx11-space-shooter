@@ -10,11 +10,6 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-constexpr float PLAYER_SPEED						 = 200.0f;
-constexpr float PLAYER_FRICTION					 = 60.0f;
-constexpr float PLAYER_MAX_VELOCITY			 = 40.0f;
-constexpr float PLAYER_MIN_VELOCITY			 = 0.3f;
-constexpr float CAMERA_DIST							 = 80.0f;
 constexpr float PLAYER_DEATH_TIME_S			 = 1.0f;
 constexpr float PLAYER_REVIVE_TIME_S		 = 2.0f;
 static const Vector3 PLAYER_MAX_POSITION = {45.0f, 27.0f, 0.0f};
@@ -52,6 +47,7 @@ GameLogic::reset()
 	m_context.playerScore = 0;
 	m_context.playerLives = INITIAL_NUM_PLAYER_LIVES;
 	m_context.playerState = PlayerState::Normal;
+	m_hudDirty						= true;
 
 	resetCamera();
 }
@@ -60,11 +56,12 @@ GameLogic::reset()
 void
 GameLogic::resetCamera()
 {
-	const auto& atP							 = Vector3{0.0f, 0.0f, 0.0f};
-	static const XMVECTORF32 eye = {atP.x, atP.y, atP.z + CAMERA_DIST, 0.0f};
-	static const XMVECTORF32 at	= {atP.x, atP.y, atP.z, 0.0f};
-	static const XMVECTORF32 up	= {0.0f, 1.0f, 0.0f, 0.0f};
-	m_context.view							 = XMMatrixLookAtRH(eye, at, up);
+	const auto& atP = Vector3{0.0f, 0.0f, 0.0f};
+	static const XMVECTORF32 eye
+		= {atP.x, atP.y, atP.z + m_context.cameraDistance, 0.0f};
+	static const XMVECTORF32 at = {atP.x, atP.y, atP.z, 0.0f};
+	static const XMVECTORF32 up = {0.0f, 1.0f, 0.0f, 0.0f};
+	m_context.view							= XMMatrixLookAtRH(eye, at, up);
 }
 
 //------------------------------------------------------------------------------
@@ -89,6 +86,7 @@ GameLogic::update(const DX::StepTimer& timer)
 				if (--m_context.playerLives > -1) {
 					m_context.playerState				 = PlayerState::Reviving;
 					m_context.playerReviveTimerS = PLAYER_REVIVE_TIME_S;
+					m_hudDirty									 = true;
 				}
 				else
 				{
@@ -127,9 +125,18 @@ GameLogic::render()
 		++idx;
 	}
 
+	// Explosions & HUD
+	CommonStates states(m_resources.m_deviceResources->GetD3DDevice());
+	auto& spriteBatch = m_resources.m_spriteBatch;
+	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
+
+	m_resources.explosions->render(*spriteBatch);
+	drawHUD();
+
+	spriteBatch->End();
+
 	// Debug Drawing
-	if (m_context.debugDraw)
-	{
+	if (m_context.debugDraw) {
 		dc->OMSetBlendState(m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
 		dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
 		dc->RSSetState(m_resources.m_states->CullNone());
@@ -148,17 +155,11 @@ GameLogic::render()
 		}
 		m_enemies.debugRender(m_resources.m_batch.get());
 		m_resources.m_batch->End();
+
+		spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
+		drawDebugVariables();
+		spriteBatch->End();
 	}
-
-	// Explosions & HUD
-	CommonStates states(m_resources.m_deviceResources->GetD3DDevice());
-	auto& spriteBatch = m_resources.m_spriteBatch;
-	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
-
-	m_resources.explosions->render(*spriteBatch);
-	drawHUD();
-
-	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -169,11 +170,11 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 
 	// Player input forces
 	auto& player = m_context.entities[PLAYERS_IDX];
-	m_context.playerAccel *= PLAYER_SPEED;
+	m_context.playerAccel *= m_context.playerSpeed;
 
 	Vector3 frictionNormal = -player.velocity;
 	frictionNormal.Normalize();
-	m_context.playerAccel += PLAYER_FRICTION * frictionNormal;
+	m_context.playerAccel += m_context.playerFriction * frictionNormal;
 
 	// Ballistic entities
 	for (size_t i = BALLISTIC_IDX; i < BALLISTIC_END; ++i)
@@ -216,11 +217,11 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 
 			// Clamp velocity
 			float velocityMagnitude = e.velocity.Length();
-			if (velocityMagnitude > PLAYER_MAX_VELOCITY) {
+			if (velocityMagnitude > m_context.playerMaxVelocity) {
 				e.velocity.Normalize();
-				e.velocity *= PLAYER_MAX_VELOCITY;
+				e.velocity *= m_context.playerMaxVelocity;
 			}
-			else if (velocityMagnitude < PLAYER_MIN_VELOCITY)
+			else if (velocityMagnitude < m_context.playerMinVelocity)
 			{
 				e.velocity = Vector3();
 			}
@@ -242,7 +243,9 @@ GameLogic::performCollisionTests()
 	auto onPlayerShotHitsEnemy =
 		[	&score				= m_context.playerScore,
 			&explosions		= m_resources.explosions,
-			&soundEffects	= m_resources.soundEffects](Entity& shot, Entity& testEntity)
+			&soundEffects	= m_resources.soundEffects,
+		  &m_hudDirty		= this->m_hudDirty
+		](Entity& shot, Entity& testEntity)
 	{
 		auto pos = shot.position + shot.model->bound.Center;
 		explosions->emit(pos, Vector3());
@@ -253,12 +256,14 @@ GameLogic::performCollisionTests()
 		shot.isAlive					 = false;
 		testEntity.isAlive		 = false;
 		score += POINTS_PER_KILL;
+		m_hudDirty = true;
 	};
 
 	auto onPlayerHit =
 		[	&context			= m_context,
 			&explosions		= m_resources.explosions,
-			&soundEffects	= m_resources.soundEffects](Entity & player, Entity & enemy)
+			&soundEffects	= m_resources.soundEffects
+		](Entity & player, Entity & enemy)
 	{
 		auto pos = player.position + player.model->bound.Center;
 		explosions->emit(pos, Vector3());
@@ -438,37 +443,106 @@ GameLogic::renderEntityBound(Entity& entity)
 
 //------------------------------------------------------------------------------
 void
+GameLogic::updateUIScore()
+{
+	auto& score					= m_context.uiScore;
+	score.text					= fmt::format(L"Score: {}", m_context.playerScore);
+	XMVECTOR dimensions = m_resources.m_font->MeasureString(score.text.c_str());
+	score.origin				= Vector2((XMVectorGetX(dimensions) / 2.f), 0.0f);
+	score.dimensions		= dimensions;
+	score.position.x		= m_resources.m_screenWidth / 2.f;
+	score.position.y		= 0.0f;
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::updateUILives()
+{
+	auto& lives					= m_context.uiLives;
+	lives.text					= fmt::format(L"Lives: {}", m_context.playerLives);
+	XMVECTOR dimensions = m_resources.m_font->MeasureString(lives.text.c_str());
+	lives.origin				= Vector2(0.0f, XMVectorGetY(dimensions));
+	lives.dimensions		= dimensions;
+	lives.position.x		= 0.0f;
+	lives.position.y		= static_cast<float>(m_resources.m_screenHeight);
+}
+
+//------------------------------------------------------------------------------
+void
 GameLogic::drawHUD()
 {
-	{
-		std::wstring scoreString = fmt::format(L"Score: {}", m_context.playerScore);
-		XMVECTOR dimensions
-			= m_resources.m_font->MeasureString(scoreString.c_str());
-		Vector2 fontOrigin = {(XMVectorGetX(dimensions) / 2.f), 0.0f};
-
-		m_resources.m_font->DrawString(
-			m_resources.m_spriteBatch.get(),
-			scoreString.c_str(),
-			m_context.hudScorePosition,
-			Colors::Yellow,
-			0.f,
-			fontOrigin);
+	if (m_hudDirty) {
+		m_hudDirty = false;
+		updateUIScore();
+		updateUILives();
 	}
 
-	{
-		std::wstring livesString = fmt::format(L"Lives: {}", m_context.playerLives);
-		XMVECTOR dimensions
-			= m_resources.m_font->MeasureString(livesString.c_str());
-		Vector2 fontOrigin = {0.0f, XMVectorGetY(dimensions)};
+	m_context.uiScore.draw(
+		Colors::Yellow, *m_resources.m_font, *m_resources.m_spriteBatch);
 
-		m_resources.m_font->DrawString(
-			m_resources.m_spriteBatch.get(),
-			livesString.c_str(),
-			m_context.hudLivesPosition,
-			Colors::Yellow,
-			0.f,
-			fontOrigin);
-	}
+	m_context.uiLives.draw(
+		Colors::Yellow, *m_resources.m_font, *m_resources.m_spriteBatch);
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::updateUIDebugVariables()
+{
+	float yPos = 0.0f;
+
+	auto formatUI = [
+		&yPos,
+		&font				= m_resources.m_font,
+		screenWidth = m_resources.m_screenWidth
+	](UIText & ui, const wchar_t* fmt, float fVar)
+	{
+		ui.text							= fmt::format(fmt, fVar);
+		XMVECTOR dimensions = font->MeasureString(ui.text.c_str());
+		float width					= XMVectorGetX(dimensions);
+		float height				= XMVectorGetY(dimensions);
+		ui.origin						= Vector2(width, 0.0f);
+		ui.dimensions				= dimensions;
+		ui.position.x				= static_cast<float>(screenWidth);
+		ui.position.y				= yPos;
+		yPos += height;
+	};
+
+	formatUI(m_context.uiPlayerSpeed, L"Player Speed: {}", m_context.playerSpeed);
+	formatUI(
+		m_context.uiPlayerFriction,
+		L"Player Friction: {}",
+		m_context.playerFriction);
+	formatUI(
+		m_context.uiPlayerMaxVelocity,
+		L"Player Max Velocity: {}",
+		m_context.playerMaxVelocity);
+	formatUI(
+		m_context.uiPlayerMinVelocity,
+		L"Player Min Velocity: {}",
+		m_context.playerMinVelocity);
+	formatUI(
+		m_context.uiCameraDist, L"Camera Dist: {}", m_context.cameraDistance);
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::drawDebugVariables()
+{
+	// TODO(James): Move to somewhere called infrequently (ie. when they change)
+	updateUIDebugVariables();
+
+	auto drawUI =
+		[& font				= m_resources.m_font,
+		 &spriteBatch = m_resources.m_spriteBatch](UIText & ui)
+	{
+		ui.draw(Colors::MediumVioletRed, *font, *spriteBatch);
+	};
+
+	drawUI(m_context.uiPlayerSpeed);
+	drawUI(m_context.uiPlayerFriction);
+	drawUI(m_context.uiPlayerMaxVelocity);
+	drawUI(m_context.uiPlayerMinVelocity);
+	drawUI(m_context.uiCameraDist);
 }
 
 //------------------------------------------------------------------------------
