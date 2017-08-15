@@ -48,7 +48,8 @@ struct AppResources
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_starTexture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_explosionTexture;
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
-	std::unique_ptr<DirectX::SpriteFont> m_font;
+	std::unique_ptr<DirectX::SpriteFont> font8pt;
+	std::unique_ptr<DirectX::SpriteFont> font32pt;
 
 	std::unique_ptr<DX::DebugBatchType> m_batch;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugInputLayout;

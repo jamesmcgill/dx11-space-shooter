@@ -52,9 +52,9 @@ GameOverState::render()
 
 	Vector2 pos
 		= {m_resources.m_screenWidth / 2.0f, m_resources.m_screenHeight / 2.0f};
-	Vector2 origin = m_resources.m_font->MeasureString(GAMEOVER_TEXT) / 2.f;
+	Vector2 origin = m_resources.font32pt->MeasureString(GAMEOVER_TEXT) / 2.f;
 
-	m_resources.m_font->DrawString(
+	m_resources.font32pt->DrawString(
 		m_resources.m_spriteBatch.get(),
 		GAMEOVER_TEXT,
 		pos,

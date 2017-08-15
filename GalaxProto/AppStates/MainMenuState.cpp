@@ -22,11 +22,13 @@ static const std::vector<MenuManager::MenuButton> s_mainMenuButtons = {
 };
 
 static const std::vector<MenuManager::MenuButton> s_confirmQuitButtons = {
-	{L"Return", Command::GotoMenu}, {L"Quit", Command::QuitApp},
+	{L"Return", Command::GotoMenu},
+	{L"Quit", Command::QuitApp},
 };
 
 static const std::vector<MenuManager::Menu> s_menus = {
-	{s_mainMenuButtons}, {s_confirmQuitButtons, 0},
+	{s_mainMenuButtons},
+	{s_confirmQuitButtons, 0},
 };
 
 //------------------------------------------------------------------------------
@@ -102,7 +104,8 @@ MainMenuState::render()
 	spriteBatch->End();
 
 	spriteBatch->Begin();
-	m_resources.menuManager->render(m_resources.m_font.get(), spriteBatch.get());
+	m_resources.menuManager->render(
+		m_resources.font32pt.get(), spriteBatch.get());
 	spriteBatch->End();
 }
 
@@ -149,5 +152,3 @@ MainMenuState::resetTimer()
 {
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
 }
-
-

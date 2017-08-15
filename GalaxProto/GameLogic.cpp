@@ -446,8 +446,9 @@ void
 GameLogic::updateUIScore()
 {
 	auto& score					= m_context.uiScore;
+	score.font					= m_resources.font32pt.get();
 	score.text					= fmt::format(L"Score: {}", m_context.playerScore);
-	XMVECTOR dimensions = m_resources.m_font->MeasureString(score.text.c_str());
+	XMVECTOR dimensions = score.font->MeasureString(score.text.c_str());
 	score.origin				= Vector2((XMVectorGetX(dimensions) / 2.f), 0.0f);
 	score.dimensions		= dimensions;
 	score.position.x		= m_resources.m_screenWidth / 2.f;
@@ -459,8 +460,9 @@ void
 GameLogic::updateUILives()
 {
 	auto& lives					= m_context.uiLives;
+	lives.font					= m_resources.font32pt.get();
 	lives.text					= fmt::format(L"Lives: {}", m_context.playerLives);
-	XMVECTOR dimensions = m_resources.m_font->MeasureString(lives.text.c_str());
+	XMVECTOR dimensions = lives.font->MeasureString(lives.text.c_str());
 	lives.origin				= Vector2(0.0f, XMVectorGetY(dimensions));
 	lives.dimensions		= dimensions;
 	lives.position.x		= 0.0f;
@@ -477,11 +479,9 @@ GameLogic::drawHUD()
 		updateUILives();
 	}
 
-	m_context.uiScore.draw(
-		Colors::Yellow, *m_resources.m_font, *m_resources.m_spriteBatch);
+	m_context.uiScore.draw(Colors::Yellow, *m_resources.m_spriteBatch);
 
-	m_context.uiLives.draw(
-		Colors::Yellow, *m_resources.m_font, *m_resources.m_spriteBatch);
+	m_context.uiLives.draw(Colors::Yellow, *m_resources.m_spriteBatch);
 }
 
 //------------------------------------------------------------------------------
@@ -492,12 +492,13 @@ GameLogic::updateUIDebugVariables()
 
 	auto formatUI = [
 		&yPos,
-		&font				= m_resources.m_font,
+		font				= m_resources.font8pt.get(),
 		screenWidth = m_resources.m_screenWidth
 	](UIText & ui, const wchar_t* fmt, float fVar)
 	{
+		ui.font							= font;
 		ui.text							= fmt::format(fmt, fVar);
-		XMVECTOR dimensions = font->MeasureString(ui.text.c_str());
+		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
 		float width					= XMVectorGetX(dimensions);
 		float height				= XMVectorGetY(dimensions);
 		ui.origin						= Vector2(width, 0.0f);
@@ -532,10 +533,10 @@ GameLogic::drawDebugVariables()
 	updateUIDebugVariables();
 
 	auto drawUI =
-		[& font				= m_resources.m_font,
+		[& font				= m_resources.font8pt,
 		 &spriteBatch = m_resources.m_spriteBatch](UIText & ui)
 	{
-		ui.draw(Colors::MediumVioletRed, *font, *spriteBatch);
+		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};
 
 	drawUI(m_context.uiPlayerSpeed);

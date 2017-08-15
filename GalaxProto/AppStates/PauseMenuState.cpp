@@ -14,7 +14,8 @@ extern void ExitGame();
 
 //------------------------------------------------------------------------------
 static const std::vector<MenuManager::MenuButton> s_pauseMenuButtons = {
-	{L"Resume", Command::ResumeGame}, {L"End Current Game", Command::EndGame},
+	{L"Resume", Command::ResumeGame},
+	{L"End Current Game", Command::EndGame},
 };
 
 static const std::vector<MenuManager::Menu> s_menus = {
@@ -82,9 +83,8 @@ PauseMenuState::render()
 
 	m_resources.m_spriteBatch->Begin();
 	m_resources.menuManager->render(
-		m_resources.m_font.get(), m_resources.m_spriteBatch.get());
+		m_resources.font32pt.get(), m_resources.m_spriteBatch.get());
 	spriteBatch->End();
-
 }
 
 //------------------------------------------------------------------------------

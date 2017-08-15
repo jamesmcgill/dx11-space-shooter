@@ -84,7 +84,7 @@ ScoreEntryState::render()
 	m_resources.m_spriteBatch->Begin();
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 
-	Vector2 fontDimensions = m_resources.m_font->MeasureString(L"XXX");
+	Vector2 fontDimensions = m_resources.font32pt->MeasureString(L"XXX");
 	Vector2 centerPos
 		= {m_resources.m_screenWidth / 2.0f, (m_resources.m_screenHeight / 2.0f)};
 
@@ -92,8 +92,8 @@ ScoreEntryState::render()
 		= centerPos - Vector2(0.0f, (ENTER_TEXT_LINES.size() * fontDimensions.y));
 	for (auto& line : ENTER_TEXT_LINES)
 	{
-		Vector2 origin = m_resources.m_font->MeasureString(line.c_str()) / 2.f;
-		m_resources.m_font->DrawString(
+		Vector2 origin = m_resources.font32pt->MeasureString(line.c_str()) / 2.f;
+		m_resources.font32pt->DrawString(
 			m_resources.m_spriteBatch.get(),
 			line.c_str(),
 			linePos,
@@ -109,7 +109,7 @@ ScoreEntryState::render()
 													 ? m_playerName
 													 : m_playerName + m_currentChar;
 
-		m_resources.m_font->DrawString(
+		m_resources.font32pt->DrawString(
 			m_resources.m_spriteBatch.get(),
 			displayedName.c_str(),
 			linePos,
@@ -125,7 +125,7 @@ ScoreEntryState::render()
 	for (auto& line : INSTRUCTION_LINES)
 	{
 		Vector2 origin = {0.0f, fontDimensions.y};
-		m_resources.m_font->DrawString(
+		m_resources.font32pt->DrawString(
 			m_resources.m_spriteBatch.get(),
 			line.c_str(),
 			linePos,

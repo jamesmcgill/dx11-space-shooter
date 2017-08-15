@@ -272,7 +272,10 @@ Game::createDeviceDependentResources()
 	m_appResources.scoreBoard	= std::make_unique<ScoreBoard>();
 	m_appResources.scoreBoard->loadFromFile();
 
-	m_appResources.m_font
+	m_appResources.font8pt
+		= std::make_unique<SpriteFont>(device, L"assets/verdana8.spritefont");
+
+	m_appResources.font32pt
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
 
 	m_appResources.m_batch = std::make_unique<DX::DebugBatchType>(context);
@@ -391,7 +394,8 @@ Game::OnDeviceLost()
 	m_appResources.m_effectFactory.reset();
 	m_appResources.m_debugEffect.reset();
 
-	m_appResources.m_font.reset();
+	m_appResources.font32pt.reset();
+	m_appResources.font8pt.reset();
 	m_appResources.starField.reset();
 	m_appResources.explosions.reset();
 	m_appResources.scoreBoard.reset();

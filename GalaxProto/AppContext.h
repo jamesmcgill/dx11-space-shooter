@@ -17,14 +17,16 @@ struct UIText {
 	DirectX::SimpleMath::Vector2 position;
 	DirectX::SimpleMath::Vector2 dimensions;
 	DirectX::SimpleMath::Vector2 origin;
+	DirectX::SpriteFont* font;
 	std::wstring text;
 
 	void draw(
 		DirectX::XMVECTOR color,
-		DirectX::SpriteFont& font,
 		DirectX::SpriteBatch& spriteBatch)
 	{
-		font.DrawString(
+		assert(font);
+
+		font->DrawString(
 			&spriteBatch,
 			text.c_str(),
 			position,
@@ -55,7 +57,6 @@ struct AppContext
 	PlayerState playerState = PlayerState::Normal;
 	float playerDeathTimerS = 0.0f;
 	float playerReviveTimerS = 0.0f;
-
 	UIText uiScore;
 	UIText uiLives;
 
