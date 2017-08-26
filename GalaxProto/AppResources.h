@@ -2,13 +2,14 @@
 #include "pch.h"
 #include "StepTimer.h"
 #include "DeviceResources.h"
-#include "Entity.h"	// ModelData
+#include "Entity.h"		 // ModelData
 #include "Starfield.h"
 #include "Explosions.h"
 #include "MenuManager.h"
 #include "ScoreBoard.h"
 //------------------------------------------------------------------------------
-enum class ModelResource {
+enum class ModelResource
+{
 	Player,
 	Shot,
 	Enemy1,
@@ -22,7 +23,8 @@ enum class ModelResource {
 	Enemy9,
 };
 
-enum class AudioResource {
+enum class AudioResource
+{
 	GameStart,
 	GameOver,
 	PlayerShot,
@@ -34,7 +36,7 @@ enum class AudioResource {
 //------------------------------------------------------------------------------
 struct AppResources
 {
-	int m_screenWidth = 0;
+	int m_screenWidth	= 0;
 	int m_screenHeight = 0;
 
 	DX::StepTimer m_timer;

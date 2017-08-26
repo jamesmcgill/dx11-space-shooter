@@ -44,7 +44,6 @@ Game::Game()
 	setModelPath(ModelResource::Enemy8, L"ship8.sdkmesh");
 	setModelPath(ModelResource::Enemy9, L"ship9.sdkmesh");
 
-
 	auto setAudioPath = [&](AudioResource res, wchar_t* path) {
 		m_appResources.soundEffectLocations[res] = AUDIO_PATH + path;
 	};
@@ -126,7 +125,8 @@ void
 Game::render()
 {
 	// Don't try to render anything before the first Update.
-	if (m_appResources.m_timer.GetFrameCount() == 0) {
+	if (m_appResources.m_timer.GetFrameCount() == 0)
+	{
 		return;
 	}
 

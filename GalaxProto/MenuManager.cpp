@@ -31,8 +31,8 @@ MenuManager::loadMenus(std::vector<MenuManager::Menu> const* menus)
 	assert(menus);
 	assert((*menus).size());
 
-	m_activeMenus = menus;
-	m_currentMenuIdx = 0;
+	m_activeMenus				= menus;
+	m_currentMenuIdx		= 0;
 	m_selectedButtonIdx = 0;
 }
 
@@ -122,7 +122,8 @@ MenuManager::focusNextButton()
 	auto& currentMenu = menus[m_currentMenuIdx];
 	++m_selectedButtonIdx;
 
-	if (m_selectedButtonIdx >= currentMenu.buttons.size()) {
+	if (m_selectedButtonIdx >= currentMenu.buttons.size())
+	{
 		m_selectedButtonIdx = 0;
 	}
 }
@@ -136,7 +137,8 @@ MenuManager::focusPrevButton()
 	assert(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 
-	if (m_selectedButtonIdx > 0) {
+	if (m_selectedButtonIdx > 0)
+	{
 		--m_selectedButtonIdx;
 	}
 	else
@@ -177,7 +179,8 @@ MenuManager::prevMenu()
 	assert(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 
-	if (currentMenu.previousMenuIdx != -1) {
+	if (currentMenu.previousMenuIdx != -1)
+	{
 		m_selectedButtonIdx = 0;
 		m_currentMenuIdx		= currentMenu.previousMenuIdx;
 	}

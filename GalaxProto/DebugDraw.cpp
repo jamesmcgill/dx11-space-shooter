@@ -236,7 +236,8 @@ DX::DrawRay(
 
 	XMVECTOR perpVector = XMVector3Cross(normDirection, g_XMIdentityR1);
 
-	if (XMVector3Equal(XMVector3LengthSq(perpVector), g_XMZero)) {
+	if (XMVector3Equal(XMVector3LengthSq(perpVector), g_XMZero))
+	{
 		perpVector = XMVector3Cross(normDirection, g_XMIdentityR2);
 	}
 	perpVector = XMVector3Normalize(perpVector);

@@ -31,10 +31,12 @@ ScoreEntryState::handleInput(const DX::StepTimer& timer)
 
 	auto& kb = m_resources.kbTracker;
 
-	if (kb.IsKeyPressed(Keyboard::Enter)) {
+	if (kb.IsKeyPressed(Keyboard::Enter))
+	{
 		m_playerName.push_back(m_currentChar);
 
-		if (m_playerName.size() >= MAX_NAME_LENGTH) {
+		if (m_playerName.size() >= MAX_NAME_LENGTH)
+		{
 			m_resources.scoreBoard->insertScore(
 				{m_context.playerScore, m_playerName});
 			m_resources.scoreBoard->saveToFile();
@@ -42,8 +44,10 @@ ScoreEntryState::handleInput(const DX::StepTimer& timer)
 		}
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Up)) {
-		if (m_currentChar == 'A') {
+	if (kb.IsKeyPressed(Keyboard::Up))
+	{
+		if (m_currentChar == 'A')
+		{
 			m_currentChar = 'Z';
 		}
 		else
@@ -52,8 +56,10 @@ ScoreEntryState::handleInput(const DX::StepTimer& timer)
 		}
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Down)) {
-		if (m_currentChar == 'Z') {
+	if (kb.IsKeyPressed(Keyboard::Down))
+	{
+		if (m_currentChar == 'Z')
+		{
 			m_currentChar = 'A';
 		}
 		else
@@ -62,8 +68,10 @@ ScoreEntryState::handleInput(const DX::StepTimer& timer)
 		}
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Back) || kb.IsKeyPressed(Keyboard::Escape)) {
-		if (!m_playerName.empty()) {
+	if (kb.IsKeyPressed(Keyboard::Back) || kb.IsKeyPressed(Keyboard::Escape))
+	{
+		if (!m_playerName.empty())
+		{
 			m_currentChar = m_playerName.back();
 			m_playerName.pop_back();
 		}

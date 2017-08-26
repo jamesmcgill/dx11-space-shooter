@@ -32,8 +32,10 @@ GameOverState::update(const DX::StepTimer& timer)
 	m_resources.starField->update(timer);
 
 	m_timeoutS -= elapsedTimeS;
-	if (m_timeoutS <= 0.0f) {
-		if (m_resources.scoreBoard->isHiScore(m_context.playerScore)) {
+	if (m_timeoutS <= 0.0f)
+	{
+		if (m_resources.scoreBoard->isHiScore(m_context.playerScore))
+		{
 			m_states.changeState(&m_states.enteringScore);
 		}
 		else

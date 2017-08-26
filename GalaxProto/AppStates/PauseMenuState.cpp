@@ -31,13 +31,16 @@ PauseMenuState::handleInput(const DX::StepTimer& timer)
 	auto& kb		= m_resources.kbTracker;
 	auto& menus = m_resources.menuManager;
 
-	if (kb.IsKeyPressed(Keyboard::Escape)) {
-		if (!menus->isRootMenu()) {
+	if (kb.IsKeyPressed(Keyboard::Escape))
+	{
+		if (!menus->isRootMenu())
+		{
 			menus->prevMenu();
 		}
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Up)) {
+	if (kb.IsKeyPressed(Keyboard::Up))
+	{
 		menus->focusPrevButton();
 	}
 	else if (kb.IsKeyPressed(Keyboard::Down))

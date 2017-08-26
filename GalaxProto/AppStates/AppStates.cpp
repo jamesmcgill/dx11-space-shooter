@@ -38,7 +38,7 @@ AppStates::changeState(IAppState* newState)
 	m_currentState->exit();
 
 	m_previousState = m_currentState;
-	m_currentState = newState;
+	m_currentState	= newState;
 	loadAndEnterState();
 }
 
@@ -46,7 +46,8 @@ AppStates::changeState(IAppState* newState)
 void
 AppStates::loadAndEnterState()
 {
-	if (!m_currentState->isLoaded()) {
+	if (!m_currentState->isLoaded())
+	{
 		m_currentState->load();
 	}
 	m_currentState->enter();

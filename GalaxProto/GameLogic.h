@@ -13,7 +13,8 @@ struct Entity;
 class GameLogic
 {
 public:
-	enum class GameStatus {
+	enum class GameStatus
+	{
 		Playing,
 		GameOver,
 	};
@@ -35,7 +36,7 @@ public:
 		const size_t rangeOnePastEndIdx,
 		Func onCollision);
 
-	void renderPlayerEntity(Entity & entity);
+	void renderPlayerEntity(Entity& entity);
 	void renderEntity(Entity& entity, float orientation = 0.0f);
 	void renderEntityBound(Entity& entity);
 

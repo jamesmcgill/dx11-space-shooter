@@ -13,7 +13,7 @@ public:
 private:
 	std::vector<Score> m_scores;
 
-	int m_screenWidth = 0;
+	int m_screenWidth	= 0;
 	int m_screenHeight = 0;
 
 	// New Score Entry

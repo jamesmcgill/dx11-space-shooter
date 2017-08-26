@@ -40,14 +40,17 @@ MainMenuState::handleInput(const DX::StepTimer& timer)
 	auto& kb		= m_resources.kbTracker;
 	auto& menus = m_resources.menuManager;
 
-	if (kb.IsKeyPressed(Keyboard::Escape)) {
+	if (kb.IsKeyPressed(Keyboard::Escape))
+	{
 		resetTimer();
-		if (!menus->isRootMenu()) {
+		if (!menus->isRootMenu())
+		{
 			menus->prevMenu();
 		}
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Up)) {
+	if (kb.IsKeyPressed(Keyboard::Up))
+	{
 		resetTimer();
 		menus->focusPrevButton();
 	}
@@ -88,7 +91,8 @@ MainMenuState::update(const DX::StepTimer& timer)
 	m_resources.menuManager->update(timer);
 
 	m_timeoutS -= elapsedTimeS;
-	if (m_timeoutS <= 0.0f) {
+	if (m_timeoutS <= 0.0f)
+	{
 		m_states.changeState(&m_states.showingScores);
 	}
 }

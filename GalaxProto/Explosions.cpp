@@ -9,7 +9,7 @@ using namespace DirectX::SimpleMath;
 //------------------------------------------------------------------------------
 constexpr float VELOCITY_MIN	= 20.0f;
 constexpr float VELOCITY_MAX	= 30.0f;
-constexpr float ENERGY_MIN		= 0.8f;		// Energy controls particle life
+constexpr float ENERGY_MIN		= 0.8f;		 // Energy controls particle life
 constexpr float ENERGY_MAX		= 1.0f;
 constexpr float ORIGIN_SPREAD = 2.0f;
 constexpr float SCALE_MIN			= 0.5f;
@@ -29,14 +29,16 @@ Explosions::Explosions(AppContext& context, ID3D11ShaderResourceView* texture)
 {
 	m_texture = texture;
 
-	if (texture) {
+	if (texture)
+	{
 		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
 		texture->GetResource(resource.GetAddressOf());
 
 		D3D11_RESOURCE_DIMENSION dim;
 		resource->GetType(&dim);
 
-		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
+		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+		{
 			throw std::exception("Explosions expects a Texture2D");
 		}
 
@@ -59,13 +61,15 @@ Explosions::update(DX::StepTimer const& timer)
 
 	for (auto& p : m_particles)
 	{
-		if (p.energy == 0.0f) {
+		if (p.energy == 0.0f)
+		{
 			continue;
 		}
 
 		p.position = p.velocity * elapsedTimeS + p.position;
 		p.energy -= elapsedTimeS;
-		if (p.energy < 0.0f) {
+		if (p.energy < 0.0f)
+		{
 			p.energy = 0.0f;
 		}
 	}
@@ -78,7 +82,8 @@ Explosions::render(DirectX::SpriteBatch& batch)
 	XMVECTOR origin = {m_textureWidth / 2.0f, m_textureHeight / 2.0f, 0.0f};
 	for (auto& p : m_particles)
 	{
-		if (p.energy == 0.0f) {
+		if (p.energy == 0.0f)
+		{
 			continue;
 		}
 		float energyRatio = p.energy / (ENERGY_MAX - SATURATION);
@@ -154,7 +159,8 @@ Explosions::emit(
 		p.energy = energyRand(m_engine);
 
 		m_nextParticleIdx++;
-		if (m_nextParticleIdx >= MAX_NUM_PARTICLES) {
+		if (m_nextParticleIdx >= MAX_NUM_PARTICLES)
+		{
 			m_nextParticleIdx = 0;
 		}
 	}

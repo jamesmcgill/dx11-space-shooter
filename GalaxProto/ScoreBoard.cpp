@@ -13,18 +13,19 @@ static const wchar_t* SCORE_FILENAME = L"score.dat";
 static const wchar_t* ENTER_NAME_MESSAGE
 	= L"Congratulations!\nYou have a new hi-score.\nPlease Enter Your Name:\n";
 
-static const int PLAYER_NAME_LENGTH = 4;
-static const size_t NUM_SCORES = 10;
-static const XMVECTOR HIGHLIGHT_COLOR = { 1.0f, 1.0f, 0.0f };
-static const XMVECTOR NORMAL_COLOR = { 1.0f, 1.0f, 1.0f };
-static const int FILE_VERSION = 100;
-static const wchar_t* DEFAULT_NAME = L"Jim";
+static const int PLAYER_NAME_LENGTH		= 4;
+static const size_t NUM_SCORES				= 10;
+static const XMVECTOR HIGHLIGHT_COLOR = {1.0f, 1.0f, 0.0f};
+static const XMVECTOR NORMAL_COLOR		= {1.0f, 1.0f, 1.0f};
+static const int FILE_VERSION					= 100;
+static const wchar_t* DEFAULT_NAME		= L"Jim";
 
 //------------------------------------------------------------------------------
 void
 ScoreBoard::PrevMenu()
 {
-	if (!m_isEntryModeOn) {
+	if (!m_isEntryModeOn)
+	{
 		return;
 	}
 
@@ -35,7 +36,8 @@ ScoreBoard::PrevMenu()
 void
 ScoreBoard::NextItem()
 {
-	if (!m_isEntryModeOn) {
+	if (!m_isEntryModeOn)
+	{
 		return;
 	}
 
@@ -49,7 +51,8 @@ ScoreBoard::NextItem()
 void
 ScoreBoard::PrevItem()
 {
-	if (!m_isEntryModeOn) {
+	if (!m_isEntryModeOn)
+	{
 		return;
 	}
 
@@ -63,7 +66,8 @@ ScoreBoard::PrevItem()
 void
 ScoreBoard::SelectItem()
 {
-	if (!m_isEntryModeOn) {
+	if (!m_isEntryModeOn)
+	{
 		return;
 	}
 
@@ -93,9 +97,12 @@ void
 ScoreBoard::insertScore(Score newScore)
 {
 	auto it = std::lower_bound(
-		m_scores.begin(), m_scores.end(), newScore.score, [](Score& s, int val) { return s.score > val; });
+		m_scores.begin(), m_scores.end(), newScore.score, [](Score& s, int val) {
+			return s.score > val;
+		});
 
-	if (it != m_scores.end()) {
+	if (it != m_scores.end())
+	{
 		m_scores.insert(it, newScore);
 		m_scores.pop_back();
 	}
@@ -107,19 +114,22 @@ ScoreBoard::loadFromFile()
 {
 	m_scores.clear();
 	std::wifstream file(SCORE_FILENAME, std::ios::in);
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		// TODO: Logging and error handling
 		loadDefaultScores();
 		return;
 	}
 
 	std::wstring versionStr;
-	if (!getline(file, versionStr)) {
+	if (!getline(file, versionStr))
+	{
 		// TODO: Logging and error handling
 		throw;
 	}
 	int version = std::stoi(versionStr);
-	if (version != FILE_VERSION) {
+	if (version != FILE_VERSION)
+	{
 		// TODO: Logging and error handling
 		throw;
 	}
@@ -128,13 +138,14 @@ ScoreBoard::loadFromFile()
 	std::wstring nameStr;
 	while (getline(file, scoreStr))
 	{
-		if (!getline(file, nameStr)) {
+		if (!getline(file, nameStr))
+		{
 			// TODO: Logging and error handling
 			throw;
 		}
 
 		int value = std::stoi(scoreStr);
-		Score score{ value, nameStr };
+		Score score{value, nameStr};
 		m_scores.push_back(score);
 	}
 }
@@ -144,7 +155,8 @@ void
 ScoreBoard::saveToFile()
 {
 	std::wofstream file(SCORE_FILENAME, std::ios::out);
-	if (!file.is_open()) {
+	if (!file.is_open())
+	{
 		// TODO: Logging and error handling
 		throw;
 	}
@@ -172,8 +184,7 @@ ScoreBoard::loadDefaultScores()
 
 //------------------------------------------------------------------------------
 void
-ScoreBoard::render(
-	DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
+ScoreBoard::render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 {
 	// Layout
 	//
@@ -185,52 +196,41 @@ ScoreBoard::render(
 	// ####  ----
 	//       ####
 	float fontHeight = XMVectorGetY(font->MeasureString(L"XXX"));
-	float padding = fontHeight * 0.3f;
-	Vector2 pos = { m_screenWidth / 2.0f, 0.0f };
+	float padding		 = fontHeight * 0.3f;
+	Vector2 pos			 = {m_screenWidth / 2.0f, 0.0f};
 
-	float numRowsAboveCenter
-		= (m_scores.size() % 2 == 0)
-		? m_scores.size() / 2.0f
-		: ((m_scores.size() + 1) / 2.0f) - 0.5f;
+	float numRowsAboveCenter = (m_scores.size() % 2 == 0)
+															 ? m_scores.size() / 2.0f
+															 : ((m_scores.size() + 1) / 2.0f) - 0.5f;
 	float numPaddingRowsAbove = numRowsAboveCenter - 0.5f;
 
 	// Screen center - text rows - padding rows
 	pos.y = (m_screenHeight / 2) - (numRowsAboveCenter * fontHeight)
-		- (numPaddingRowsAbove * padding);
+					- (numPaddingRowsAbove * padding);
 
 	// Render Scoreboard
 	for (auto& e : m_scores)
 	{
 		XMVECTOR dimensions = font->MeasureString(e.playerName.c_str());
-		Vector2 nameOrigin = { (XMVectorGetX(dimensions)), 0.0f };
-		Vector2 scoreOrigin = { 0.0f, nameOrigin.y };
+		Vector2 nameOrigin	= {(XMVectorGetX(dimensions)), 0.0f};
+		Vector2 scoreOrigin = {0.0f, nameOrigin.y};
 
 		font->DrawString(
-			spriteBatch,
-			e.playerName.c_str(),
-			pos,
-			NORMAL_COLOR,
-			0.f,
-			nameOrigin);
+			spriteBatch, e.playerName.c_str(), pos, NORMAL_COLOR, 0.f, nameOrigin);
 
 		fmt::WMemoryWriter w;
 		w << e.score;
 
 		font->DrawString(
-			spriteBatch,
-			w.c_str(),
-			pos,
-			NORMAL_COLOR,
-			0.f,
-			scoreOrigin);
+			spriteBatch, w.c_str(), pos, NORMAL_COLOR, 0.f, scoreOrigin);
 
 		pos.y += fontHeight + padding;
 	}
 }
 
 //------------------------------------------------------------------------------
-//HRESULT
-//ScoreBoard::DrawNewScoreEntryScreen(LPDIRECT3DDEVICE9 pd3dDevice)
+// HRESULT
+// ScoreBoard::DrawNewScoreEntryScreen(LPDIRECT3DDEVICE9 pd3dDevice)
 //{
 //	RECT main_rect;
 //	RECT entry_rect;
@@ -270,7 +270,7 @@ ScoreBoard::render(
 void
 ScoreBoard::setWindowSize(int screenWidth, int screenHeight)
 {
-	m_screenWidth = screenWidth;
+	m_screenWidth	= screenWidth;
 	m_screenHeight = screenHeight;
 }
 

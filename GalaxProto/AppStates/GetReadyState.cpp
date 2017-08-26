@@ -30,7 +30,8 @@ GetReadyState::update(const DX::StepTimer& timer)
 
 	m_resources.starField->update(timer);
 	m_timeoutS -= elapsedTimeS;
-	if (m_timeoutS <= 0.0f) {
+	if (m_timeoutS <= 0.0f)
+	{
 		m_states.changeState(&m_states.playing);
 	}
 }

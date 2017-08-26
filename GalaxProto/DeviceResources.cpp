@@ -29,7 +29,7 @@ SdkLayersAvailable()
 		nullptr,		// No need to keep the D3D device reference.
 		nullptr,		// No need to know the feature level.
 		nullptr			// No need to keep the D3D device context reference.
-		);
+	);
 
 	return SUCCEEDED(hr);
 }
@@ -62,7 +62,8 @@ DX::DeviceResources::CreateDeviceResources()
 	UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #if defined(_DEBUG)
-	if (SdkLayersAvailable()) {
+	if (SdkLayersAvailable())
+	{
 		// If the project is in a debug build, enable debugging via SDK Layers with
 		// this flag.
 		creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -87,10 +88,12 @@ DX::DeviceResources::CreateDeviceResources()
 	UINT featLevelCount = 0;
 	for (; featLevelCount < _countof(s_featureLevels); ++featLevelCount)
 	{
-		if (s_featureLevels[featLevelCount] < m_d3dMinFeatureLevel) break;
+		if (s_featureLevels[featLevelCount] < m_d3dMinFeatureLevel)
+			break;
 	}
 
-	if (!featLevelCount) {
+	if (!featLevelCount)
+	{
 		throw std::out_of_range("minFeatureLevel too high");
 	}
 
@@ -99,7 +102,8 @@ DX::DeviceResources::CreateDeviceResources()
 
 	// Create the Direct3D 11 API device object and a corresponding context.
 	HRESULT hr = E_FAIL;
-	if (adapter) {
+	if (adapter)
+	{
 		hr = D3D11CreateDevice(
 			adapter.Get(),
 			D3D_DRIVER_TYPE_UNKNOWN,
@@ -113,9 +117,10 @@ DX::DeviceResources::CreateDeviceResources()
 			&m_d3dFeatureLevel,		 // Returns feature level of device created.
 			m_d3dContext
 				.ReleaseAndGetAddressOf()		 // Returns the device immediate context.
-			);
+		);
 
-		if (hr == E_INVALIDARG && featLevelCount > 1) {
+		if (hr == E_INVALIDARG && featLevelCount > 1)
+		{
 			assert(s_featureLevels[0] == D3D_FEATURE_LEVEL_11_1);
 
 			// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we
@@ -139,7 +144,8 @@ DX::DeviceResources::CreateDeviceResources()
 		throw std::exception("No Direct3D hardware device found");
 	}
 #else
-	if (FAILED(hr)) {
+	if (FAILED(hr))
+	{
 		// If the initialization fails, fall back to the WARP device.
 		// For more information on WARP, see:
 		// http://go.microsoft.com/fwlink/?LinkId=286690
@@ -156,7 +162,8 @@ DX::DeviceResources::CreateDeviceResources()
 			&m_d3dFeatureLevel,
 			m_d3dContext.ReleaseAndGetAddressOf());
 
-		if (hr == E_INVALIDARG && featLevelCount > 1) {
+		if (hr == E_INVALIDARG && featLevelCount > 1)
+		{
 			assert(s_featureLevels[0] == D3D_FEATURE_LEVEL_11_1);
 
 			// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we
@@ -174,7 +181,8 @@ DX::DeviceResources::CreateDeviceResources()
 				m_d3dContext.ReleaseAndGetAddressOf());
 		}
 
-		if (SUCCEEDED(hr)) {
+		if (SUCCEEDED(hr))
+		{
 			OutputDebugStringA("Direct3D Adapter - WARP\n");
 		}
 	}
@@ -184,9 +192,11 @@ DX::DeviceResources::CreateDeviceResources()
 
 #ifndef NDEBUG
 	ComPtr<ID3D11Debug> d3dDebug;
-	if (SUCCEEDED(m_d3dDevice.As(&d3dDebug))) {
+	if (SUCCEEDED(m_d3dDevice.As(&d3dDebug)))
+	{
 		ComPtr<ID3D11InfoQueue> d3dInfoQueue;
-		if (SUCCEEDED(d3dDebug.As(&d3dInfoQueue))) {
+		if (SUCCEEDED(d3dDebug.As(&d3dInfoQueue)))
+		{
 #ifdef _DEBUG
 			d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 			d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
@@ -203,7 +213,8 @@ DX::DeviceResources::CreateDeviceResources()
 #endif
 
 	// Obtain Direct3D 11.1 interfaces (if available)
-	if (SUCCEEDED(m_d3dDevice.As(&m_d3dDevice1))) {
+	if (SUCCEEDED(m_d3dDevice.As(&m_d3dDevice1)))
+	{
 		(void)m_d3dContext.As(&m_d3dContext1);
 		(void)m_d3dContext.As(&m_d3dAnnotation);
 	}
@@ -213,7 +224,8 @@ DX::DeviceResources::CreateDeviceResources()
 void
 DX::DeviceResources::CreateWindowSizeDependentResources()
 {
-	if (!m_window) {
+	if (!m_window)
+	{
 		throw std::exception("Call SetWindow with a valid Win32 window handle");
 	}
 
@@ -232,7 +244,8 @@ DX::DeviceResources::CreateWindowSizeDependentResources()
 	UINT backBufferHeight
 		= std::max<UINT>(m_outputSize.bottom - m_outputSize.top, 1);
 
-	if (m_swapChain) {
+	if (m_swapChain)
+	{
 		// If the swap chain already exists, resize it.
 		HRESULT hr = m_swapChain->ResizeBuffers(
 			m_backBufferCount,
@@ -241,7 +254,8 @@ DX::DeviceResources::CreateWindowSizeDependentResources()
 			m_backBufferFormat,
 			0);
 
-		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+		{
 #ifdef _DEBUG
 			char buff[64] = {};
 			sprintf_s(
@@ -284,7 +298,8 @@ DX::DeviceResources::CreateWindowSizeDependentResources()
 			dxgiAdapter->GetParent(IID_PPV_ARGS(dxgiFactory.GetAddressOf())));
 
 		ComPtr<IDXGIFactory2> dxgiFactory2;
-		if (SUCCEEDED(dxgiFactory.As(&dxgiFactory2))) {
+		if (SUCCEEDED(dxgiFactory.As(&dxgiFactory2)))
+		{
 			// DirectX 11.1 or later
 			DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 			swapChainDesc.Width									= backBufferWidth;
@@ -348,7 +363,8 @@ DX::DeviceResources::CreateWindowSizeDependentResources()
 		nullptr,
 		m_d3dRenderTargetView.ReleaseAndGetAddressOf()));
 
-	if (m_depthBufferFormat != DXGI_FORMAT_UNKNOWN) {
+	if (m_depthBufferFormat != DXGI_FORMAT_UNKNOWN)
+	{
 		// Create a depth stencil view for use with 3D rendering if needed.
 		CD3D11_TEXTURE2D_DESC depthStencilDesc(
 			m_depthBufferFormat,
@@ -396,7 +412,8 @@ DX::DeviceResources::WindowSizeChanged(int width, int height)
 	newRc.left = newRc.top = 0;
 	newRc.right						 = width;
 	newRc.bottom					 = height;
-	if (newRc == m_outputSize) {
+	if (newRc == m_outputSize)
+	{
 		return false;
 	}
 
@@ -409,7 +426,8 @@ DX::DeviceResources::WindowSizeChanged(int width, int height)
 void
 DX::DeviceResources::HandleDeviceLost()
 {
-	if (m_deviceNotify) {
+	if (m_deviceNotify)
+	{
 		m_deviceNotify->OnDeviceLost();
 	}
 
@@ -427,7 +445,8 @@ DX::DeviceResources::HandleDeviceLost()
 #ifdef _DEBUG
 	{
 		ComPtr<ID3D11Debug> d3dDebug;
-		if (SUCCEEDED(m_d3dDevice.As(&d3dDebug))) {
+		if (SUCCEEDED(m_d3dDevice.As(&d3dDebug)))
+		{
 			d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY);
 		}
 	}
@@ -438,7 +457,8 @@ DX::DeviceResources::HandleDeviceLost()
 	CreateDeviceResources();
 	CreateWindowSizeDependentResources();
 
-	if (m_deviceNotify) {
+	if (m_deviceNotify)
+	{
 		m_deviceNotify->OnDeviceRestored();
 	}
 }
@@ -452,14 +472,16 @@ DX::DeviceResources::Present()
 	// cycles rendering frames that will never be displayed to the screen.
 	HRESULT hr = m_swapChain->Present(1, 0);
 
-	if (m_d3dContext1) {
+	if (m_d3dContext1)
+	{
 		// Discard the contents of the render target.
 		// This is a valid operation only when the existing contents will be
 		// entirely overwritten. If dirty or scroll rects are used, this call should
 		// be removed.
 		m_d3dContext1->DiscardView(m_d3dRenderTargetView.Get());
 
-		if (m_d3dDepthStencilView) {
+		if (m_d3dDepthStencilView)
+		{
 			// Discard the contents of the depth stencil.
 			m_d3dContext1->DiscardView(m_d3dDepthStencilView.Get());
 		}
@@ -467,7 +489,8 @@ DX::DeviceResources::Present()
 
 	// If the device was removed either by a disconnection or a driver upgrade, we
 	// must recreate all device resources.
-	if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+	if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+	{
 #ifdef _DEBUG
 		char buff[64] = {};
 		sprintf_s(
@@ -506,7 +529,8 @@ DX::DeviceResources::GetHardwareAdapter(IDXGIAdapter1** ppAdapter)
 		DXGI_ADAPTER_DESC1 desc;
 		adapter->GetDesc1(&desc);
 
-		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		{
 			// Don't select the Basic Render Driver adapter.
 			continue;
 		}

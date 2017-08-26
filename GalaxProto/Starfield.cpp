@@ -16,14 +16,16 @@ StarField::StarField(ID3D11ShaderResourceView* texture)
 {
 	m_texture = texture;
 
-	if (texture) {
+	if (texture)
+	{
 		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
 		texture->GetResource(resource.GetAddressOf());
 
 		D3D11_RESOURCE_DIMENSION dim;
 		resource->GetType(&dim);
 
-		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
+		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+		{
 			throw std::exception("StarField expects a Texture2D");
 		}
 
@@ -83,7 +85,8 @@ StarField::update(DX::StepTimer const& timer)
 			p.position.y += static_cast<float>(speed * timer.GetElapsedSeconds());
 
 			// Regenerate old particles
-			if (p.position.y > m_screenHeight) {
+			if (p.position.y > m_screenHeight)
+			{
 				p.position.y = static_cast<float>(-m_textureHeight)
 											 + (p.position.y - m_screenHeight);
 				p.position.x = m_xRand(m_engine);

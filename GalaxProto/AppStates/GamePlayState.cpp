@@ -27,32 +27,38 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 
 	auto& kbState = m_resources.kbTracker.lastState;
 
-	if (kbState.Escape) {
+	if (kbState.Escape)
+	{
 		m_states.changeState(&m_states.paused);
 	}
 
 	// Debug options
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::E)) {
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::E))
+	{
 		auto pos = m_context.entities[PLAYERS_IDX].position
 							 + m_context.entities[PLAYERS_IDX].model->bound.Center;
 		m_resources.explosions->emit(pos, Vector3());
 	}
 
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F2)) {
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F2))
+	{
 		m_gameLogic.m_enemies.debugLevel();
 		m_gameLogic.reset();
 	}
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F3)) {
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F3))
+	{
 		m_context.debugDraw = !m_context.debugDraw;
 	}
 
 	// Player Movement
 	m_context.playerAccel = Vector3();		// NB. Must be reset, even while dead.
-	if (m_context.playerState == PlayerState::Dying) {
+	if (m_context.playerState == PlayerState::Dying)
+	{
 		return;
 	}
 
-	if (kbState.W) {
+	if (kbState.W)
+	{
 		m_context.cameraRotationX -= elapsedTimeS * CAMERA_SPEED_X;
 	}
 	else if (kbState.S)
@@ -60,7 +66,8 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.cameraRotationX += elapsedTimeS * CAMERA_SPEED_X;
 	}
 
-	if (kbState.A) {
+	if (kbState.A)
+	{
 		m_context.cameraRotationY -= elapsedTimeS * CAMERA_SPEED_Y;
 	}
 	else if (kbState.D)
@@ -68,7 +75,8 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.cameraRotationY += elapsedTimeS * CAMERA_SPEED_Y;
 	}
 
-	if (kbState.Up) {
+	if (kbState.Up)
+	{
 		m_context.playerAccel.y = 1.0f;
 	}
 	else if (kbState.Down)
@@ -76,7 +84,8 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.playerAccel.y = -1.0f;
 	}
 
-	if (kbState.Left) {
+	if (kbState.Left)
+	{
 		m_context.playerAccel.x = -1.0f;
 	}
 	else if (kbState.Right)
@@ -84,7 +93,8 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.playerAccel.x = 1.0f;
 	}
 
-	if (m_context.playerAccel.x != 0.0f && m_context.playerAccel.y != 0.0f) {
+	if (m_context.playerAccel.x != 0.0f && m_context.playerAccel.y != 0.0f)
+	{
 		m_context.playerAccel *= UNIT_DIAGONAL_LENGTH;
 	}
 
@@ -102,7 +112,8 @@ GamePlayState::update(const DX::StepTimer& timer)
 {
 	m_resources.starField->update(timer);
 	m_resources.explosions->update(timer);
-	if (GameLogic::GameStatus::GameOver == m_gameLogic.update(timer)) {
+	if (GameLogic::GameStatus::GameOver == m_gameLogic.update(timer))
+	{
 		m_states.changeState(&m_states.gameOver);
 	}
 }
@@ -146,7 +157,8 @@ void
 GamePlayState::enter()
 {
 	//	TRACE("GamePlayState::enter()");
-	if (m_states.previousState() != &m_states.paused) {
+	if (m_states.previousState() != &m_states.paused)
+	{
 		m_gameLogic.reset();
 		m_resources.m_timer.ResetTotalTimer();
 	}

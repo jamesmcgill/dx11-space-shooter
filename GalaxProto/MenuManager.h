@@ -62,9 +62,9 @@ public:
 	void prevMenu();
 
 private:
-	int m_screenWidth = 0;
-	int m_screenHeight = 0;
-	size_t m_currentMenuIdx = 0;
+	int m_screenWidth					 = 0;
+	int m_screenHeight				 = 0;
+	size_t m_currentMenuIdx		 = 0;
 	size_t m_selectedButtonIdx = 0;
 	std::vector<MenuManager::Menu> const* m_activeMenus;
 };

@@ -82,8 +82,10 @@ GameLogic::update(const DX::StepTimer& timer)
 			break;
 
 		case PlayerState::Dying:
-			if ((m_context.playerDeathTimerS -= elapsedTimeS) <= 0.0f) {
-				if (--m_context.playerLives > -1) {
+			if ((m_context.playerDeathTimerS -= elapsedTimeS) <= 0.0f)
+			{
+				if (--m_context.playerLives > -1)
+				{
 					m_context.playerState				 = PlayerState::Reviving;
 					m_context.playerReviveTimerS = PLAYER_REVIVE_TIME_S;
 					m_hudDirty									 = true;
@@ -96,7 +98,8 @@ GameLogic::update(const DX::StepTimer& timer)
 			break;
 
 		case PlayerState::Reviving:
-			if ((m_context.playerReviveTimerS -= elapsedTimeS) <= 0.0f) {
+			if ((m_context.playerReviveTimerS -= elapsedTimeS) <= 0.0f)
+			{
 				m_context.playerState = PlayerState::Normal;
 			}
 			performCollisionTests();
@@ -115,7 +118,8 @@ GameLogic::render()
 	size_t idx = 0;
 	for (auto& entity : m_context.entities)
 	{
-		if (PLAYERS_IDX == idx) {
+		if (PLAYERS_IDX == idx)
+		{
 			renderPlayerEntity(entity);
 		}
 		else if (entity.isAlive)
@@ -136,7 +140,8 @@ GameLogic::render()
 	spriteBatch->End();
 
 	// Debug Drawing
-	if (m_context.debugDraw) {
+	if (m_context.debugDraw)
+	{
 		dc->OMSetBlendState(m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
 		dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
 		dc->RSSetState(m_resources.m_states->CullNone());
@@ -149,7 +154,8 @@ GameLogic::render()
 		m_resources.m_batch->Begin();
 		for (auto& entity : m_context.entities)
 		{
-			if (entity.isAlive) {
+			if (entity.isAlive)
+			{
 				renderEntityBound(entity);
 			}
 		}
@@ -189,14 +195,16 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 								 + e.velocity * elapsedTimeS + e.position;
 		e.velocity = accel * elapsedTimeS + e.velocity;
 
-		if (isPlayer) {
+		if (isPlayer)
+		{
 			auto slide = [& incident = e.velocity](Vector3 normal)
 			{
 				return incident - 1.0f * incident.Dot(normal) * normal;
 			};
 
 			// Limit position
-			if (e.position.x < -PLAYER_MAX_POSITION.x) {
+			if (e.position.x < -PLAYER_MAX_POSITION.x)
+			{
 				e.position.x = -PLAYER_MAX_POSITION.x;
 				e.velocity	 = slide(Vector3(1.0f, 0.0f, 0.0f));
 			}
@@ -205,7 +213,8 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 				e.position.x = PLAYER_MAX_POSITION.x;
 				e.velocity	 = slide(Vector3(-1.0f, 0.0f, 0.0f));
 			}
-			if (e.position.y < -PLAYER_MAX_POSITION.y) {
+			if (e.position.y < -PLAYER_MAX_POSITION.y)
+			{
 				e.position.y = -PLAYER_MAX_POSITION.y;
 				e.velocity	 = slide(Vector3(0.0f, 1.0f, 0.0f));
 			}
@@ -217,7 +226,8 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 
 			// Clamp velocity
 			float velocityMagnitude = e.velocity.Length();
-			if (velocityMagnitude > m_context.playerMaxVelocity) {
+			if (velocityMagnitude > m_context.playerMaxVelocity)
+			{
 				e.velocity.Normalize();
 				e.velocity *= m_context.playerMaxVelocity;
 			}
@@ -290,7 +300,8 @@ GameLogic::performCollisionTests()
 	}
 
 	// Player is invulnerable, no more collision tests
-	if (m_context.playerState == PlayerState::Reviving) {
+	if (m_context.playerState == PlayerState::Reviving)
+	{
 		return;
 	}
 
@@ -310,7 +321,8 @@ GameLogic::collisionTestEntity(
 	const size_t rangeOnePastEndIdx,
 	Func onCollision)
 {
-	if (!entity.isAlive) {
+	if (!entity.isAlive)
+	{
 		return;
 	}
 
@@ -323,7 +335,8 @@ GameLogic::collisionTestEntity(
 	{
 		assert(m_context.entities[testIdx].model);
 		auto& testEntity = m_context.entities[testIdx];
-		if (!testEntity.isAlive) {
+		if (!testEntity.isAlive)
+		{
 			continue;
 		}
 
@@ -331,7 +344,8 @@ GameLogic::collisionTestEntity(
 		auto testCenter = testEntity.position + testBound.Center;
 
 		auto distance = (srcCenter - testCenter).Length();
-		if (distance <= (srcBound.Radius + testBound.Radius)) {
+		if (distance <= (srcBound.Radius + testBound.Radius))
+		{
 			onCollision(entity, testEntity);
 		}
 	}
@@ -473,7 +487,8 @@ GameLogic::updateUILives()
 void
 GameLogic::drawHUD()
 {
-	if (m_hudDirty) {
+	if (m_hudDirty)
+	{
 		m_hudDirty = false;
 		updateUIScore();
 		updateUILives();

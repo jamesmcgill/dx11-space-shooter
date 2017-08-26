@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Entity.h"		 // NUM_ENEMIES
-#include "AppResources.h" // ModelResource
+#include "Entity.h"					 // NUM_ENEMIES
+#include "AppResources.h"		 // ModelResource
 
 namespace DX
 {

@@ -151,8 +151,8 @@ static const Level level1 = {{
 	// EnemyWave{{section2}, 45.0f},
 }};
 
-static std::vector<Level> s_debugLevels = { { getDebugLevel() } };
-static std::vector<Level> s_levels = {{ level1 }};
+static std::vector<Level> s_debugLevels = {{getDebugLevel()}};
+static std::vector<Level> s_levels			= {{level1}};
 
 //------------------------------------------------------------------------------
 constexpr float SHOT_SPEED									= 40.0f;
@@ -186,7 +186,7 @@ Enemies::reset()
 
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		m_context.entities[i].isAlive = false;
+		m_context.entities[i].isAlive			= false;
 		m_context.entities[i].isColliding = false;
 	}
 }
@@ -200,7 +200,8 @@ Enemies::update(const DX::StepTimer& timer)
 
 	// Spawn enemies
 	auto& level = s_levels[m_currentLevel];
-	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS) {
+	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS)
+	{
 		// Spawn wave
 		for (auto& sec : level.waves[m_nextEventWaveIdx].sections)
 		{
@@ -218,7 +219,8 @@ Enemies::update(const DX::StepTimer& timer)
 				newEnemy.birthTimeS = totalTimeS + delayS;
 				newEnemy.model			= &m_resources.modelData[sec.model];
 				m_context.nextEnemyIdx++;
-				if (m_context.nextEnemyIdx >= ENEMIES_END) {
+				if (m_context.nextEnemyIdx >= ENEMIES_END)
+				{
 					m_context.nextEnemyIdx = ENEMIES_IDX;
 				}
 				delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
@@ -226,7 +228,8 @@ Enemies::update(const DX::StepTimer& timer)
 		}			 // section
 
 		m_nextEventWaveIdx++;
-		if (m_nextEventWaveIdx < level.waves.size()) {
+		if (m_nextEventWaveIdx < level.waves.size())
+		{
 			m_nextEventTimeS = level.waves[m_nextEventWaveIdx].instanceTimeS;
 			m_activeWaveIdx	= m_nextEventWaveIdx - 1;
 		}
@@ -239,10 +242,12 @@ Enemies::update(const DX::StepTimer& timer)
 	}
 
 	// Spawn enemy shots
-	if (fmod(totalTimeS, 2.0f) < elapsedTimeS) {
+	if (fmod(totalTimeS, 2.0f) < elapsedTimeS)
+	{
 		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 		{
-			if (m_context.entities[i].isAlive) {
+			if (m_context.entities[i].isAlive)
+			{
 				emitShot(
 					m_context.entities[i],
 					-1.0f,
@@ -259,7 +264,8 @@ Enemies::update(const DX::StepTimer& timer)
 	int countAlive = 0;
 	for (size_t i = 0; i < NUM_ENTITIES; ++i)
 	{
-		if (m_context.entities[i].isAlive) {
+		if (m_context.entities[i].isAlive)
+		{
 			++countAlive;
 		}
 	}
@@ -293,7 +299,8 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		auto& e = m_context.entities[i];
-		if (!e.isAlive) {
+		if (!e.isAlive)
+		{
 			continue;
 		}
 		assert(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
@@ -301,7 +308,8 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		auto& waypoints = *m_entityIdxToWaypoints[i - ENEMIES_IDX];
 
 		const float aliveS = (totalTimeS - e.birthTimeS);
-		if (aliveS < 0.0f) {
+		if (aliveS < 0.0f)
+		{
 			e.position = waypoints[0].wayPoint;
 			continue;
 		}
@@ -309,7 +317,8 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		// Enemy finished it's route
 		const size_t currentSegment
 			= static_cast<size_t>(floor(aliveS / SEGMENT_DURATION_S));
-		if (currentSegment >= waypoints.size() - 1) {
+		if (currentSegment >= waypoints.size() - 1)
+		{
 			e.isAlive = false;
 			continue;
 		}
@@ -341,7 +350,8 @@ Enemies::emitShot(
 	newShot.velocity = Vector3(0.0f, speed, 0.0f);
 
 	shotEntityIdx++;
-	if (shotEntityIdx >= maxEntityIdxPlusOne) {
+	if (shotEntityIdx >= maxEntityIdxPlusOne)
+	{
 		shotEntityIdx = minEntityIdx;
 	}
 }
@@ -369,7 +379,8 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		assert(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
-		if (m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr) {
+		if (m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr)
+		{
 			waypointsToRender.insert(m_entityIdxToWaypoints[i - ENEMIES_IDX]);
 		}
 	}
@@ -400,7 +411,8 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 }
 
 //------------------------------------------------------------------------------
-void Enemies::debugLevel()
+void
+Enemies::debugLevel()
 {
 	s_levels.swap(s_debugLevels);
 }

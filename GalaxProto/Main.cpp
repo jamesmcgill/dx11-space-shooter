@@ -31,10 +31,12 @@ wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	if (!XMVerifyCPUSupport()) return 1;
+	if (!XMVerifyCPUSupport())
+		return 1;
 
 	HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-	if (FAILED(hr)) return 1;
+	if (FAILED(hr))
+		return 1;
 
 	g_game = std::make_unique<Game>();
 
@@ -54,7 +56,8 @@ wWinMain(
 		wcex.lpszMenuName	= nullptr;
 		wcex.lpszClassName = L"GalaxProtoWindowClass";
 		wcex.hIconSm			 = LoadIcon(wcex.hInstance, L"IDI_ICON");
-		if (!RegisterClassEx(&wcex)) return 1;
+		if (!RegisterClassEx(&wcex))
+			return 1;
 
 		// Create window
 		int w, h;
@@ -84,7 +87,8 @@ wWinMain(
 		// TODO: Change to CreateWindowEx(WS_EX_TOPMOST, L"GalaxProtoWindowClass",
 		// L"GalaxProto", WS_POPUP, to default to fullscreen.
 
-		if (!hwnd) return 1;
+		if (!hwnd)
+			return 1;
 
 		ShowWindow(hwnd, nCmdShow);
 		// TODO: Change nCmdShow to SW_SHOWMAXIMIZED to default to fullscreen.
@@ -101,7 +105,8 @@ wWinMain(
 	MSG msg = {0};
 	while (WM_QUIT != msg.message)
 	{
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -141,17 +146,21 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_SIZE:
-			if (wParam == SIZE_MINIMIZED) {
-				if (!s_minimized) {
+			if (wParam == SIZE_MINIMIZED)
+			{
+				if (!s_minimized)
+				{
 					s_minimized = true;
-					if (!s_in_suspend && game) game->onSuspending();
+					if (!s_in_suspend && game)
+						game->onSuspending();
 					s_in_suspend = true;
 				}
 			}
 			else if (s_minimized)
 			{
 				s_minimized = false;
-				if (s_in_suspend && game) game->onResuming();
+				if (s_in_suspend && game)
+					game->onResuming();
 				s_in_suspend = false;
 			}
 			else if (!s_in_sizemove && game)
@@ -166,7 +175,8 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case WM_EXITSIZEMOVE:
 			s_in_sizemove = false;
-			if (game) {
+			if (game)
+			{
 				RECT rc;
 				GetClientRect(hWnd, &rc);
 
@@ -183,9 +193,11 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 		case WM_ACTIVATEAPP:
-			if (game) {
+			if (game)
+			{
 				Keyboard::ProcessMessage(message, wParam, lParam);
-				if (wParam) {
+				if (wParam)
+				{
 					game->onActivated();
 				}
 				else
@@ -199,13 +211,16 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (wParam)
 			{
 				case PBT_APMQUERYSUSPEND:
-					if (!s_in_suspend && game) game->onSuspending();
+					if (!s_in_suspend && game)
+						game->onSuspending();
 					s_in_suspend = true;
 					return TRUE;
 
 				case PBT_APMRESUMESUSPEND:
-					if (!s_minimized) {
-						if (s_in_suspend && game) game->onResuming();
+					if (!s_minimized)
+					{
+						if (s_in_suspend && game)
+							game->onResuming();
 						s_in_suspend = false;
 					}
 					return TRUE;
@@ -224,15 +239,18 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case WM_SYSKEYDOWN:
 			Keyboard::ProcessMessage(message, wParam, lParam);
-			if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000) {
+			if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000)
+			{
 				// Implements the classic ALT+ENTER fullscreen toggle
-				if (s_fullscreen) {
+				if (s_fullscreen)
+				{
 					SetWindowLongPtr(hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 					SetWindowLongPtr(hWnd, GWL_EXSTYLE, 0);
 
 					int width	= 800;
 					int height = 600;
-					if (game) game->getDefaultSize(width, height);
+					if (game)
+						game->getDefaultSize(width, height);
 
 					ShowWindow(hWnd, SW_SHOWNORMAL);
 

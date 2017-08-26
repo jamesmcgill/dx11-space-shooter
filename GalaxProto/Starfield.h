@@ -5,7 +5,7 @@
 
 namespace DX
 {
-	class StepTimer;
+class StepTimer;
 }
 
 //------------------------------------------------------------------------------
@@ -23,7 +23,10 @@ public:
 		SPEED_Medium = 2500,
 		SPEED_Fast	 = 1200
 	};
-	void setSpeed(SPEED_TimePerScreenWrapMs speed) { m_timePerWrapMs = speed; }
+	void setSpeed(SPEED_TimePerScreenWrapMs speed)
+	{
+		m_timePerWrapMs = speed;
+	}
 
 private:
 	struct StarParticle
