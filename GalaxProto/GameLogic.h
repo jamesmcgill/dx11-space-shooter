@@ -22,7 +22,6 @@ public:
 	GameLogic(AppContext& context, AppResources& resources);
 
 	void reset();
-	void resetCamera();
 	GameStatus update(const DX::StepTimer& timer);
 	void render();
 

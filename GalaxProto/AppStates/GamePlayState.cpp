@@ -17,6 +17,7 @@ extern void ExitGame();
 //------------------------------------------------------------------------------
 constexpr float CAMERA_SPEED_X			 = 1.0f;
 constexpr float CAMERA_SPEED_Y			 = 1.0f;
+constexpr float CAMERA_MIN_DIST			 = 30.0f;
 constexpr float UNIT_DIAGONAL_LENGTH = 0.7071067811865475f;
 
 //------------------------------------------------------------------------------
@@ -50,29 +51,44 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.debugDraw = !m_context.debugDraw;
 	}
 
-	// Player Movement
-	m_context.playerAccel = Vector3();		// NB. Must be reset, even while dead.
-	if (m_context.playerState == PlayerState::Dying)
+	constexpr size_t CAMERA_DIST_CONTROL = 16;
+	const auto& midiMask								 = m_resources.midiTracker.dirtyMask;
+	const auto& midiState								 = m_resources.midiTracker.currentState;
+	if (midiMask.test(CAMERA_DIST_CONTROL))
 	{
-		return;
+		m_context.cameraDistance
+			= static_cast<float>(midiState[CAMERA_DIST_CONTROL]) + CAMERA_MIN_DIST;
+		m_context.updateViewMatrix();
 	}
+	m_resources.midiTracker.flush();
 
 	if (kbState.W)
 	{
 		m_context.cameraRotationX -= elapsedTimeS * CAMERA_SPEED_X;
+		m_context.updateViewMatrix();
 	}
 	else if (kbState.S)
 	{
 		m_context.cameraRotationX += elapsedTimeS * CAMERA_SPEED_X;
+		m_context.updateViewMatrix();
 	}
 
 	if (kbState.A)
 	{
 		m_context.cameraRotationY -= elapsedTimeS * CAMERA_SPEED_Y;
+		m_context.updateViewMatrix();
 	}
 	else if (kbState.D)
 	{
 		m_context.cameraRotationY += elapsedTimeS * CAMERA_SPEED_Y;
+		m_context.updateViewMatrix();
+	}
+
+	// Player Movement
+	m_context.playerAccel = Vector3();		// NB. Must be reset, even while dead.
+	if (m_context.playerState == PlayerState::Dying)
+	{
+		return;
 	}
 
 	if (kbState.Up)

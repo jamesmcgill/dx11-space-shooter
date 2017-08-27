@@ -7,6 +7,8 @@
 #include "Explosions.h"
 #include "MenuManager.h"
 #include "ScoreBoard.h"
+#include "midi-controller/MidiController.h"
+
 //------------------------------------------------------------------------------
 enum class ModelResource
 {
@@ -45,6 +47,8 @@ struct AppResources
 	std::unique_ptr<DirectX::Keyboard> m_keyboard;
 	DirectX::Keyboard::KeyboardStateTracker kbTracker;
 	std::unique_ptr<DirectX::AudioEngine> audioEngine;
+	midi::MidiController midiController;
+	midi::MidiControllerTracker midiTracker;
 
 	std::unique_ptr<DirectX::CommonStates> m_states;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_starTexture;

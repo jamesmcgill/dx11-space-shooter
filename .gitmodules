@@ -1,0 +1,3 @@
+[submodule "midi-controller"]
+	path = midi-controller
+	url = git@github.com:jamesmcgill/midi-controller.git

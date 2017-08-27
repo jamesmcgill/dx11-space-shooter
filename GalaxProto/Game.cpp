@@ -29,6 +29,13 @@ Game::Game()
 	m_appResources.audioEngine = std::make_unique<AudioEngine>(eflags);
 	m_appResources.audioEngine->SetMasterVolume(0.5f);
 
+	m_appResources.midiController.loadAndInitDll();
+	midi::g_onControllerEvent
+		= [& tracker = m_appResources.midiTracker](int controllerId, int value)
+	{
+		tracker.onEvent(controllerId, value);
+	};
+
 	// Setup Resource Names
 	auto setModelPath = [&](ModelResource res, wchar_t* path) {
 		m_appResources.modelLocations[res] = MODEL_PATH + path;
@@ -386,7 +393,7 @@ Game::createWindowSizeDependentResources()
 	m_gameLogic.updateUILives();
 	m_gameLogic.updateUIScore();
 
-	m_gameLogic.resetCamera();
+	m_appContext.updateViewMatrix();
 }
 
 //------------------------------------------------------------------------------

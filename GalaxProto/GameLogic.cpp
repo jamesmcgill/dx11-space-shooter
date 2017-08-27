@@ -49,19 +49,7 @@ GameLogic::reset()
 	m_context.playerState = PlayerState::Normal;
 	m_hudDirty						= true;
 
-	resetCamera();
-}
-
-//------------------------------------------------------------------------------
-void
-GameLogic::resetCamera()
-{
-	const auto& atP = Vector3{0.0f, 0.0f, 0.0f};
-	static const XMVECTORF32 eye
-		= {atP.x, atP.y, atP.z + m_context.cameraDistance, 0.0f};
-	static const XMVECTORF32 at = {atP.x, atP.y, atP.z, 0.0f};
-	static const XMVECTORF32 up = {0.0f, 1.0f, 0.0f, 0.0f};
-	m_context.view							= XMMatrixLookAtRH(eye, at, up);
+	m_context.updateViewMatrix();
 }
 
 //------------------------------------------------------------------------------

@@ -36,7 +36,7 @@ struct AppContext
 	DirectX::SimpleMath::Matrix proj;
 	float cameraRotationX = 0.0f;
 	float cameraRotationY = 0.0f;
-	float cameraDist			= 1.0f;
+	float cameraDistance	= 80.0f;
 
 	size_t nextPlayerShotIdx = PLAYER_SHOTS_IDX;
 	size_t nextEnemyShotIdx	= ENEMY_SHOTS_IDX;
@@ -58,12 +58,39 @@ struct AppContext
 	float playerFriction		= 60.0f;
 	float playerMaxVelocity = 40.0f;
 	float playerMinVelocity = 0.3f;
-	float cameraDistance		= 80.0f;
+
 	UIText uiPlayerSpeed;
 	UIText uiPlayerFriction;
 	UIText uiPlayerMaxVelocity;
 	UIText uiPlayerMinVelocity;
 	UIText uiCameraDist;
+
+	void updateViewMatrix()
+	{
+		using namespace DirectX;
+
+		const auto& atP = DirectX::SimpleMath::Vector3{0.0f, 0.0f, 0.0f};
+		const DirectX::XMVECTORF32 eye
+			= {atP.x, atP.y, atP.z + cameraDistance, 0.0f};
+		const DirectX::XMVECTORF32 at = {atP.x, atP.y, atP.z, 0.0f};
+		const DirectX::XMVECTORF32 up = {0.0f, 1.0f, 0.0f, 0.0f};
+		// view																 = XMMatrixLookAtRH(eye, at, up);
+
+		// Camera controls
+		XMVECTOR eyePos = XMVectorSubtract(eye, at);
+
+		float radiansX = static_cast<float>(fmod(cameraRotationX, XM_2PI));
+		eyePos				 = XMVector3Rotate(
+			eyePos, XMQuaternionRotationMatrix(XMMatrixRotationX(radiansX)));
+
+		float radiansY = static_cast<float>(fmod(cameraRotationY, XM_2PI));
+		eyePos				 = XMVector3Rotate(
+			eyePos, XMQuaternionRotationMatrix(XMMatrixRotationY(radiansY)));
+
+		eyePos = XMVectorAdd(eyePos, at);
+
+		view = XMMatrixLookAtRH(eyePos, at, up);
+	}
 };
 
 //------------------------------------------------------------------------------
