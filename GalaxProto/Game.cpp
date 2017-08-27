@@ -27,6 +27,7 @@ Game::Game()
 	eflags = eflags | AudioEngine_Debug;
 #endif
 	m_appResources.audioEngine = std::make_unique<AudioEngine>(eflags);
+	m_appResources.audioEngine->SetMasterVolume(0.5f);
 
 	// Setup Resource Names
 	auto setModelPath = [&](ModelResource res, wchar_t* path) {
@@ -59,6 +60,15 @@ Game::Game()
 	{
 		m_appContext.entities[i].isAlive	= true;
 		m_appContext.entities[i].position = PLAYER_START_POS;
+	}
+}
+
+//------------------------------------------------------------------------------
+Game::~Game()
+{
+	if (m_appResources.audioEngine)
+	{
+		m_appResources.audioEngine->Reset();
 	}
 }
 
@@ -400,6 +410,7 @@ Game::OnDeviceLost()
 	m_appResources.explosions.reset();
 	m_appResources.scoreBoard.reset();
 	m_appResources.menuManager.reset();
+
 	m_appResources.m_batch.reset();
 	m_appResources.m_spriteBatch.reset();
 	m_appResources.m_explosionTexture.Reset();

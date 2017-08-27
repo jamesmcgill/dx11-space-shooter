@@ -13,6 +13,7 @@ class Game : public DX::IDeviceNotify
 {
 public:
 	Game();
+	~Game();
 
 	// Initialization and management
 	void initialize(HWND window, int width, int height);
