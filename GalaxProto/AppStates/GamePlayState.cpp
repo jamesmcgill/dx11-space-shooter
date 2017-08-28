@@ -15,10 +15,16 @@ using namespace DirectX::SimpleMath;
 extern void ExitGame();
 
 //------------------------------------------------------------------------------
-constexpr float CAMERA_SPEED_X			 = 1.0f;
-constexpr float CAMERA_SPEED_Y			 = 1.0f;
-constexpr float CAMERA_MIN_DIST			 = 30.0f;
-constexpr float UNIT_DIAGONAL_LENGTH = 0.7071067811865475f;
+constexpr float CAMERA_SPEED_X							 = 1.0f;
+constexpr float CAMERA_SPEED_Y							 = 1.0f;
+constexpr float CAMERA_MIN_DIST							 = 30.0f;
+constexpr float UNIT_DIAGONAL_LENGTH				 = 0.7071067811865475f;
+
+constexpr size_t CAMERA_DIST_CONTROL				 = 16;
+constexpr size_t PLAYER_SPEED_CONTROL				 = 17;
+constexpr size_t PLAYER_FRICTION_CONTROL		 = 18;
+constexpr size_t PLAYER_MAX_VELOCITY_CONTROL = 19;
+constexpr size_t PLAYER_MIN_VELOCITY_CONTROL = 20;
 
 //------------------------------------------------------------------------------
 void
@@ -51,14 +57,33 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.debugDraw = !m_context.debugDraw;
 	}
 
-	constexpr size_t CAMERA_DIST_CONTROL = 16;
-	const auto& midiMask								 = m_resources.midiTracker.dirtyMask;
-	const auto& midiState								 = m_resources.midiTracker.currentState;
+	const auto& midiMask	= m_resources.midiTracker.dirtyMask;
+	const auto& midiState = m_resources.midiTracker.currentState;
 	if (midiMask.test(CAMERA_DIST_CONTROL))
 	{
 		m_context.cameraDistance
 			= static_cast<float>(midiState[CAMERA_DIST_CONTROL]) + CAMERA_MIN_DIST;
 		m_context.updateViewMatrix();
+	}
+	if (midiMask.test(PLAYER_SPEED_CONTROL))
+	{
+		m_context.playerSpeed
+			= static_cast<float>(midiState[PLAYER_SPEED_CONTROL] * 2);
+	}
+	if (midiMask.test(PLAYER_FRICTION_CONTROL))
+	{
+		m_context.playerFriction
+			= static_cast<float>(midiState[PLAYER_FRICTION_CONTROL] * 2);
+	}
+	if (midiMask.test(PLAYER_MAX_VELOCITY_CONTROL))
+	{
+		m_context.playerMaxVelocity
+			= static_cast<float>(midiState[PLAYER_MAX_VELOCITY_CONTROL] * 2);
+	}
+	if (midiMask.test(PLAYER_MIN_VELOCITY_CONTROL))
+	{
+		m_context.playerMinVelocity
+			= static_cast<float>(midiState[PLAYER_MIN_VELOCITY_CONTROL]) / 10.f;
 	}
 	m_resources.midiTracker.flush();
 
