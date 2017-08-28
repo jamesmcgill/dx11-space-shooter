@@ -38,6 +38,7 @@ public:
 private:
 	void update();
 	void render();
+	void drawGlobalDebugInfo();
 	void clear();
 
 	void createDeviceDependentResources();

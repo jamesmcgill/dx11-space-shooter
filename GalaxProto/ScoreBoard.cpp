@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include "fmt/format.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;

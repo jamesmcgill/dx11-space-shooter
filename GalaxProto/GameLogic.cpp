@@ -4,7 +4,6 @@
 #include "AppResources.h"
 #include "StepTimer.h"
 #include "Entity.h"
-#include "fmt/format.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -307,7 +306,7 @@ GameLogic::collisionTestEntity(
 	Entity& entity,
 	const size_t rangeStartIdx,
 	const size_t rangeOnePastEndIdx,
-	Func onCollision)
+	Func& onCollision)
 {
 	if (!entity.isAlive)
 	{
@@ -532,12 +531,7 @@ GameLogic::updateUIDebugVariables()
 void
 GameLogic::drawDebugVariables()
 {
-	// TODO(James): Move to somewhere called infrequently (ie. when they change)
-	updateUIDebugVariables();
-
-	auto drawUI =
-		[& font				= m_resources.font8pt,
-		 &spriteBatch = m_resources.m_spriteBatch](UIText & ui)
+	auto drawUI = [& spriteBatch = m_resources.m_spriteBatch](UIText & ui)
 	{
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};

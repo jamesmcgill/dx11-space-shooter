@@ -122,6 +122,10 @@ Game::update()
 {
 	auto kbState = m_appResources.m_keyboard->GetState();
 	m_appResources.kbTracker.Update(kbState);
+	if (m_appResources.kbTracker.IsKeyPressed(Keyboard::F1))
+	{
+		m_appContext.debugDraw = !m_appContext.debugDraw;
+	}
 
 	m_appResources.audioEngine->Update();
 
@@ -151,9 +155,51 @@ Game::render()
 
 	m_appResources.m_deviceResources->PIXBeginEvent(L"Render");
 	m_appStates.currentState()->render();
+	if (m_appContext.debugDraw)
+	{
+		drawGlobalDebugInfo();
+	}
 	m_appResources.m_deviceResources->PIXEndEvent();
 
 	m_appResources.m_deviceResources->Present();
+}
+
+//------------------------------------------------------------------------------
+void
+Game::drawGlobalDebugInfo()
+{
+	float yPos		= 0.0f;
+	auto formatUI = [
+		&yPos,
+		font				= m_appResources.font8pt.get(),
+		screenWidth = m_appResources.m_screenWidth
+	](UIText & ui, const wchar_t* fmt, auto&&... vars)
+	{
+		ui.font							= font;
+		ui.text							= fmt::format(fmt, vars...);
+		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
+		float height				= XMVectorGetY(dimensions);
+		ui.origin						= Vector2(0.0f, 0.0f);
+		ui.dimensions				= dimensions;
+		ui.position.x				= 0.0f;
+		ui.position.y				= yPos;
+		yPos += height;
+	};
+	formatUI(
+		m_appContext.uiFrameRate,
+		L"fps: {}, Time: {:.2f}ms",
+		m_appResources.m_timer.GetFramesPerSecond(),
+		m_appResources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
+
+	auto drawUI =
+		[&font = m_appResources.font8pt,
+		&spriteBatch = m_appResources.m_spriteBatch](UIText & ui)
+	{
+		ui.draw(Colors::MediumVioletRed, *spriteBatch);
+	};
+	m_appResources.m_spriteBatch->Begin();
+	drawUI(m_appContext.uiFrameRate);
+	m_appResources.m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -392,6 +438,7 @@ Game::createWindowSizeDependentResources()
 	// Position HUD
 	m_gameLogic.updateUILives();
 	m_gameLogic.updateUIScore();
+	m_gameLogic.updateUIDebugVariables();
 
 	m_appContext.updateViewMatrix();
 }

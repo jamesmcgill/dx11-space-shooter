@@ -33,7 +33,7 @@ public:
 		Entity& entity,
 		const size_t rangeStartIdx,
 		const size_t rangeOnePastEndIdx,
-		Func onCollision);
+		Func& onCollision);
 
 	void renderPlayerEntity(Entity& entity);
 	void renderEntity(Entity& entity, float orientation = 0.0f);

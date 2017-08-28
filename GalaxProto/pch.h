@@ -60,6 +60,7 @@
 #include <map>
 
 #include <stdio.h>
+#include "fmt/format.h"
 
 namespace DX
 {

@@ -48,6 +48,31 @@ public:
 		return TicksToSeconds(m_elapsedTicks);
 	}
 
+	// This time will be smaller than GetElapsedSeconds()
+	// as it represents only a partial tick (until now)
+	double GetElapsedSecondsSinceTickStarted() const
+	{
+		LARGE_INTEGER currentTime;
+
+		if (!QueryPerformanceCounter(&currentTime))
+		{
+			throw std::exception("QueryPerformanceCounter");
+		}
+
+		uint64_t timeDelta = currentTime.QuadPart - m_qpcLastTime.QuadPart;
+		// Clamp excessively large time deltas (e.g. after paused in the debugger).
+		if (timeDelta > m_qpcMaxDelta)
+		{
+			timeDelta = m_qpcMaxDelta;
+		}
+		// Convert QPC units into a canonical tick format. This cannot overflow due
+		// to the previous clamp.
+		timeDelta *= TicksPerSecond;
+		timeDelta /= m_qpcFrequency.QuadPart;
+
+		return TicksToSeconds(timeDelta);
+	}
+
 	// Get total time since the start of the program.
 	uint64_t GetTotalTicks() const
 	{

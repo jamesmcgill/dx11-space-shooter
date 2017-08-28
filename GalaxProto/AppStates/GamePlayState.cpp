@@ -52,10 +52,6 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_gameLogic.m_enemies.debugLevel();
 		m_gameLogic.reset();
 	}
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F3))
-	{
-		m_context.debugDraw = !m_context.debugDraw;
-	}
 
 	const auto& midiMask	= m_resources.midiTracker.dirtyMask;
 	const auto& midiState = m_resources.midiTracker.currentState;
@@ -64,26 +60,31 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.cameraDistance
 			= static_cast<float>(midiState[CAMERA_DIST_CONTROL]) + CAMERA_MIN_DIST;
 		m_context.updateViewMatrix();
+		m_gameLogic.updateUIDebugVariables();
 	}
 	if (midiMask.test(PLAYER_SPEED_CONTROL))
 	{
 		m_context.playerSpeed
 			= static_cast<float>(midiState[PLAYER_SPEED_CONTROL] * 2);
+		m_gameLogic.updateUIDebugVariables();
 	}
 	if (midiMask.test(PLAYER_FRICTION_CONTROL))
 	{
 		m_context.playerFriction
 			= static_cast<float>(midiState[PLAYER_FRICTION_CONTROL] * 2);
+		m_gameLogic.updateUIDebugVariables();
 	}
 	if (midiMask.test(PLAYER_MAX_VELOCITY_CONTROL))
 	{
 		m_context.playerMaxVelocity
 			= static_cast<float>(midiState[PLAYER_MAX_VELOCITY_CONTROL] * 2);
+		m_gameLogic.updateUIDebugVariables();
 	}
 	if (midiMask.test(PLAYER_MIN_VELOCITY_CONTROL))
 	{
 		m_context.playerMinVelocity
 			= static_cast<float>(midiState[PLAYER_MIN_VELOCITY_CONTROL]) / 10.f;
+		m_gameLogic.updateUIDebugVariables();
 	}
 	m_resources.midiTracker.flush();
 

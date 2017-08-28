@@ -18,7 +18,7 @@ struct UIText
 	DirectX::SimpleMath::Vector2 position;
 	DirectX::SimpleMath::Vector2 dimensions;
 	DirectX::SimpleMath::Vector2 origin;
-	DirectX::SpriteFont* font;
+	DirectX::SpriteFont* font = nullptr;
 	std::wstring text;
 
 	void draw(DirectX::XMVECTOR color, DirectX::SpriteBatch& spriteBatch)
@@ -64,6 +64,7 @@ struct AppContext
 	UIText uiPlayerMaxVelocity;
 	UIText uiPlayerMinVelocity;
 	UIText uiCameraDist;
+	UIText uiFrameRate;
 
 	void updateViewMatrix()
 	{
