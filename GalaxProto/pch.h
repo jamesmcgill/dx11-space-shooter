@@ -59,8 +59,10 @@
 #include <array>
 #include <map>
 
-#include <stdio.h>
 #include "fmt/format.h"
+#include <crtdbg.h>
+
+#define ASSERT _ASSERTE
 
 namespace DX
 {
