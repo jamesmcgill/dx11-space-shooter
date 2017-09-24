@@ -5,6 +5,10 @@
 #include "StepTimer.h"
 #include "Entity.h"
 
+#define LOG_LEVEL_VERBOSE
+#define ENABLE_TRACE
+#include "utils/Log.h"
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -23,6 +27,7 @@ GameLogic::GameLogic(AppContext& context, AppResources& resources)
 		, m_resources(resources)
 		, m_enemies(context, resources)
 {
+	TRACE();
 	reset();
 }
 
@@ -30,6 +35,7 @@ GameLogic::GameLogic(AppContext& context, AppResources& resources)
 void
 GameLogic::reset()
 {
+	TRACE();
 	m_enemies.reset();
 
 	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
@@ -73,6 +79,7 @@ GameLogic::update(const DX::StepTimer& timer)
 			{
 				if (--m_context.playerLives > -1)
 				{
+					LOG_VERBOSE("playerState: Dying->Reviving\n");
 					m_context.playerState				 = PlayerState::Reviving;
 					m_context.playerReviveTimerS = PLAYER_REVIVE_TIME_S;
 					m_hudDirty									 = true;
@@ -87,6 +94,7 @@ GameLogic::update(const DX::StepTimer& timer)
 		case PlayerState::Reviving:
 			if ((m_context.playerReviveTimerS -= elapsedTimeS) <= 0.0f)
 			{
+				LOG_VERBOSE("playerState: Reviving->Normal\n");
 				m_context.playerState = PlayerState::Normal;
 			}
 			performCollisionTests();
@@ -274,6 +282,7 @@ GameLogic::performCollisionTests()
 		enemy.isColliding	= true;
 
 		enemy.isAlive							= false;
+		LOG_VERBOSE("playerState: Normal->Dying\n");
 		context.playerState				= PlayerState::Dying;
 		context.playerDeathTimerS = PLAYER_DEATH_TIME_S;
 	};
@@ -446,6 +455,7 @@ GameLogic::renderEntityBound(Entity& entity)
 void
 GameLogic::updateUIScore()
 {
+	TRACE();
 	auto& score					= m_context.uiScore;
 	score.font					= m_resources.font32pt.get();
 	score.text					= fmt::format(L"Score: {}", m_context.playerScore);
@@ -460,6 +470,7 @@ GameLogic::updateUIScore()
 void
 GameLogic::updateUILives()
 {
+	TRACE();
 	auto& lives					= m_context.uiLives;
 	lives.font					= m_resources.font32pt.get();
 	lives.text					= fmt::format(L"Lives: {}", m_context.playerLives);

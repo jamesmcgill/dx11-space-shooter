@@ -1,12 +1,12 @@
-//#define ENABLE_TRACE
-//#define ENABLE_LOCAL
-
 #include "pch.h"
 #include "AppStates.h"
 #include "GameOverState.h"
 #include "AppContext.h"
 #include "AppResources.h"
 #include "GameLogic.h"
+
+#define ENABLE_TRACE
+#include "utils/Log.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -71,14 +71,14 @@ GameOverState::render()
 void
 GameOverState::load()
 {
-	// TRACE("GameOverState::load()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
 void
 GameOverState::unload()
 {
-	// TRACE("GameOverState::unload()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ GameOverState::isLoaded() const
 void
 GameOverState::enter()
 {
-	// TRACE("GameOverState::enter()");
+	TRACE();
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
 	m_resources.soundEffects[AudioResource::GameOver]->Play();
 }
@@ -101,7 +101,7 @@ GameOverState::enter()
 void
 GameOverState::exit()
 {
-	// TRACE("GameOverState::exit()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------

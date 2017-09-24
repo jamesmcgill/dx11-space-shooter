@@ -1,11 +1,11 @@
-//#define ENABLE_TRACE
-//#define ENABLE_LOCAL
-
 #include "pch.h"
 #include "AppStates.h"
 #include "MainMenuState.h"
 #include "AppResources.h"
 #include "GameLogic.h"
+
+#define ENABLE_TRACE
+#include "utils/Log.h"
 
 using namespace DirectX;
 
@@ -117,14 +117,14 @@ MainMenuState::render()
 void
 MainMenuState::load()
 {
-	// TRACE("MainMenuState::load()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
 void
 MainMenuState::unload()
 {
-	// TRACE("MainMenuState::unload()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ MainMenuState::isLoaded() const
 void
 MainMenuState::enter()
 {
-	// TRACE("MainMenuState::enter()");
+	TRACE();
 	m_resources.menuManager->loadMenus(&s_menus);
 	resetTimer();
 }
@@ -147,7 +147,7 @@ MainMenuState::enter()
 void
 MainMenuState::exit()
 {
-	// TRACE("MainMenuState::exit()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------

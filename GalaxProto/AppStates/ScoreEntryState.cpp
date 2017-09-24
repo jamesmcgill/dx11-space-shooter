@@ -1,12 +1,12 @@
-//#define ENABLE_TRACE
-//#define ENABLE_LOCAL
-
 #include "pch.h"
 #include "AppStates.h"
 #include "AppContext.h"
 #include "ScoreEntryState.h"
 #include "AppResources.h"
 #include "GameLogic.h"
+
+#define ENABLE_TRACE
+#include "utils/Log.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -150,14 +150,14 @@ ScoreEntryState::render()
 void
 ScoreEntryState::load()
 {
-	// TRACE("ScoreEntryState::load()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
 void
 ScoreEntryState::unload()
 {
-	// TRACE("ScoreEntryState::unload()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ ScoreEntryState::isLoaded() const
 void
 ScoreEntryState::enter()
 {
-	// TRACE("ScoreEntryState::enter()");
+	TRACE();
 	m_playerName.clear();
 	m_currentChar = L'A';
 }
@@ -180,7 +180,7 @@ ScoreEntryState::enter()
 void
 ScoreEntryState::exit()
 {
-	// TRACE("ScoreEntryState::exit()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------

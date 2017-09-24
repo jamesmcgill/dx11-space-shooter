@@ -1,11 +1,11 @@
-//#define ENABLE_TRACE
-//#define ENABLE_LOCAL
-
 #include "pch.h"
 #include "AppStates.h"
 #include "GetReadyState.h"
 #include "AppResources.h"
 #include "GameLogic.h"
+
+#define ENABLE_TRACE
+#include "utils/Log.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -57,14 +57,14 @@ GetReadyState::render()
 void
 GetReadyState::load()
 {
-	// TRACE("GetReadyState::load()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
 void
 GetReadyState::unload()
 {
-	// TRACE("GetReadyState::unload()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ GetReadyState::isLoaded() const
 void
 GetReadyState::enter()
 {
-	// TRACE("GetReadyState::enter()");
+	TRACE();
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
 	m_resources.soundEffects[AudioResource::GameStart]->Play();
 }
@@ -87,7 +87,7 @@ GetReadyState::enter()
 void
 GetReadyState::exit()
 {
-	// TRACE("GetReadyState::exit()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------

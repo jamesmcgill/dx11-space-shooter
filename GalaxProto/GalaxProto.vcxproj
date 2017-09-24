@@ -182,6 +182,7 @@
     <ClInclude Include="ScoreBoard.h" />
     <ClInclude Include="Starfield.h" />
     <ClInclude Include="StepTimer.h" />
+    <ClInclude Include="utils\Log.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppStates\AppStates.cpp" />

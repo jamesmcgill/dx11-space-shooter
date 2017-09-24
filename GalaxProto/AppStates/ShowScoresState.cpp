@@ -1,11 +1,11 @@
-//#define ENABLE_TRACE
-//#define ENABLE_LOCAL
-
 #include "pch.h"
 #include "AppStates.h"
 #include "ShowScoresState.h"
 #include "AppResources.h"
 #include "GameLogic.h"
+
+#define ENABLE_TRACE
+#include "utils/Log.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -60,14 +60,14 @@ ShowScoresState::render()
 void
 ShowScoresState::load()
 {
-	// TRACE("ShowScoresState::load()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
 void
 ShowScoresState::unload()
 {
-	// TRACE("ShowScoresState::unload()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ ShowScoresState::isLoaded() const
 void
 ShowScoresState::enter()
 {
-	// TRACE("ShowScoresState::enter()");
+	TRACE();
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
 }
 
@@ -89,7 +89,7 @@ ShowScoresState::enter()
 void
 ShowScoresState::exit()
 {
-	// TRACE("ShowScoresState::exit()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------

@@ -2,6 +2,10 @@
 #include "Game.h"
 #include "DebugDraw.h"
 
+#define ENABLE_TRACE
+#include "utils/Log.h"
+
+//------------------------------------------------------------------------------
 extern void ExitGame();
 
 using namespace DirectX;
@@ -17,6 +21,8 @@ Game::Game()
 		: m_gameLogic(m_appContext, m_appResources)
 		, m_appStates(m_appContext, m_appResources, m_gameLogic)
 {
+	TRACE();
+
 	m_appResources.m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_appResources.m_deviceResources->RegisterDeviceNotify(this);
 
@@ -73,6 +79,7 @@ Game::Game()
 //------------------------------------------------------------------------------
 Game::~Game()
 {
+	TRACE();
 	if (m_appResources.audioEngine)
 	{
 		m_appResources.audioEngine->Reset();
@@ -85,6 +92,7 @@ Game::~Game()
 void
 Game::initialize(HWND window, int width, int height)
 {
+	TRACE();
 	m_appResources.m_deviceResources->SetWindow(window, width, height);
 
 	m_appResources.m_deviceResources->CreateDeviceResources();
@@ -237,6 +245,7 @@ Game::clear()
 void
 Game::onActivated()
 {
+	TRACE();
 	// TODO: Game is becoming active window.
 }
 
@@ -244,6 +253,7 @@ Game::onActivated()
 void
 Game::onDeactivated()
 {
+	TRACE();
 	// TODO: Game is becoming background window.
 }
 
@@ -251,6 +261,7 @@ Game::onDeactivated()
 void
 Game::onSuspending()
 {
+	TRACE();
 	// TODO: Game is being power-suspended (or minimized).
 }
 
@@ -258,6 +269,7 @@ Game::onSuspending()
 void
 Game::onResuming()
 {
+	TRACE();
 	m_appResources.m_timer.ResetElapsedTime();
 
 	// TODO: Game is being power-resumed (or returning from minimize).
@@ -267,6 +279,7 @@ Game::onResuming()
 void
 Game::onWindowSizeChanged(int width, int height)
 {
+	TRACE();
 	if (!m_appResources.m_deviceResources->WindowSizeChanged(width, height))
 		return;
 
@@ -296,6 +309,7 @@ Game::getDefaultSize(int& width, int& height) const
 void
 Game::createDeviceDependentResources()
 {
+	TRACE();
 	auto device	= m_appResources.m_deviceResources->GetD3DDevice();
 	auto context = m_appResources.m_deviceResources->GetD3DDeviceContext();
 
@@ -415,6 +429,7 @@ Game::createDeviceDependentResources()
 void
 Game::createWindowSizeDependentResources()
 {
+	TRACE();
 	RECT outputSize = m_appResources.m_deviceResources->GetOutputSize();
 
 	const float fovAngleY = 30.0f * XM_PI / 180.0f;
@@ -447,6 +462,7 @@ Game::createWindowSizeDependentResources()
 void
 Game::OnDeviceLost()
 {
+	TRACE();
 	for (auto& modelData : m_appResources.modelData)
 	{
 		modelData.second.model.reset();
@@ -476,6 +492,7 @@ Game::OnDeviceLost()
 void
 Game::OnDeviceRestored()
 {
+	TRACE();
 	createDeviceDependentResources();
 
 	createWindowSizeDependentResources();

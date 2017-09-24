@@ -1,12 +1,12 @@
-//#define ENABLE_TRACE
-//#define ENABLE_LOCAL
-
 #include "pch.h"
 #include "AppStates.h"
 #include "GamePlayState.h"
 #include "AppContext.h"
 #include "AppResources.h"
 #include "GameLogic.h"
+
+#define ENABLE_TRACE
+#include "utils/Log.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -177,14 +177,14 @@ GamePlayState::render()
 void
 GamePlayState::load()
 {
-	//	TRACE("GamePlayState::load()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
 void
 GamePlayState::unload()
 {
-	//	TRACE("GamePlayState::unload()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ GamePlayState::isLoaded() const
 void
 GamePlayState::enter()
 {
-	//	TRACE("GamePlayState::enter()");
+	TRACE();
 	if (m_states.previousState() != &m_states.paused)
 	{
 		m_gameLogic.reset();
@@ -210,7 +210,7 @@ GamePlayState::enter()
 void
 GamePlayState::exit()
 {
-	//	TRACE("GamePlayState::exit()");
+	TRACE();
 }
 
 //------------------------------------------------------------------------------

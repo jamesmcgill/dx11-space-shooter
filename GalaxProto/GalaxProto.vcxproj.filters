@@ -14,6 +14,9 @@
     <Filter Include="AppStates">
       <UniqueIdentifier>{00cffc13-b446-4f4f-9ca5-93636dc0ffcc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{41c3b207-9b46-47bc-9aa4-8bd06810dda8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -63,6 +66,9 @@
     <ClInclude Include="ScoreBoard.h" />
     <ClInclude Include="AppStates\ScoreEntryState.h">
       <Filter>AppStates</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\Log.h">
+      <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
