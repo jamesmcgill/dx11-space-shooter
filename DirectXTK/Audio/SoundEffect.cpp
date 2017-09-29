@@ -464,13 +464,17 @@ SoundEffect::~SoundEffect()
 // Public methods.
 void SoundEffect::Play()
 {
+#ifndef DISABLE_SOUNDS
     pImpl->Play( 1.f, 0.f, 0.f );
+#endif
 }
 
 
 void SoundEffect::Play( float volume, float pitch, float pan )
 {
+#ifndef DISABLE_SOUNDS
     pImpl->Play( volume, pitch, pan );
+#endif
 }
 
 
