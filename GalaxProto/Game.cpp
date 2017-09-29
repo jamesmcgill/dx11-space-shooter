@@ -179,7 +179,7 @@ Game::drawGlobalDebugInfo()
 	float yPos		= 0.0f;
 	auto formatUI = [
 		&yPos,
-		font				= m_appResources.font8pt.get(),
+		font				= m_appResources.fontMono8pt.get(),
 		screenWidth = m_appResources.m_screenWidth
 	](UIText & ui, const wchar_t* fmt, auto&&... vars)
 	{
@@ -351,9 +351,13 @@ Game::createDeviceDependentResources()
 
 	m_appResources.font8pt
 		= std::make_unique<SpriteFont>(device, L"assets/verdana8.spritefont");
-
 	m_appResources.font32pt
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
+
+	m_appResources.fontMono8pt
+		= std::make_unique<SpriteFont>(device, L"assets/mono8.spritefont");
+	m_appResources.fontMono32pt
+		= std::make_unique<SpriteFont>(device, L"assets/mono32.spritefont");
 
 	m_appResources.m_batch = std::make_unique<DX::DebugBatchType>(context);
 	{
@@ -474,6 +478,8 @@ Game::OnDeviceLost()
 	m_appResources.m_effectFactory.reset();
 	m_appResources.m_debugEffect.reset();
 
+	m_appResources.fontMono32pt.reset();
+	m_appResources.fontMono8pt.reset();
 	m_appResources.font32pt.reset();
 	m_appResources.font8pt.reset();
 	m_appResources.starField.reset();

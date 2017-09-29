@@ -56,6 +56,8 @@ struct AppResources
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> font8pt;
 	std::unique_ptr<DirectX::SpriteFont> font32pt;
+	std::unique_ptr<DirectX::SpriteFont> fontMono8pt;
+	std::unique_ptr<DirectX::SpriteFont> fontMono32pt;
 
 	std::unique_ptr<DX::DebugBatchType> m_batch;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_debugInputLayout;
