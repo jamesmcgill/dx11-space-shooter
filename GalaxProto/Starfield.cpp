@@ -2,6 +2,8 @@
 #include "Starfield.h"
 #include "StepTimer.h"
 
+#include "utils/Log.h"
+
 const float ZBOUNDMIN = 1.0f;
 const float ZBOUNDMAX = 8.5f;
 const float SCALE_MIN = 0.2f;
@@ -14,6 +16,7 @@ using namespace DirectX;
 StarField::StarField(ID3D11ShaderResourceView* texture)
 		: m_engine(m_device())
 {
+	TRACE
 	m_texture = texture;
 
 	if (texture)
@@ -44,6 +47,7 @@ StarField::StarField(ID3D11ShaderResourceView* texture)
 void
 StarField::initialisePositions()
 {
+	TRACE
 	std::uniform_real_distribution<float> yRand(
 		static_cast<float>(-m_textureHeight), static_cast<float>(m_screenHeight));
 
@@ -71,6 +75,7 @@ StarField::initialisePositions()
 void
 StarField::update(DX::StepTimer const& timer)
 {
+	TRACE
 	float speed = m_screenHeight / (m_timePerWrapMs / MILLISECS_PER_SEC);
 	const float layerSpeedOffset = speed / (NUM_LAYERS + 2);
 
@@ -100,6 +105,7 @@ StarField::update(DX::StepTimer const& timer)
 void
 StarField::render(DirectX::SpriteBatch& batch)
 {
+	TRACE
 	XMVECTOR origin = {0.0f, 0.0f, 0.0f};
 	for (auto& l : m_particleLayers)
 	{
@@ -123,6 +129,7 @@ StarField::render(DirectX::SpriteBatch& batch)
 void
 StarField::setWindowSize(int screenWidth, int screenHeight)
 {
+	TRACE
 	m_screenWidth	= screenWidth;
 	m_screenHeight = screenHeight;
 

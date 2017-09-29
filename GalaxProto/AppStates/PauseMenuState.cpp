@@ -4,7 +4,6 @@
 #include "AppResources.h"
 #include "GameLogic.h"
 
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 using namespace DirectX;
@@ -28,6 +27,7 @@ PauseMenuState::handleInput(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
+	TRACE
 	auto& kb		= m_resources.kbTracker;
 	auto& menus = m_resources.menuManager;
 
@@ -69,6 +69,7 @@ PauseMenuState::handleInput(const DX::StepTimer& timer)
 void
 PauseMenuState::update(const DX::StepTimer& timer)
 {
+	TRACE
 	m_resources.menuManager->update(timer);
 }
 
@@ -76,6 +77,7 @@ PauseMenuState::update(const DX::StepTimer& timer)
 void
 PauseMenuState::render()
 {
+	TRACE
 	auto& spriteBatch = m_resources.m_spriteBatch;
 
 	spriteBatch->Begin();
@@ -94,14 +96,14 @@ PauseMenuState::render()
 void
 PauseMenuState::load()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
 void
 PauseMenuState::unload()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
@@ -115,7 +117,7 @@ PauseMenuState::isLoaded() const
 void
 PauseMenuState::enter()
 {
-	TRACE();
+	TRACE
 	m_resources.m_timer.PauseTotalTimer(true);
 	m_resources.menuManager->loadMenus(&s_menus);
 }
@@ -124,7 +126,7 @@ PauseMenuState::enter()
 void
 PauseMenuState::exit()
 {
-	TRACE();
+	TRACE
 	m_resources.m_timer.PauseTotalTimer(false);
 }
 

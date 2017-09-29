@@ -39,6 +39,7 @@ private:
 	void update();
 	void render();
 	void drawGlobalDebugInfo();
+	void drawProfilerInfo();
 	void clear();
 
 	void createDeviceDependentResources();

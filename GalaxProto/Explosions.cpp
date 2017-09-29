@@ -3,6 +3,8 @@
 #include "StepTimer.h"
 #include "AppContext.h"
 
+#include "utils/Log.h"
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -27,6 +29,7 @@ Explosions::Explosions(AppContext& context, ID3D11ShaderResourceView* texture)
 		: m_engine(m_device())
 		, m_context(context)
 {
+	TRACE
 	m_texture = texture;
 
 	if (texture)
@@ -57,6 +60,7 @@ Explosions::Explosions(AppContext& context, ID3D11ShaderResourceView* texture)
 void
 Explosions::update(DX::StepTimer const& timer)
 {
+	TRACE
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 
 	for (auto& p : m_particles)
@@ -79,6 +83,7 @@ Explosions::update(DX::StepTimer const& timer)
 void
 Explosions::render(DirectX::SpriteBatch& batch)
 {
+	TRACE
 	XMVECTOR origin = {m_textureWidth / 2.0f, m_textureHeight / 2.0f, 0.0f};
 	for (auto& p : m_particles)
 	{
@@ -123,6 +128,7 @@ void
 Explosions::emit(
 	const Vector3& origin, const Vector3& baseVelocity, size_t numParticles)
 {
+	TRACE
 	// Hack to allow continue using SpriteBatch with world space objects
 	// Generate matrix to invert the default in
 	// SpriteBatch::Impl::GetViewportTransform()

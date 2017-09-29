@@ -1,22 +1,30 @@
 #pragma once
 //------------------------------------------------------------------------------
-//#include "pch.h"
-#include <windows.h>		// OutputDebugStringA
+#include "pch.h"
+//#include <windows.h>			// OutputDebugStringA
+//#include <unordered_map>
 
 //------------------------------------------------------------------------------
 // Very Basic Logging
 // Currently outputs to Visual Studio Debugger (Which is slow!)
 //
 //------------------------------------------------------------------------------
-// These macros must be enabled locally (on each and every file)
-//  e.g. TRACE requires ENABLE_TRACE be defined before including this file.
-//  However TRACE_GLOBAL_OVERRIDE will force activation of all TRACE macros.
+// TRACE
+// Performs 2 functions (which can be enabled independently):
 //
-// TRACE            : requires ENABLE_TRACE or TRACE_GLOBAL_OVERRIDE be defined
-// LOG_LOCAL        : requires ENABLE_LOCAL or LOCAL_GLOBAL_OVERRIDE be defined
+// 1) if ENABLE_TRACE_LOG is defined prior to including this header file then
+//			calling TRACE will output the current function call to the log output.
+//			(ENABLE_TRACE_LOG must be defined for each file. However
+//			TRACE_GLOBAL_OVERRIDE will force activte all TRACE macros everywhere.)
+//
+// 2) if ENABLE_TIMED_TRACE is defined (below) then every call to TRACE
+//			anywhere in the program will log the duration until the end of
+//			the enclosing function call. This happens REGARDLESS of
+//			whether ENABLE_TRACE_LOG was set.
 //
 //------------------------------------------------------------------------------
-// Logs filtered based on the logging level:
+// Logs filtered based on the global logging level:
+// (logging level may be overridden per file e.g. with LOG_LEVEL_VERBOSE)
 //
 // LOG_VERBOSE
 // LOG_VERBOSE_IF
@@ -43,8 +51,11 @@
 #define __LOG_LEVEL_FATAL_ERROR 5		 // Show only fatal errors
 #define __LOG_LEVEL_DISABLED 6			 // Don't show any logs
 
-// Set this to desired level
+// Set this to desired default level (may be overridden per file)
 #define LOG_LEVEL __LOG_LEVEL_INFO
+
+// Comment out to disable profiling (via TRACE)
+#define ENABLE_TIMED_TRACE
 
 //------------------------------------------------------------------------------
 // Locally override logging level
@@ -91,13 +102,203 @@ __logMsgImp__(
 
 	char buffer[BUFFER_SIZE];
 	auto count = sprintf_s(
-		buffer, BUFFER_SIZE, "%s: %s() [%s:%d]: ", level, function, file, line);
+		buffer,
+		BUFFER_SIZE,
+		"%7s: [%80s:%4d] %20s(): ",
+		level,
+		file,
+		line,
+		function);
 	sprintf_s(buffer + count, BUFFER_SIZE - count, fmt, args...);
 
 	OutputDebugStringA(buffer);
 }
 
+//------------------------------------------------------------------------------
+struct __TimedRecord__
+{
+	uint64_t totalTicks;
+	int32_t callCount;
+	int32_t lineNumber;
+	const char* file;
+	const char* function;
+};
+
+//------------------------------------------------------------------------------
+struct __TimedRaiiBlock__
+{
+	using PerformanceRecords = std::unordered_map<size_t, __TimedRecord__>;
+
+	// Integer format represents time using 10,000,000 ticks per second.
+	static const uint64_t TICKS_PER_MILLISECOND = 10'000;
+
+	const size_t _hashIndex;
+	uint64_t _qpcStartTime;
+	const int _line;
+	const char* _file;
+	const char* _function;
+
+	static uint64_t& getQpcFrequency()
+	{
+		static uint64_t qpcFrequency = initFrequency();
+		return qpcFrequency;
+	}
+	static uint64_t& getQpcMaxDelta()
+	{
+		static uint64_t qpcMaxDelta = initMaxDelta();
+		return qpcMaxDelta;
+	}
+	static PerformanceRecords& getPerfRecords()
+	{
+		static PerformanceRecords perfRecords = initPerfRecords();
+		return perfRecords;
+	}
+
+	//----------------------------------------------------------------------------
+	__TimedRaiiBlock__(
+		const size_t hashIndex,
+		const int line,
+		const char* file,
+		const char* function)
+			: _hashIndex(hashIndex)
+			, _qpcStartTime(getCurrentTime())
+			, _line(line)
+			, _file(file)
+			, _function(function)
+	{
+	}
+
+	//----------------------------------------------------------------------------
+	~__TimedRaiiBlock__()
+	{
+		uint64_t elapsedTicks = getClampedDuration(_qpcStartTime, getCurrentTime());
+
+		auto& perfRecord = getPerfRecords()[_hashIndex];
+
+		// Collision Testing
+#define TEST_HASH_COLLISIONS
+#ifdef TEST_HASH_COLLISIONS
+		if (perfRecord.callCount > 0)
+		{
+			if (
+				(_line != perfRecord.lineNumber)
+				|| (strcmp(perfRecord.file, _file) != 0))
+			{
+				ASSERT(false);
+			}
+		}
+#endif
+
+		perfRecord.totalTicks += elapsedTicks;
+		perfRecord.callCount++;
+		perfRecord.lineNumber = _line;
+		perfRecord.file				= _file;
+		perfRecord.function		= _function;
+
+		// TEST message
+		double elapsedTimeMs = ticksToMilliSeconds(elapsedTicks);
+		__logMsgImp__(
+			"TIMED",
+			"%9.6fms - hash %ull\n",
+			_file,
+			_line,
+			_function,
+			elapsedTimeMs,
+			_hashIndex);
+	}
+
+	//----------------------------------------------------------------------------
+	static uint64_t initFrequency()
+	{
+		LARGE_INTEGER frequency;
+		if (!QueryPerformanceFrequency(&frequency))
+		{
+			throw std::exception("QueryPerformanceFrequency");
+		}
+		return frequency.QuadPart;
+	}
+
+	//----------------------------------------------------------------------------
+	static uint64_t initMaxDelta()
+	{
+		// Initialize max delta to 1/10 of a second.
+		return getQpcFrequency() / 10;
+	}
+
+	//----------------------------------------------------------------------------
+	static PerformanceRecords initPerfRecords()
+	{
+		return PerformanceRecords();
+	}
+
+	//----------------------------------------------------------------------------
+	static void clearRecordArray(PerformanceRecords& perfRecords)
+	{
+		for (auto& perf : perfRecords)
+		{
+			auto& r			 = perf.second;
+			r.totalTicks = 0LL;
+			r.callCount	= 0;
+			r.lineNumber = 0;
+		}
+	}
+
+	//----------------------------------------------------------------------------
+	static uint64_t getCurrentTime()
+	{
+		LARGE_INTEGER currentTime = {0LL};
+		if (!QueryPerformanceCounter(&currentTime))
+		{
+			throw std::exception("QueryPerformanceCounter");
+		}
+		return currentTime.QuadPart;
+	}
+
+	//----------------------------------------------------------------------------
+	static uint64_t
+	getClampedDuration(const uint64_t tEarliest, const uint64_t tLatest)
+	{
+		uint64_t timeDelta = tLatest - tEarliest;
+
+		// Clamp excessively large time deltas (e.g. after paused in the debugger).
+		if (timeDelta > getQpcMaxDelta())
+		{
+			timeDelta = getQpcMaxDelta();
+		}
+		return timeDelta;
+	}
+
+	//----------------------------------------------------------------------------
+	static double ticksToMilliSeconds(uint64_t ticks)
+	{
+		// Convert QPC units into a canonical tick format. This cannot overflow due
+		// to the previous clamp.
+		ticks *= TICKS_PER_MILLISECOND;
+		ticks /= getQpcFrequency();
+
+		return static_cast<double>(ticks) / TICKS_PER_MILLISECOND;
+	}
+};
+
+//------------------------------------------------------------------------------
+static size_t
+__createTimedRecordHash__(
+	const std::string_view& filePath, const int lineNumber)
+{
+	// Don't bother hashing the full path. Only the last few characters
+	// will differ enough to be useful for hashing.
+	const size_t NUM_CHARS = 12;
+	const size_t subPos
+		= (filePath.length() > NUM_CHARS) ? filePath.length() - NUM_CHARS : 0;
+	const std::string_view file = filePath.substr(subPos);
+	const std::size_t h1				= std::hash<std::string_view>{}(file);
+	const std::size_t h2				= std::hash<int>{}(lineNumber);
+	return h1 ^ (h2 << 1);
+}
+
+//------------------------------------------------------------------------------
 // clang-format off
+
 
 //------------------------------------------------------------------------------
 // Begining of actual implementation to all logging macros
@@ -109,29 +310,42 @@ __logMsgImp__(
 
 //------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------
+// Profiling entry point
+//------------------------------------------------------------------------------
+#define TIMED_TRACE                                                          \
+	const std::string_view& filePath = __FILE__;                               \
+	const size_t hashIndex = __createTimedRecordHash__(filePath, __LINE__);    \
+	__TimedRaiiBlock__ timedBlock_##__COUNTER__(                               \
+			hashIndex, __LINE__, __FILE__, __func__);
+
+//------------------------------------------------------------------------------
 
 
 //------------------------------------------------------------------------------
 // PUBLIC INTERFACE
 //------------------------------------------------------------------------------
 #undef TRACE
-#if defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE)
-#define TRACE() do{                                \
+#if (defined(ENABLE_TIMED_TRACE))                  \
+ && (defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
+#define TRACE TIMED_TRACE                          \
+do{                                                \
 __LOG_MESSAGE_IMPL__("TRACE", "\n");               \
-}while(false)
-#else
-#define TRACE(fmt, ...) do{}while(false)
-#endif
+}while(false);
 
-#undef LOG_LOCAL
-#if defined(LOCAL_GLOBAL_OVERRIDE) || defined(ENABLE_LOCAL)
-#define LOG_LOCAL(fmt, ...) do{                    \
-__LOG_MESSAGE_IMPL__("LOG", fmt, __VA_ARGS__);     \
-}while(false)
-#else
-#define LOG_LOCAL(fmt, ...) do{}while(false)
-#endif
+#elif (defined(ENABLE_TIMED_TRACE))                \
+ && !(defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
+#define TRACE TIMED_TRACE
 
+#elif (!defined(ENABLE_TIMED_TRACE))               \
+ && (defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
+#define TRACE do{                                  \
+__LOG_MESSAGE_IMPL__("TRACE", "\n");               \
+}while(false);
+
+#else
+#define TRACE do{}while(false);
+#endif
 
 //------------------------------------------------------------------------------
 #undef LOG_VERBOSE
@@ -268,8 +482,7 @@ __LOG_MESSAGE_IMPL__("FATAL", fmt, __VA_ARGS__);   \
 //------------------------------------------------------------------------------
 // Ensure these are switched off for the next file
 //------------------------------------------------------------------------------
-#undef ENABLE_TRACE
-#undef ENABLE_LOCAL
+#undef ENABLE_TRACE_LOG
 
 //------------------------------------------------------------------------------
 // clang-format on

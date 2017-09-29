@@ -2,6 +2,8 @@
 #include "MenuManager.h"
 #include "StepTimer.h"
 
+#include "utils/Log.h"
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -28,8 +30,10 @@ MenuManager::MenuManager()
 void
 MenuManager::loadMenus(std::vector<MenuManager::Menu> const* menus)
 {
-	assert(menus);
-	assert((*menus).size());
+	TRACE
+
+	ASSERT(menus);
+	ASSERT((*menus).size());
 
 	m_activeMenus				= menus;
 	m_currentMenuIdx		= 0;
@@ -48,9 +52,10 @@ void
 MenuManager::render(
 	DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 {
+	TRACE
 	auto& menus = *m_activeMenus;
 
-	assert(m_currentMenuIdx < menus.size());
+	ASSERT(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 
 	// Button Layout
@@ -116,9 +121,10 @@ MenuManager::isRootMenu() const
 void
 MenuManager::focusNextButton()
 {
+	TRACE
 	auto& menus = *m_activeMenus;
 
-	assert(m_currentMenuIdx < menus.size());
+	ASSERT(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 	++m_selectedButtonIdx;
 
@@ -132,9 +138,10 @@ MenuManager::focusNextButton()
 void
 MenuManager::focusPrevButton()
 {
+	TRACE
 	auto& menus = *m_activeMenus;
 
-	assert(m_currentMenuIdx < menus.size());
+	ASSERT(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 
 	if (m_selectedButtonIdx > 0)
@@ -151,12 +158,13 @@ MenuManager::focusPrevButton()
 Command
 MenuManager::selectCurrentButton()
 {
+	TRACE
 	auto& menus = *m_activeMenus;
 
-	assert(m_currentMenuIdx < menus.size());
+	ASSERT(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 
-	assert(m_selectedButtonIdx < currentMenu.buttons.size());
+	ASSERT(m_selectedButtonIdx < currentMenu.buttons.size());
 	auto& currentButton = currentMenu.buttons[m_selectedButtonIdx];
 
 	const Command& cmd = currentButton.command;
@@ -175,8 +183,9 @@ MenuManager::selectCurrentButton()
 void
 MenuManager::prevMenu()
 {
+	TRACE
 	auto& menus = *m_activeMenus;
-	assert(m_currentMenuIdx < menus.size());
+	ASSERT(m_currentMenuIdx < menus.size());
 	auto& currentMenu = menus[m_currentMenuIdx];
 
 	if (currentMenu.previousMenuIdx != -1)

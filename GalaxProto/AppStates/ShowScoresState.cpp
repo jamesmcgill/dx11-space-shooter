@@ -4,7 +4,6 @@
 #include "AppResources.h"
 #include "GameLogic.h"
 
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 using namespace DirectX;
@@ -19,6 +18,7 @@ ShowScoresState::handleInput(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
+	TRACE
 	auto& kb = m_resources.kbTracker;
 
 	if (
@@ -33,6 +33,7 @@ ShowScoresState::handleInput(const DX::StepTimer& timer)
 void
 ShowScoresState::update(const DX::StepTimer& timer)
 {
+	TRACE
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
 	m_resources.starField->update(timer);
@@ -47,6 +48,7 @@ ShowScoresState::update(const DX::StepTimer& timer)
 void
 ShowScoresState::render()
 {
+	TRACE
 	m_resources.m_spriteBatch->Begin();
 
 	m_resources.starField->render(*m_resources.m_spriteBatch);
@@ -60,14 +62,14 @@ ShowScoresState::render()
 void
 ShowScoresState::load()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
 void
 ShowScoresState::unload()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
@@ -81,7 +83,7 @@ ShowScoresState::isLoaded() const
 void
 ShowScoresState::enter()
 {
-	TRACE();
+	TRACE
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
 }
 
@@ -89,7 +91,7 @@ ShowScoresState::enter()
 void
 ShowScoresState::exit()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------

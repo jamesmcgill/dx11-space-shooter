@@ -5,7 +5,6 @@
 #include "AppResources.h"
 #include "GameLogic.h"
 
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 using namespace DirectX;
@@ -29,6 +28,7 @@ ScoreEntryState::handleInput(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
+	TRACE
 	auto& kb = m_resources.kbTracker;
 
 	if (kb.IsKeyPressed(Keyboard::Enter))
@@ -82,6 +82,7 @@ ScoreEntryState::handleInput(const DX::StepTimer& timer)
 void
 ScoreEntryState::update(const DX::StepTimer& timer)
 {
+	TRACE
 	m_resources.starField->update(timer);
 }
 
@@ -89,6 +90,7 @@ ScoreEntryState::update(const DX::StepTimer& timer)
 void
 ScoreEntryState::render()
 {
+	TRACE
 	m_resources.m_spriteBatch->Begin();
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 
@@ -150,14 +152,14 @@ ScoreEntryState::render()
 void
 ScoreEntryState::load()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
 void
 ScoreEntryState::unload()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
@@ -171,7 +173,7 @@ ScoreEntryState::isLoaded() const
 void
 ScoreEntryState::enter()
 {
-	TRACE();
+	TRACE
 	m_playerName.clear();
 	m_currentChar = L'A';
 }
@@ -180,7 +182,7 @@ ScoreEntryState::enter()
 void
 ScoreEntryState::exit()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------

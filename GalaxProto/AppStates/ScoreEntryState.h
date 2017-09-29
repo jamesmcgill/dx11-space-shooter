@@ -28,7 +28,7 @@ public:
 
 private:
 	std::wstring m_playerName;
-	wchar_t m_currentChar;
+	wchar_t m_currentChar = L' ';
 };
 
 //------------------------------------------------------------------------------

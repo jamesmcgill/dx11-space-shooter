@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "utils/Log.h"
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -95,6 +97,7 @@ ScoreBoard::isHiScore(const int& nScore) const
 void
 ScoreBoard::insertScore(Score newScore)
 {
+	TRACE
 	auto it = std::lower_bound(
 		m_scores.begin(), m_scores.end(), newScore.score, [](Score& s, int val) {
 			return s.score > val;
@@ -111,6 +114,7 @@ ScoreBoard::insertScore(Score newScore)
 void
 ScoreBoard::loadFromFile()
 {
+	TRACE
 	m_scores.clear();
 	std::wifstream file(SCORE_FILENAME, std::ios::in);
 	if (!file.is_open())
@@ -153,6 +157,7 @@ ScoreBoard::loadFromFile()
 void
 ScoreBoard::saveToFile()
 {
+	TRACE
 	std::wofstream file(SCORE_FILENAME, std::ios::out);
 	if (!file.is_open())
 	{
@@ -172,6 +177,7 @@ ScoreBoard::saveToFile()
 void
 ScoreBoard::loadDefaultScores()
 {
+	TRACE
 	m_scores.clear();
 	int score = 10000;
 	for (size_t i = 0; i < NUM_SCORES; ++i)
@@ -185,6 +191,8 @@ ScoreBoard::loadDefaultScores()
 void
 ScoreBoard::render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 {
+	TRACE
+
 	// Layout
 	//
 	//       ####

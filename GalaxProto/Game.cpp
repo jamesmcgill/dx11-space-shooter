@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Game.h"
 #include "DebugDraw.h"
+#include <cstring>
 
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 //------------------------------------------------------------------------------
@@ -21,8 +21,7 @@ Game::Game()
 		: m_gameLogic(m_appContext, m_appResources)
 		, m_appStates(m_appContext, m_appResources, m_gameLogic)
 {
-	TRACE();
-
+	TRACE
 	m_appResources.m_deviceResources = std::make_unique<DX::DeviceResources>();
 	m_appResources.m_deviceResources->RegisterDeviceNotify(this);
 
@@ -79,7 +78,7 @@ Game::Game()
 //------------------------------------------------------------------------------
 Game::~Game()
 {
-	TRACE();
+	TRACE
 	if (m_appResources.audioEngine)
 	{
 		m_appResources.audioEngine->Reset();
@@ -92,7 +91,7 @@ Game::~Game()
 void
 Game::initialize(HWND window, int width, int height)
 {
-	TRACE();
+	TRACE
 	m_appResources.m_deviceResources->SetWindow(window, width, height);
 
 	m_appResources.m_deviceResources->CreateDeviceResources();
@@ -119,15 +118,19 @@ Game::initialize(HWND window, int width, int height)
 void
 Game::tick()
 {
+	TRACE
 	m_appResources.m_timer.Tick([&]() { update(); });
 
 	render();
+
+	__TimedRaiiBlock__::clearRecordArray(__TimedRaiiBlock__::getPerfRecords());
 }
 
 //------------------------------------------------------------------------------
 void
 Game::update()
 {
+	TRACE
 	auto kbState = m_appResources.m_keyboard->GetState();
 	m_appResources.kbTracker.Update(kbState);
 	if (m_appResources.kbTracker.IsKeyPressed(Keyboard::F1))
@@ -162,10 +165,18 @@ Game::render()
 	clear();
 
 	m_appResources.m_deviceResources->PIXBeginEvent(L"Render");
-	m_appStates.currentState()->render();
+	{
+		TRACE
+		m_appStates.currentState()->render();
+		if (m_appContext.debugDraw)
+		{
+			drawGlobalDebugInfo();
+		}
+	}
+
 	if (m_appContext.debugDraw)
 	{
-		drawGlobalDebugInfo();
+		drawProfilerInfo();
 	}
 	m_appResources.m_deviceResources->PIXEndEvent();
 
@@ -199,9 +210,7 @@ Game::drawGlobalDebugInfo()
 		m_appResources.m_timer.GetFramesPerSecond(),
 		m_appResources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
-	auto drawUI =
-		[&font = m_appResources.font8pt,
-		&spriteBatch = m_appResources.m_spriteBatch](UIText & ui)
+	auto drawUI = [& spriteBatch = m_appResources.m_spriteBatch](UIText & ui)
 	{
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};
@@ -211,11 +220,62 @@ Game::drawGlobalDebugInfo()
 }
 
 //------------------------------------------------------------------------------
+void
+Game::drawProfilerInfo()
+{
+	auto monoFont			= m_appResources.fontMono8pt.get();
+
+	float yPos = XMVectorGetY(monoFont->MeasureString(L"X"));
+	auto createText =
+		[&yPos, font = monoFont, screenWidth = m_appResources.m_screenWidth](
+			const wchar_t* fmt, auto&&... vars)
+			->UIText
+	{
+		UIText ui;
+		ui.font							= font;
+		ui.text							= fmt::format(fmt, vars...);
+		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
+		float height				= XMVectorGetY(dimensions);
+		ui.origin						= Vector2(0.0f, 0.0f);
+		ui.dimensions				= dimensions;
+		ui.position.x				= 0.0f;
+		ui.position.y				= yPos;
+		yPos += height;
+		return ui;
+	};
+
+	auto drawText = [& spriteBatch = m_appResources.m_spriteBatch](UIText & ui)
+	{
+		ui.draw(Colors::MediumVioletRed, *spriteBatch);
+	};
+
+	m_appResources.m_spriteBatch->Begin();
+	for (auto& perf : __TimedRaiiBlock__::getPerfRecords())
+	{
+		auto& record = perf.second;
+		const char* fileName = strrchr(record.file, '\\');
+		ASSERT(fileName);
+		fileName++;
+
+		UIText ui = createText(
+			L"{:>20}:{:<4} {:>20}() {:>9.6}ms, hit:{:>2}\n",
+			fileName,
+			record.lineNumber,
+			record.function,
+			__TimedRaiiBlock__::ticksToMilliSeconds(record.totalTicks),
+			record.callCount);
+		drawText(ui);
+	}
+	m_appResources.m_spriteBatch->End();
+}
+
+//------------------------------------------------------------------------------
 // Helper method to clear the back buffers.
 //------------------------------------------------------------------------------
 void
 Game::clear()
 {
+	TRACE
 	m_appResources.m_deviceResources->PIXBeginEvent(L"Clear");
 
 	// Clear the views.
@@ -245,7 +305,7 @@ Game::clear()
 void
 Game::onActivated()
 {
-	TRACE();
+	TRACE
 	// TODO: Game is becoming active window.
 }
 
@@ -253,7 +313,7 @@ Game::onActivated()
 void
 Game::onDeactivated()
 {
-	TRACE();
+	TRACE
 	// TODO: Game is becoming background window.
 }
 
@@ -261,7 +321,7 @@ Game::onDeactivated()
 void
 Game::onSuspending()
 {
-	TRACE();
+	TRACE
 	// TODO: Game is being power-suspended (or minimized).
 }
 
@@ -269,7 +329,7 @@ Game::onSuspending()
 void
 Game::onResuming()
 {
-	TRACE();
+	TRACE
 	m_appResources.m_timer.ResetElapsedTime();
 
 	// TODO: Game is being power-resumed (or returning from minimize).
@@ -279,7 +339,7 @@ Game::onResuming()
 void
 Game::onWindowSizeChanged(int width, int height)
 {
-	TRACE();
+	TRACE
 	if (!m_appResources.m_deviceResources->WindowSizeChanged(width, height))
 		return;
 
@@ -309,7 +369,7 @@ Game::getDefaultSize(int& width, int& height) const
 void
 Game::createDeviceDependentResources()
 {
-	TRACE();
+	TRACE
 	auto device	= m_appResources.m_deviceResources->GetD3DDevice();
 	auto context = m_appResources.m_deviceResources->GetD3DDeviceContext();
 
@@ -433,7 +493,7 @@ Game::createDeviceDependentResources()
 void
 Game::createWindowSizeDependentResources()
 {
-	TRACE();
+	TRACE
 	RECT outputSize = m_appResources.m_deviceResources->GetOutputSize();
 
 	const float fovAngleY = 30.0f * XM_PI / 180.0f;
@@ -466,7 +526,7 @@ Game::createWindowSizeDependentResources()
 void
 Game::OnDeviceLost()
 {
-	TRACE();
+	TRACE
 	for (auto& modelData : m_appResources.modelData)
 	{
 		modelData.second.model.reset();
@@ -498,7 +558,7 @@ Game::OnDeviceLost()
 void
 Game::OnDeviceRestored()
 {
-	TRACE();
+	TRACE
 	createDeviceDependentResources();
 
 	createWindowSizeDependentResources();

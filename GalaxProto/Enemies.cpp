@@ -4,6 +4,8 @@
 #include "AppResources.h"
 #include "StepTimer.h"
 
+#include "utils/Log.h"
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -166,6 +168,7 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 		, m_nextEventWaveIdx(0)
 		, m_activeWaveIdx(0)
 {
+	TRACE
 	reset();
 }
 
@@ -173,11 +176,12 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 void
 Enemies::reset()
 {
+	TRACE
 	m_currentLevel		 = 0;
 	m_nextEventWaveIdx = 0;
 	m_activeWaveIdx		 = 0;
 
-	assert(!s_levels[m_currentLevel].waves.empty());
+	ASSERT(!s_levels[m_currentLevel].waves.empty());
 	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;
 	for (auto& e : m_entityIdxToWaypoints)
 	{
@@ -195,6 +199,7 @@ Enemies::reset()
 void
 Enemies::update(const DX::StepTimer& timer)
 {
+	TRACE
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
@@ -211,7 +216,7 @@ Enemies::update(const DX::StepTimer& timer)
 			{
 				// Spawn enemy
 				auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
-				assert(
+				ASSERT(
 					m_entityIdxToWaypoints.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
 				m_entityIdxToWaypoints[m_context.nextEnemyIdx - ENEMIES_IDX]
 					= &sec.waypoints;
@@ -288,6 +293,7 @@ bezier(FLOAT t, FXMVECTOR startPos, FXMVECTOR endPos, FXMVECTOR control)
 void
 Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 {
+	TRACE
 	// float elapsedTimeS = float(timer.GetElapsedSeconds());
 	float totalTimeS = static_cast<float>(timer.GetTotalSeconds());
 
@@ -303,8 +309,8 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		{
 			continue;
 		}
-		assert(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
-		assert(m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr);
+		ASSERT(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
+		ASSERT(m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr);
 		auto& waypoints = *m_entityIdxToWaypoints[i - ENEMIES_IDX];
 
 		const float aliveS = (totalTimeS - e.birthTimeS);
@@ -342,6 +348,7 @@ Enemies::emitShot(
 	const size_t minEntityIdx,
 	const size_t maxEntityIdxPlusOne)
 {
+	TRACE
 	auto& newShot		= m_context.entities[shotEntityIdx];
 	newShot.isAlive = true;
 	newShot.position
@@ -360,6 +367,7 @@ Enemies::emitShot(
 void
 Enemies::emitPlayerShot()
 {
+	TRACE
 	emitShot(
 		m_context.entities[PLAYERS_IDX],
 		1.0f,
@@ -375,10 +383,11 @@ Enemies::emitPlayerShot()
 void
 Enemies::debugRender(DX::DebugBatchType* batch)
 {
+	TRACE
 	std::set<const std::vector<Waypoint>*> waypointsToRender;
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		assert(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
+		ASSERT(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
 		if (m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr)
 		{
 			waypointsToRender.insert(m_entityIdxToWaypoints[i - ENEMIES_IDX]);

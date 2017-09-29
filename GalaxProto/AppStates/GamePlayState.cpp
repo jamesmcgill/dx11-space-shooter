@@ -5,7 +5,6 @@
 #include "AppResources.h"
 #include "GameLogic.h"
 
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 using namespace DirectX;
@@ -30,6 +29,7 @@ constexpr size_t PLAYER_MIN_VELOCITY_CONTROL = 20;
 void
 GamePlayState::handleInput(const DX::StepTimer& timer)
 {
+	TRACE
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
 	auto& kbState = m_resources.kbTracker.lastState;
@@ -152,6 +152,7 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 void
 GamePlayState::update(const DX::StepTimer& timer)
 {
+	TRACE
 	m_resources.starField->update(timer);
 	m_resources.explosions->update(timer);
 	if (GameLogic::GameStatus::GameOver == m_gameLogic.update(timer))
@@ -164,6 +165,7 @@ GamePlayState::update(const DX::StepTimer& timer)
 void
 GamePlayState::render()
 {
+	TRACE
 	auto& spriteBatch = m_resources.m_spriteBatch;
 
 	spriteBatch->Begin();
@@ -177,14 +179,14 @@ GamePlayState::render()
 void
 GamePlayState::load()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
 void
 GamePlayState::unload()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
@@ -198,7 +200,7 @@ GamePlayState::isLoaded() const
 void
 GamePlayState::enter()
 {
-	TRACE();
+	TRACE
 	if (m_states.previousState() != &m_states.paused)
 	{
 		m_gameLogic.reset();
@@ -210,7 +212,7 @@ GamePlayState::enter()
 void
 GamePlayState::exit()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------

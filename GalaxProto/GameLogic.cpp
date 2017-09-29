@@ -5,8 +5,6 @@
 #include "StepTimer.h"
 #include "Entity.h"
 
-#define LOG_LEVEL_VERBOSE
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 using namespace DirectX;
@@ -27,7 +25,7 @@ GameLogic::GameLogic(AppContext& context, AppResources& resources)
 		, m_resources(resources)
 		, m_enemies(context, resources)
 {
-	TRACE();
+	TRACE
 	reset();
 }
 
@@ -35,7 +33,7 @@ GameLogic::GameLogic(AppContext& context, AppResources& resources)
 void
 GameLogic::reset()
 {
-	TRACE();
+	TRACE
 	m_enemies.reset();
 
 	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
@@ -63,6 +61,7 @@ GameLogic::update(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
 
+	TRACE
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 	m_enemies.update(timer);
@@ -108,6 +107,7 @@ GameLogic::update(const DX::StepTimer& timer)
 void
 GameLogic::render()
 {
+	TRACE
 	auto dc = m_resources.m_deviceResources->GetD3DDeviceContext();
 
 	size_t idx = 0;
@@ -167,6 +167,7 @@ GameLogic::render()
 void
 GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 {
+	TRACE
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
 
 	// Player input forces
@@ -238,6 +239,7 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 void
 GameLogic::performCollisionTests()
 {
+	TRACE
 	for (size_t i = 0; i < NUM_ENTITIES; ++i)
 	{
 		m_context.entities[i].isColliding = false;
@@ -317,19 +319,20 @@ GameLogic::collisionTestEntity(
 	const size_t rangeOnePastEndIdx,
 	Func& onCollision)
 {
+	TRACE
 	if (!entity.isAlive)
 	{
 		return;
 	}
 
 	// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
-	assert(entity.model);
+	ASSERT(entity.model);
 	auto& srcBound = entity.model->bound;
 	auto srcCenter = entity.position + srcBound.Center;
 
 	for (size_t testIdx = rangeStartIdx; testIdx < rangeOnePastEndIdx; ++testIdx)
 	{
-		assert(m_context.entities[testIdx].model);
+		ASSERT(m_context.entities[testIdx].model);
 		auto& testEntity = m_context.entities[testIdx];
 		if (!testEntity.isAlive)
 		{
@@ -353,6 +356,7 @@ GameLogic::collisionTestEntity(
 void
 GameLogic::renderPlayerEntity(Entity& entity)
 {
+	TRACE
 	switch (m_context.playerState)
 	{
 		case PlayerState::Normal:
@@ -380,8 +384,9 @@ GameLogic::renderPlayerEntity(Entity& entity)
 void
 GameLogic::renderEntity(Entity& entity, float orientation)
 {
+	TRACE
 	// TODO(James): Use <notnullable> to enforce assertion
-	assert(entity.model);
+	ASSERT(entity.model);
 	const auto& modelData		= entity.model;
 	const auto& boundCenter = entity.model->bound.Center;
 
@@ -425,8 +430,9 @@ GameLogic::renderEntity(Entity& entity, float orientation)
 void
 GameLogic::renderEntityBound(Entity& entity)
 {
+	TRACE
 	// TODO(James): Use <notnullable> to enforce assertion
-	assert(entity.model);
+	ASSERT(entity.model);
 	// const auto& modelData = entity.model;
 
 	auto bound	 = entity.model->bound;
@@ -455,7 +461,7 @@ GameLogic::renderEntityBound(Entity& entity)
 void
 GameLogic::updateUIScore()
 {
-	TRACE();
+	TRACE
 	auto& score					= m_context.uiScore;
 	score.font					= m_resources.font32pt.get();
 	score.text					= fmt::format(L"Score: {}", m_context.playerScore);
@@ -470,7 +476,7 @@ GameLogic::updateUIScore()
 void
 GameLogic::updateUILives()
 {
-	TRACE();
+	TRACE
 	auto& lives					= m_context.uiLives;
 	lives.font					= m_resources.font32pt.get();
 	lives.text					= fmt::format(L"Lives: {}", m_context.playerLives);
@@ -485,6 +491,7 @@ GameLogic::updateUILives()
 void
 GameLogic::drawHUD()
 {
+	TRACE
 	if (m_hudDirty)
 	{
 		m_hudDirty = false;
@@ -501,6 +508,7 @@ GameLogic::drawHUD()
 void
 GameLogic::updateUIDebugVariables()
 {
+	TRACE
 	float yPos = 0.0f;
 
 	auto formatUI = [
@@ -542,6 +550,7 @@ GameLogic::updateUIDebugVariables()
 void
 GameLogic::drawDebugVariables()
 {
+	TRACE
 	auto drawUI = [& spriteBatch = m_resources.m_spriteBatch](UIText & ui)
 	{
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);

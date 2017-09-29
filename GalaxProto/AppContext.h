@@ -80,12 +80,12 @@ struct AppContext
 		// Camera controls
 		XMVECTOR eyePos = XMVectorSubtract(eye, at);
 
-		float radiansX = static_cast<float>(fmod(cameraRotationX, XM_2PI));
-		eyePos				 = XMVector3Rotate(
+		const float radiansX = static_cast<float>(fmod(cameraRotationX, XM_2PI));
+		eyePos							 = XMVector3Rotate(
 			eyePos, XMQuaternionRotationMatrix(XMMatrixRotationX(radiansX)));
 
-		float radiansY = static_cast<float>(fmod(cameraRotationY, XM_2PI));
-		eyePos				 = XMVector3Rotate(
+		const float radiansY = static_cast<float>(fmod(cameraRotationY, XM_2PI));
+		eyePos							 = XMVector3Rotate(
 			eyePos, XMQuaternionRotationMatrix(XMMatrixRotationY(radiansY)));
 
 		eyePos = XMVectorAdd(eyePos, at);

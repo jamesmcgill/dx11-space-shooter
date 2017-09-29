@@ -55,11 +55,14 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <array>
 #include <map>
+#include <unordered_map>
 
 #include "fmt/format.h"
+#include <gsl/gsl>
 #include <crtdbg.h>
 
 #define ASSERT _ASSERTE

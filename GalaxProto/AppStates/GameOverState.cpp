@@ -5,7 +5,6 @@
 #include "AppResources.h"
 #include "GameLogic.h"
 
-#define ENABLE_TRACE
 #include "utils/Log.h"
 
 using namespace DirectX;
@@ -27,7 +26,8 @@ GameOverState::handleInput(const DX::StepTimer& timer)
 void
 GameOverState::update(const DX::StepTimer& timer)
 {
-	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
+	TRACE
+	const float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
 	m_resources.starField->update(timer);
 
@@ -49,6 +49,7 @@ GameOverState::update(const DX::StepTimer& timer)
 void
 GameOverState::render()
 {
+	TRACE
 	m_resources.m_spriteBatch->Begin();
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 
@@ -71,14 +72,14 @@ GameOverState::render()
 void
 GameOverState::load()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
 void
 GameOverState::unload()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ GameOverState::isLoaded() const
 void
 GameOverState::enter()
 {
-	TRACE();
+	TRACE
 	m_timeoutS = STATE_TIMEOUT_SECONDS;
 	m_resources.soundEffects[AudioResource::GameOver]->Play();
 }
@@ -101,7 +102,7 @@ GameOverState::enter()
 void
 GameOverState::exit()
 {
-	TRACE();
+	TRACE
 }
 
 //------------------------------------------------------------------------------
