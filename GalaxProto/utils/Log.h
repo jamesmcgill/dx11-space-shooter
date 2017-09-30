@@ -7,8 +7,10 @@
 namespace logger
 {
 //------------------------------------------------------------------------------
-// Very Basic Logging
+// Very Basic Logging and profiler
 // Currently outputs to Visual Studio Debugger (Which is slow!)
+//
+// Profiling is NOT thread-safe
 //
 //------------------------------------------------------------------------------
 // TRACE
@@ -129,7 +131,9 @@ struct TimedRecord
 //------------------------------------------------------------------------------
 struct TimedRaiiBlock
 {
-	using PerformanceRecords = std::unordered_map<size_t, TimedRecord>;
+	static const int SNAPSHOT_COUNT = 120;
+	using SnapShot									= std::unordered_map<size_t, TimedRecord>;
+	using AllSnapShots							= std::array<SnapShot, SNAPSHOT_COUNT>;
 
 	// Integer format represents time using 10,000,000 ticks per second.
 	static const uint64_t TICKS_PER_SECOND			= 10'000'000;
@@ -151,10 +155,28 @@ struct TimedRaiiBlock
 		static uint64_t qpcMaxDelta = initMaxDelta();
 		return qpcMaxDelta;
 	}
-	static PerformanceRecords& getPerfRecords()
+	static AllSnapShots& getAllSnapShots()
 	{
-		static PerformanceRecords perfRecords = initPerfRecords();
-		return perfRecords;
+		static AllSnapShots snapShots = AllSnapShots();
+		return snapShots;
+	}
+	static SnapShot& getSnapShot(const int snapShotIdx)
+	{
+		return getAllSnapShots()[snapShotIdx];
+	}
+	static int& getCurrentSnapShotIdx()
+	{
+		static int idx = 0;
+		return idx;
+	}
+	static int& incrementSnapShotIdx()
+	{
+		int& idx = getCurrentSnapShotIdx();
+		if (++idx >= SNAPSHOT_COUNT)
+		{
+			idx = 0;
+		}
+		return idx;
 	}
 
 	//----------------------------------------------------------------------------
@@ -176,27 +198,26 @@ struct TimedRaiiBlock
 	{
 		uint64_t elapsedTicks = getClampedDuration(_qpcStartTime, getCurrentTime());
 
-		auto& perfRecord = getPerfRecords()[_hashIndex];
+		auto& currentSnapShot = getSnapShot(getCurrentSnapShotIdx());
+		auto& record					= currentSnapShot[_hashIndex];
 
 		// Collision Testing
 #define TEST_HASH_COLLISIONS
 #ifdef TEST_HASH_COLLISIONS
-		if (perfRecord.callCount > 0)
+		if (record.callCount > 0)
 		{
-			if (
-				(_line != perfRecord.lineNumber)
-				|| (strcmp(perfRecord.file, _file) != 0))
+			if ((_line != record.lineNumber) || (strcmp(record.file, _file) != 0))
 			{
 				ASSERT(false);
 			}
 		}
 #endif
 
-		perfRecord.totalTicks += elapsedTicks;
-		perfRecord.callCount++;
-		perfRecord.lineNumber = _line;
-		perfRecord.file				= _file;
-		perfRecord.function		= _function;
+		record.totalTicks += elapsedTicks;
+		record.callCount++;
+		record.lineNumber = _line;
+		record.file				= _file;
+		record.function		= _function;
 
 		// TEST message
 		double elapsedTimeMs = ticksToMilliSeconds(elapsedTicks);
@@ -229,17 +250,19 @@ struct TimedRaiiBlock
 	}
 
 	//----------------------------------------------------------------------------
-	static PerformanceRecords initPerfRecords()
+	static void endFrame()
 	{
-		return PerformanceRecords();
+		int newIdx = incrementSnapShotIdx();
+
+		clearSnapShot(getSnapShot(newIdx));
 	}
 
 	//----------------------------------------------------------------------------
-	static void clearRecordArray(PerformanceRecords& perfRecords)
+	static void clearSnapShot(SnapShot& snapShot)
 	{
-		for (auto& perf : perfRecords)
+		for (auto& snap : snapShot)
 		{
-			auto& r			 = perf.second;
+			auto& r			 = snap.second;
 			r.totalTicks = 0LL;
 			r.callCount	= 0;
 			r.lineNumber = 0;

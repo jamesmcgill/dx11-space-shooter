@@ -123,8 +123,7 @@ Game::tick()
 
 	render();
 
-	logger::TimedRaiiBlock::clearRecordArray(
-		logger::TimedRaiiBlock::getPerfRecords());
+	logger::TimedRaiiBlock::endFrame();
 }
 
 //------------------------------------------------------------------------------
@@ -251,9 +250,9 @@ Game::drawProfilerInfo()
 	};
 
 	m_appResources.m_spriteBatch->Begin();
-	for (auto& perf : logger::TimedRaiiBlock::getPerfRecords())
+	for (auto& snapShot : logger::TimedRaiiBlock::getAllSnapShots()[0])
 	{
-		auto& record				 = perf.second;
+		auto& record				 = snapShot.second;
 
 		UIText ui = createText(
 			L"{:>9.6}ms, hit:{:>2} {:>20}()      {}({})\n",
