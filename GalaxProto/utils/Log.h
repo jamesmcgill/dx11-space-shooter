@@ -4,7 +4,8 @@
 //#include <windows.h>			// OutputDebugStringA
 //#include <unordered_map>
 
-namespace logger {
+namespace logger
+{
 //------------------------------------------------------------------------------
 // Very Basic Logging
 // Currently outputs to Visual Studio Debugger (Which is slow!)
@@ -131,6 +132,7 @@ struct TimedRaiiBlock
 	using PerformanceRecords = std::unordered_map<size_t, TimedRecord>;
 
 	// Integer format represents time using 10,000,000 ticks per second.
+	static const uint64_t TICKS_PER_SECOND			= 10'000'000;
 	static const uint64_t TICKS_PER_MILLISECOND = 10'000;
 
 	const size_t _hashIndex;
@@ -274,7 +276,7 @@ struct TimedRaiiBlock
 	{
 		// Convert QPC units into a canonical tick format. This cannot overflow due
 		// to the previous clamp.
-		ticks *= TICKS_PER_MILLISECOND;
+		ticks *= TICKS_PER_SECOND;
 		ticks /= getQpcFrequency();
 
 		return static_cast<double>(ticks) / TICKS_PER_MILLISECOND;
@@ -283,8 +285,7 @@ struct TimedRaiiBlock
 
 //------------------------------------------------------------------------------
 static size_t
-createTimedRecordHash(
-	const std::string_view& filePath, const int lineNumber)
+createTimedRecordHash(const std::string_view& filePath, const int lineNumber)
 {
 	// Don't bother hashing the full path. Only the last few characters
 	// will differ enough to be useful for hashing.

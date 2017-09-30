@@ -254,17 +254,14 @@ Game::drawProfilerInfo()
 	for (auto& perf : logger::TimedRaiiBlock::getPerfRecords())
 	{
 		auto& record				 = perf.second;
-		const char* fileName = strrchr(record.file, '\\');
-		ASSERT(fileName);
-		fileName++;
 
 		UIText ui = createText(
-			L"{:>20}:{:<4} {:>20}() {:>9.6}ms, hit:{:>2}\n",
-			fileName,
-			record.lineNumber,
-			record.function,
+			L"{:>9.6}ms, hit:{:>2} {:>20}()      {:<20}:{:<4}\n",
 			logger::TimedRaiiBlock::ticksToMilliSeconds(record.totalTicks),
-			record.callCount);
+			record.callCount,
+			record.function,
+			record.file,
+			record.lineNumber);
 		drawText(ui);
 	}
 	m_appResources.m_spriteBatch->End();
