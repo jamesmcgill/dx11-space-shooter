@@ -62,7 +62,6 @@
 #include <unordered_map>
 
 #include "fmt/format.h"
-#include <gsl/gsl>
 #include <crtdbg.h>
 
 #define ASSERT _ASSERTE
