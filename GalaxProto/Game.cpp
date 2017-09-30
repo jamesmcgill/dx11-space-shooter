@@ -256,7 +256,7 @@ Game::drawProfilerInfo()
 		auto& record				 = perf.second;
 
 		UIText ui = createText(
-			L"{:>9.6}ms, hit:{:>2} {:>20}()      {:<20}:{:<4}\n",
+			L"{:>9.6}ms, hit:{:>2} {:>20}()      {}({})\n",
 			logger::TimedRaiiBlock::ticksToMilliSeconds(record.totalTicks),
 			record.callCount,
 			record.function,
