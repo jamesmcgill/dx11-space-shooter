@@ -123,7 +123,8 @@ Game::tick()
 
 	render();
 
-	__TimedRaiiBlock__::clearRecordArray(__TimedRaiiBlock__::getPerfRecords());
+	logger::TimedRaiiBlock::clearRecordArray(
+		logger::TimedRaiiBlock::getPerfRecords());
 }
 
 //------------------------------------------------------------------------------
@@ -223,7 +224,7 @@ Game::drawGlobalDebugInfo()
 void
 Game::drawProfilerInfo()
 {
-	auto monoFont			= m_appResources.fontMono8pt.get();
+	auto monoFont = m_appResources.fontMono8pt.get();
 
 	float yPos = XMVectorGetY(monoFont->MeasureString(L"X"));
 	auto createText =
@@ -250,9 +251,9 @@ Game::drawProfilerInfo()
 	};
 
 	m_appResources.m_spriteBatch->Begin();
-	for (auto& perf : __TimedRaiiBlock__::getPerfRecords())
+	for (auto& perf : logger::TimedRaiiBlock::getPerfRecords())
 	{
-		auto& record = perf.second;
+		auto& record				 = perf.second;
 		const char* fileName = strrchr(record.file, '\\');
 		ASSERT(fileName);
 		fileName++;
@@ -262,7 +263,7 @@ Game::drawProfilerInfo()
 			fileName,
 			record.lineNumber,
 			record.function,
-			__TimedRaiiBlock__::ticksToMilliSeconds(record.totalTicks),
+			logger::TimedRaiiBlock::ticksToMilliSeconds(record.totalTicks),
 			record.callCount);
 		drawText(ui);
 	}

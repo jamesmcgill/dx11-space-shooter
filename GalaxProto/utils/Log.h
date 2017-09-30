@@ -4,6 +4,7 @@
 //#include <windows.h>			// OutputDebugStringA
 //#include <unordered_map>
 
+namespace logger {
 //------------------------------------------------------------------------------
 // Very Basic Logging
 // Currently outputs to Visual Studio Debugger (Which is slow!)
@@ -43,16 +44,16 @@
 //------------------------------------------------------------------------------
 // Logging levels
 //------------------------------------------------------------------------------
-#define __LOG_LEVEL_VERBOSE 0				 // Show all logs
-#define __LOG_LEVEL_DEBUG 1					 // Show debug, info, warnings and errors
-#define __LOG_LEVEL_INFO 2					 // Show info, warnings and all errors
-#define __LOG_LEVEL_WARNING 3				 // Show warnings and all errors
-#define __LOG_LEVEL_ERROR 4					 // Show all errors
-#define __LOG_LEVEL_FATAL_ERROR 5		 // Show only fatal errors
-#define __LOG_LEVEL_DISABLED 6			 // Don't show any logs
+#define LOG_LEVEL_VERBOSE 0				 // Show all logs
+#define LOG_LEVEL_DEBUG 1					 // Show debug, info, warnings and errors
+#define LOG_LEVEL_INFO 2					 // Show info, warnings and all errors
+#define LOG_LEVEL_WARNING 3				 // Show warnings and all errors
+#define LOG_LEVEL_ERROR 4					 // Show all errors
+#define LOG_LEVEL_FATAL_ERROR 5		 // Show only fatal errors
+#define LOG_LEVEL_DISABLED 6			 // Don't show any logs
 
 // Set this to desired default level (may be overridden per file)
-#define LOG_LEVEL __LOG_LEVEL_INFO
+#define LOG_LEVEL LOG_LEVEL_INFO
 
 // Comment out to disable profiling (via TRACE)
 #define ENABLE_TIMED_TRACE
@@ -62,25 +63,25 @@
 //------------------------------------------------------------------------------
 #if defined(LOG_LEVEL_VERBOSE)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_VERBOSE
+#define LOG_LEVEL LOG_LEVEL_VERBOSE
 #elif defined(LOG_LEVEL_DEBUG)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_DEBUG
+#define LOG_LEVEL LOG_LEVEL_DEBUG
 #elif defined(LOG_LEVEL_INFO)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_INFO
+#define LOG_LEVEL LOG_LEVEL_INFO
 #elif defined(LOG_LEVEL_WARNING)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_WARNING
+#define LOG_LEVEL LOG_LEVEL_WARNING
 #elif defined(LOG_LEVEL_ERROR)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_ERROR
+#define LOG_LEVEL LOG_LEVEL_ERROR
 #elif defined(LOG_LEVEL_FATAL_ERROR)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_FATAL_ERROR
+#define LOG_LEVEL LOG_LEVEL_FATAL_ERROR
 #elif defined(LOG_LEVEL_DISABLED)
 #undef LOG_LEVEL
-#define LOG_LEVEL __LOG_LEVEL_DISABLED
+#define LOG_LEVEL LOG_LEVEL_DISABLED
 #endif
 
 //------------------------------------------------------------------------------
@@ -90,7 +91,7 @@
 //------------------------------------------------------------------------------
 template <typename... Args>
 static void
-__logMsgImp__(
+logMsgImp(
 	const char* level,
 	const char* fmt,
 	const char* file,
@@ -115,7 +116,7 @@ __logMsgImp__(
 }
 
 //------------------------------------------------------------------------------
-struct __TimedRecord__
+struct TimedRecord
 {
 	uint64_t totalTicks;
 	int32_t callCount;
@@ -125,9 +126,9 @@ struct __TimedRecord__
 };
 
 //------------------------------------------------------------------------------
-struct __TimedRaiiBlock__
+struct TimedRaiiBlock
 {
-	using PerformanceRecords = std::unordered_map<size_t, __TimedRecord__>;
+	using PerformanceRecords = std::unordered_map<size_t, TimedRecord>;
 
 	// Integer format represents time using 10,000,000 ticks per second.
 	static const uint64_t TICKS_PER_MILLISECOND = 10'000;
@@ -155,7 +156,7 @@ struct __TimedRaiiBlock__
 	}
 
 	//----------------------------------------------------------------------------
-	__TimedRaiiBlock__(
+	TimedRaiiBlock(
 		const size_t hashIndex,
 		const int line,
 		const char* file,
@@ -169,7 +170,7 @@ struct __TimedRaiiBlock__
 	}
 
 	//----------------------------------------------------------------------------
-	~__TimedRaiiBlock__()
+	~TimedRaiiBlock()
 	{
 		uint64_t elapsedTicks = getClampedDuration(_qpcStartTime, getCurrentTime());
 
@@ -197,7 +198,7 @@ struct __TimedRaiiBlock__
 
 		// TEST message
 		double elapsedTimeMs = ticksToMilliSeconds(elapsedTicks);
-		__logMsgImp__(
+		logMsgImp(
 			"TIMED",
 			"%9.6fms - hash %ull\n",
 			_file,
@@ -282,7 +283,7 @@ struct __TimedRaiiBlock__
 
 //------------------------------------------------------------------------------
 static size_t
-__createTimedRecordHash__(
+createTimedRecordHash(
 	const std::string_view& filePath, const int lineNumber)
 {
 	// Don't bother hashing the full path. Only the last few characters
@@ -304,43 +305,41 @@ __createTimedRecordHash__(
 // Begining of actual implementation to all logging macros
 // Extract file and line number and pass them along with the message
 //------------------------------------------------------------------------------
-#define __LOG_MESSAGE_IMPL__(level, fmt, ...) do{                         \
-	__logMsgImp__(level, fmt, __FILE__, __LINE__, __func__, __VA_ARGS__);   \
+#define LOG_MESSAGE_IMPL(level, fmt, ...) do{                                  \
+	logger::logMsgImp(level, fmt, __FILE__, __LINE__, __func__, __VA_ARGS__);    \
 }while(false)
 
 //------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// Profiling entry point
-//------------------------------------------------------------------------------
-#define TIMED_TRACE                                                          \
-	const std::string_view& filePath = __FILE__;                               \
-	const size_t hashIndex = __createTimedRecordHash__(filePath, __LINE__);    \
-	__TimedRaiiBlock__ timedBlock_##__COUNTER__(                               \
-			hashIndex, __LINE__, __FILE__, __func__);
-
-//------------------------------------------------------------------------------
+}; // namespace logger
 
 
 //------------------------------------------------------------------------------
 // PUBLIC INTERFACE
 //------------------------------------------------------------------------------
+#undef TIMED_TRACE
+#define TIMED_TRACE                                                            \
+	const std::string_view& filePath = __FILE__;                                 \
+	const size_t hashIndex = logger::createTimedRecordHash(filePath, __LINE__);  \
+	logger::TimedRaiiBlock timedBlock_##__COUNTER__(                             \
+			hashIndex, __LINE__, __FILE__, __func__);
+
+//------------------------------------------------------------------------------
 #undef TRACE
-#if (defined(ENABLE_TIMED_TRACE))                  \
+#if (defined(ENABLE_TIMED_TRACE))                                              \
  && (defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
-#define TRACE TIMED_TRACE                          \
-do{                                                \
-__LOG_MESSAGE_IMPL__("TRACE", "\n");               \
+#define TRACE TIMED_TRACE                                                      \
+do{                                                                            \
+LOG_MESSAGE_IMPL("TRACE", "\n");                                               \
 }while(false);
 
-#elif (defined(ENABLE_TIMED_TRACE))                \
+#elif (defined(ENABLE_TIMED_TRACE))                                            \
  && !(defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
 #define TRACE TIMED_TRACE
 
-#elif (!defined(ENABLE_TIMED_TRACE))               \
+#elif (!defined(ENABLE_TIMED_TRACE))                                           \
  && (defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
-#define TRACE do{                                  \
-__LOG_MESSAGE_IMPL__("TRACE", "\n");               \
+#define TRACE do{                                                              \
+LOG_MESSAGE_IMPL("TRACE", "\n");                                               \
 }while(false);
 
 #else
@@ -349,9 +348,9 @@ __LOG_MESSAGE_IMPL__("TRACE", "\n");               \
 
 //------------------------------------------------------------------------------
 #undef LOG_VERBOSE
-#if LOG_LEVEL <= __LOG_LEVEL_VERBOSE
-#define LOG_VERBOSE(fmt, ...) do{                  \
-__LOG_MESSAGE_IMPL__("VERBOSE", fmt, __VA_ARGS__); \
+#if LOG_LEVEL <= LOG_LEVEL_VERBOSE
+#define LOG_VERBOSE(fmt, ...) do{                                              \
+LOG_MESSAGE_IMPL("VERBOSE", fmt, __VA_ARGS__);                                 \
 }while(false)
 #else
 #define LOG_VERBOSE(fmt, ...) do{}while(false)
@@ -359,11 +358,11 @@ __LOG_MESSAGE_IMPL__("VERBOSE", fmt, __VA_ARGS__); \
 
 //------------------------------------------------------------------------------
 #undef LOG_VERBOSE_IF
-#if LOG_LEVEL <= __LOG_LEVEL_VERBOSE
-#define LOG_VERBOSE_IF(cond, fmt, ...) do{         \
-if (cond) {                                        \
-__LOG_MESSAGE_IMPL__("VERBOSE", fmt, __VA_ARGS__); \
-}                                                  \
+#if LOG_LEVEL <= LOG_LEVEL_VERBOSE
+#define LOG_VERBOSE_IF(cond, fmt, ...) do{                                     \
+if (cond) {                                                                    \
+LOG_MESSAGE_IMPL("VERBOSE", fmt, __VA_ARGS__);                                 \
+}                                                                              \
 }while(false)
 #else
 #define LOG_VERBOSE_IF(cond, fmt, ...) do{}while(false)
@@ -371,9 +370,9 @@ __LOG_MESSAGE_IMPL__("VERBOSE", fmt, __VA_ARGS__); \
 
 //------------------------------------------------------------------------------
 #undef LOG_DEBUG
-#if LOG_LEVEL <= __LOG_LEVEL_DEBUG
-#define LOG_DEBUG(fmt, ...) do{                    \
-__LOG_MESSAGE_IMPL__("DEBUG", fmt, __VA_ARGS__);   \
+#if LOG_LEVEL <= LOG_LEVEL_DEBUG
+#define LOG_DEBUG(fmt, ...) do{                                                \
+LOG_MESSAGE_IMPL("DEBUG", fmt, __VA_ARGS__);                                   \
 }while(false)
 #else
 #define LOG_DEBUG(fmt, ...) do{}while(false)
@@ -381,11 +380,11 @@ __LOG_MESSAGE_IMPL__("DEBUG", fmt, __VA_ARGS__);   \
 
 //------------------------------------------------------------------------------
 #undef LOG_DEBUG_IF
-#if LOG_LEVEL <= __LOG_LEVEL_DEBUG
-#define LOG_DEBUG_IF(cond, fmt, ...) do{           \
-if (cond) {                                        \
-__LOG_MESSAGE_IMPL__("DEBUG", fmt, __VA_ARGS__);   \
-}                                                  \
+#if LOG_LEVEL <= LOG_LEVEL_DEBUG
+#define LOG_DEBUG_IF(cond, fmt, ...) do{                                       \
+if (cond) {                                                                    \
+LOG_MESSAGE_IMPL("DEBUG", fmt, __VA_ARGS__);                                   \
+}                                                                              \
 }while(false)
 #else
 #define LOG_DEBUG_IF(cond, fmt, ...) do{}while(false)
@@ -393,9 +392,9 @@ __LOG_MESSAGE_IMPL__("DEBUG", fmt, __VA_ARGS__);   \
 
 //------------------------------------------------------------------------------
 #undef LOG_INFO
-#if LOG_LEVEL <= __LOG_LEVEL_INFO
-#define LOG_INFO(fmt, ...) do{                     \
-__LOG_MESSAGE_IMPL__("INFO", fmt, __VA_ARGS__);    \
+#if LOG_LEVEL <= LOG_LEVEL_INFO
+#define LOG_INFO(fmt, ...) do{                                                 \
+LOG_MESSAGE_IMPL("INFO", fmt, __VA_ARGS__);                                    \
 }while(false)
 #else
 #define LOG_INFO(fmt, ...) do{}while(false)
@@ -403,11 +402,11 @@ __LOG_MESSAGE_IMPL__("INFO", fmt, __VA_ARGS__);    \
 
 //------------------------------------------------------------------------------
 #undef LOG_INFO_IF
-#if LOG_LEVEL <= __LOG_LEVEL_INFO
-#define LOG_INFO_IF(cond, fmt, ...) do{            \
-if (cond) {                                        \
-__LOG_MESSAGE_IMPL__("INFO", fmt, __VA_ARGS__);    \
-}                                                  \
+#if LOG_LEVEL <= LOG_LEVEL_INFO
+#define LOG_INFO_IF(cond, fmt, ...) do{                                        \
+if (cond) {                                                                    \
+LOG_MESSAGE_IMPL("INFO", fmt, __VA_ARGS__);                                    \
+}                                                                              \
 }while(false)
 #else
 #define LOG_INFO_IF(cond, fmt, ...) do{}while(false)
@@ -415,9 +414,9 @@ __LOG_MESSAGE_IMPL__("INFO", fmt, __VA_ARGS__);    \
 
 //------------------------------------------------------------------------------
 #undef LOG_WARNING
-#if LOG_LEVEL <= __LOG_LEVEL_WARNING
-#define LOG_WARNING(fmt, ...) do{                  \
-__LOG_MESSAGE_IMPL__("WARNING", fmt, __VA_ARGS__); \
+#if LOG_LEVEL <= LOG_LEVEL_WARNING
+#define LOG_WARNING(fmt, ...) do{                                              \
+LOG_MESSAGE_IMPL("WARNING", fmt, __VA_ARGS__);                                 \
 }while(false)
 #else
 #define LOG_WARNING(fmt, ...) do{}while(false)
@@ -425,11 +424,11 @@ __LOG_MESSAGE_IMPL__("WARNING", fmt, __VA_ARGS__); \
 
 //------------------------------------------------------------------------------
 #undef LOG_WARNING_IF
-#if LOG_LEVEL <= __LOG_LEVEL_WARNING
-#define LOG_WARNING_IF(cond, fmt, ...) do{         \
-if (cond) {                                        \
-__LOG_MESSAGE_IMPL__("WARNING", fmt, __VA_ARGS__); \
-}                                                  \
+#if LOG_LEVEL <= LOG_LEVEL_WARNING
+#define LOG_WARNING_IF(cond, fmt, ...) do{                                     \
+if (cond) {                                                                    \
+LOG_MESSAGE_IMPL("WARNING", fmt, __VA_ARGS__);                                 \
+}                                                                              \
 }while(false)
 #else
 #define LOG_WARNING_IF(cond, fmt, ...) do{}while(false)
@@ -437,9 +436,9 @@ __LOG_MESSAGE_IMPL__("WARNING", fmt, __VA_ARGS__); \
 
 //------------------------------------------------------------------------------
 #undef LOG_ERROR
-#if LOG_LEVEL <= __LOG_LEVEL_ERROR
-#define LOG_ERROR(fmt, ...) do{                    \
-__LOG_MESSAGE_IMPL__("ERROR", fmt, __VA_ARGS__);   \
+#if LOG_LEVEL <= LOG_LEVEL_ERROR
+#define LOG_ERROR(fmt, ...) do{                                                \
+LOG_MESSAGE_IMPL("ERROR", fmt, __VA_ARGS__);                                   \
 }while(false)
 #else
 #define LOG_ERROR(fmt, ...) do{}while(false)
@@ -447,11 +446,11 @@ __LOG_MESSAGE_IMPL__("ERROR", fmt, __VA_ARGS__);   \
 
 //------------------------------------------------------------------------------
 #undef LOG_ERROR_IF
-#if LOG_LEVEL <= __LOG_LEVEL_ERROR
-#define LOG_ERROR_IF(cond, fmt, ...) do{           \
-if (cond) {                                        \
-__LOG_MESSAGE_IMPL__("ERROR", fmt, __VA_ARGS__);   \
-}                                                  \
+#if LOG_LEVEL <= LOG_LEVEL_ERROR
+#define LOG_ERROR_IF(cond, fmt, ...) do{                                       \
+if (cond) {                                                                    \
+LOG_MESSAGE_IMPL("ERROR", fmt, __VA_ARGS__);                                   \
+}                                                                              \
 }while(false)
 #else
 #define LOG_ERROR_IF(cond, fmt, ...) do{}while(false)
@@ -459,9 +458,9 @@ __LOG_MESSAGE_IMPL__("ERROR", fmt, __VA_ARGS__);   \
 
 //------------------------------------------------------------------------------
 #undef LOG_FATAL_ERROR
-#if LOG_LEVEL <= __LOG_LEVEL_FATAL_ERROR
-#define LOG_FATAL_ERROR(fmt, ...) do{              \
-__LOG_MESSAGE_IMPL__("FATAL", fmt, __VA_ARGS__);   \
+#if LOG_LEVEL <= LOG_LEVEL_FATAL_ERROR
+#define LOG_FATAL_ERROR(fmt, ...) do{                                          \
+LOG_MESSAGE_IMPL("FATAL", fmt, __VA_ARGS__);                                   \
 }while(false)
 #else
 #define LOG_FATAL_ERROR(fmt, ...) do{}while(false)
@@ -469,11 +468,11 @@ __LOG_MESSAGE_IMPL__("FATAL", fmt, __VA_ARGS__);   \
 
 //------------------------------------------------------------------------------
 #undef LOG_FATAL_ERROR_IF
-#if LOG_LEVEL <= __LOG_LEVEL_FATAL_ERROR
-#define LOG_FATAL_ERROR_IF(cond, fmt, ...) do{     \
-if (cond) {                                        \
-__LOG_MESSAGE_IMPL__("FATAL", fmt, __VA_ARGS__);   \
-}                                                  \
+#if LOG_LEVEL <= LOG_LEVEL_FATAL_ERROR
+#define LOG_FATAL_ERROR_IF(cond, fmt, ...) do{                                 \
+if (cond) {                                                                    \
+LOG_MESSAGE_IMPL("FATAL", fmt, __VA_ARGS__);                                   \
+}                                                                              \
 }while(false)
 #else
 #define LOG_FATAL_ERROR_IF(cond, fmt, ...) do{}while(false)
