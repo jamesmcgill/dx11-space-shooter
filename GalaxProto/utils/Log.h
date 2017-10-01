@@ -108,7 +108,7 @@ logMsgImp(
 	auto count = sprintf_s(
 		buffer,
 		BUFFER_SIZE,
-		"%7s: [%80s:%4d] %20s(): ",
+		"%7s: [%30s:%4d] %20s(): ",
 		level,
 		file,
 		line,
@@ -129,11 +129,52 @@ struct TimedRecord
 };
 
 //------------------------------------------------------------------------------
+template <typename T> struct AggregateValue
+{
+	T total				= 0;
+	T min					= std::numeric_limits<T>::max();
+	T max					= std::numeric_limits<T>::lowest();
+	int32_t count = 0;
+
+	void accumulate(T newValue)
+	{
+		total += newValue;
+		if (newValue < min)
+		{
+			min = newValue;
+		}
+		if (newValue > max)
+		{
+			max = newValue;
+		}
+		count++;
+	}
+
+	T average() const
+	{
+		return total / count;
+	}
+};
+
+//------------------------------------------------------------------------------
+struct AggregateRecord
+{
+	AggregateValue<uint64_t> ticks;
+	AggregateValue<int32_t> callsCount;
+	AggregateValue<uint64_t> ticksPerCount;
+
+	int32_t lineNumber;
+	const char* file;
+	const char* function;
+};
+
+//------------------------------------------------------------------------------
 struct TimedRaiiBlock
 {
 	static const int SNAPSHOT_COUNT = 120;
 	using SnapShot									= std::unordered_map<size_t, TimedRecord>;
 	using AllSnapShots							= std::array<SnapShot, SNAPSHOT_COUNT>;
+	using AggregateSnapShot					= std::unordered_map<size_t, AggregateRecord>;
 
 	// Integer format represents time using 10,000,000 ticks per second.
 	static const uint64_t TICKS_PER_SECOND			= 10'000'000;
@@ -258,15 +299,36 @@ struct TimedRaiiBlock
 	}
 
 	//----------------------------------------------------------------------------
+	static AggregateSnapShot aggregateData()
+	{
+		AggregateSnapShot aggregateSnapShot;
+		auto& allSnapShots = logger::TimedRaiiBlock::getAllSnapShots();
+		for (auto& snapShot : allSnapShots)
+		{
+			for (auto& entry : snapShot)
+			{
+				auto& sourceRecord = entry.second;
+				auto& record			 = aggregateSnapShot[entry.first];
+
+				record.ticks.accumulate(sourceRecord.totalTicks);
+				record.callsCount.accumulate(sourceRecord.callCount);
+				record.ticksPerCount.accumulate(
+					sourceRecord.totalTicks / sourceRecord.callCount);
+
+				record.function		= sourceRecord.function;
+				record.file				= sourceRecord.file;
+				record.lineNumber = sourceRecord.lineNumber;
+			}
+		}
+
+		return aggregateSnapShot;
+	}
+
+	//----------------------------------------------------------------------------
 	static void clearSnapShot(SnapShot& snapShot)
 	{
-		for (auto& snap : snapShot)
-		{
-			auto& r			 = snap.second;
-			r.totalTicks = 0LL;
-			r.callCount	= 0;
-			r.lineNumber = 0;
-		}
+		auto tmp = SnapShot();
+		snapShot.swap(tmp);
 	}
 
 	//----------------------------------------------------------------------------
@@ -286,7 +348,8 @@ struct TimedRaiiBlock
 	{
 		uint64_t timeDelta = tLatest - tEarliest;
 
-		// Clamp excessively large time deltas (e.g. after paused in the debugger).
+		// Clamp excessively large time deltas (e.g. after paused in the
+		// debugger).
 		if (timeDelta > getQpcMaxDelta())
 		{
 			timeDelta = getQpcMaxDelta();
@@ -297,8 +360,8 @@ struct TimedRaiiBlock
 	//----------------------------------------------------------------------------
 	static double ticksToMilliSeconds(uint64_t ticks)
 	{
-		// Convert QPC units into a canonical tick format. This cannot overflow due
-		// to the previous clamp.
+		// Convert QPC units into a canonical tick format. This cannot overflow
+		// due to the previous clamp.
 		ticks *= TICKS_PER_SECOND;
 		ticks /= getQpcFrequency();
 

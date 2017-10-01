@@ -250,19 +250,23 @@ Game::drawProfilerInfo()
 	};
 
 	m_appResources.m_spriteBatch->Begin();
-	for (auto& snapShot : logger::TimedRaiiBlock::getAllSnapShots()[0])
+
+	auto aggregate = logger::TimedRaiiBlock::aggregateData();
+	for (auto& entry : aggregate)
 	{
-		auto& record				 = snapShot.second;
+		auto& record = entry.second;
 
 		UIText ui = createText(
-			L"{:>9.6}ms, hit:{:>2} {:>20}()      {}({})\n",
-			logger::TimedRaiiBlock::ticksToMilliSeconds(record.totalTicks),
-			record.callCount,
+			L"({:>7.6} / {:<7.6}ms)  hit:{:>2}    {:>20}()      {}({})\n",
+			logger::TimedRaiiBlock::ticksToMilliSeconds(record.ticks.min),
+			logger::TimedRaiiBlock::ticksToMilliSeconds(record.ticks.max),
+			record.callsCount.average(),
 			record.function,
 			record.file,
 			record.lineNumber);
 		drawText(ui);
 	}
+
 	m_appResources.m_spriteBatch->End();
 }
 
