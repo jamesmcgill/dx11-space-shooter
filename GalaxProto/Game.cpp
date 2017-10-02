@@ -118,12 +118,25 @@ Game::initialize(HWND window, int width, int height)
 void
 Game::tick()
 {
-	TRACE
-	m_appResources.m_timer.Tick([&]() { update(); });
+	{
+		TRACE
+		m_appResources.m_timer.Tick([&]() { update(); });
 
-	render();
+		render();
+	}
 
-	logger::TimedRaiiBlock::endFrame();
+	if (m_appContext.debugDraw)
+	{
+		drawProfilerInfo();
+	}
+	if (m_appContext.debugDraw)
+	{
+		drawGlobalDebugInfo();
+	}
+
+	m_appResources.m_deviceResources->Present();
+
+	logger::Stats::signalFrameEnd();
 }
 
 //------------------------------------------------------------------------------
@@ -156,6 +169,7 @@ Game::update()
 void
 Game::render()
 {
+	TRACE
 	// Don't try to render anything before the first Update.
 	if (m_appResources.m_timer.GetFrameCount() == 0)
 	{
@@ -165,22 +179,8 @@ Game::render()
 	clear();
 
 	m_appResources.m_deviceResources->PIXBeginEvent(L"Render");
-	{
-		TRACE
-		m_appStates.currentState()->render();
-		if (m_appContext.debugDraw)
-		{
-			drawGlobalDebugInfo();
-		}
-	}
-
-	if (m_appContext.debugDraw)
-	{
-		drawProfilerInfo();
-	}
+	m_appStates.currentState()->render();
 	m_appResources.m_deviceResources->PIXEndEvent();
-
-	m_appResources.m_deviceResources->Present();
 }
 
 //------------------------------------------------------------------------------
@@ -251,15 +251,15 @@ Game::drawProfilerInfo()
 
 	m_appResources.m_spriteBatch->Begin();
 
-	auto aggregate = logger::TimedRaiiBlock::aggregateData();
+	auto aggregate = logger::Stats::aggregateData();
 	for (auto& entry : aggregate)
 	{
 		auto& record = entry.second;
 
 		UIText ui = createText(
 			L"({:>7.6} / {:<7.6}ms)  hit:{:>2}    {:>20}()      {}({})\n",
-			logger::TimedRaiiBlock::ticksToMilliSeconds(record.ticks.min),
-			logger::TimedRaiiBlock::ticksToMilliSeconds(record.ticks.max),
+			logger::Timing::ticksToMilliSeconds(record.ticks.min),
+			logger::Timing::ticksToMilliSeconds(record.ticks.max),
 			record.callsCount.average(),
 			record.function,
 			record.file,
