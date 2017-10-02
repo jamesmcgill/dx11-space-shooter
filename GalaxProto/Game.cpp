@@ -257,10 +257,11 @@ Game::drawProfilerInfo()
 		auto& record = entry.second;
 
 		UIText ui = createText(
-			L"({:>7.6} / {:<7.6}ms)  hit:{:>2}    {:>20}()      {}({})\n",
+			L"({:>7.6} / {:<7.6}ms)  hits({:>2}/{:>2})    {:>20}()      {}({})\n",
 			logger::Timing::ticksToMilliSeconds(record.ticks.min),
 			logger::Timing::ticksToMilliSeconds(record.ticks.max),
-			record.callsCount.average(),
+			record.callsCount.min,
+			record.callsCount.max,
 			record.function,
 			record.file,
 			record.lineNumber);

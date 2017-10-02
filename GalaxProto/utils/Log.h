@@ -122,10 +122,20 @@ logMsgImp(
 struct TimedRecord
 {
 	uint64_t totalTicks;
-	int32_t callCount;
+
+	size_t hashIndex;
 	int32_t lineNumber;
 	const char* file;
 	const char* function;
+
+	std::vector<TimedRecord*> childNodes;
+
+	//----------------------------------------------------------------------------
+	static TimedRecord*& getHeadNode()
+	{
+		static TimedRecord* head = nullptr;
+		return head;
+	}
 };
 
 //------------------------------------------------------------------------------
@@ -252,10 +262,18 @@ struct Timing
 //------------------------------------------------------------------------------
 struct Stats
 {
-	static const int SNAPSHOT_COUNT = 120;
-	using SnapShot									= std::unordered_map<size_t, TimedRecord>;
-	using AllSnapShots							= std::array<SnapShot, SNAPSHOT_COUNT>;
-	using AggregateSnapShot					= std::unordered_map<size_t, AggregateRecord>;
+	static const int SNAPSHOT_COUNT		= 120;
+	static const int MAX_RECORD_COUNT = 120;
+
+	using Records = std::array<TimedRecord, MAX_RECORD_COUNT>;
+	struct SnapShot
+	{
+		Records records;
+		size_t numRecords = 0;
+	};
+
+	using AllSnapShots			= std::array<SnapShot, SNAPSHOT_COUNT>;
+	using AggregateSnapShot = std::unordered_map<size_t, AggregateRecord>;
 
 	//------------------------------------------------------------------------------
 	static AllSnapShots& getAllSnapShots()
@@ -291,8 +309,9 @@ struct Stats
 	//----------------------------------------------------------------------------
 	static void clearSnapShot(SnapShot& snapShot)
 	{
-		auto tmp = SnapShot();
-		snapShot.swap(tmp);
+		Records temp;
+		snapShot.records.swap(temp);
+		snapShot.numRecords = 0;
 	}
 
 	//----------------------------------------------------------------------------
@@ -305,19 +324,36 @@ struct Stats
 	//----------------------------------------------------------------------------
 	static AggregateSnapShot aggregateData()
 	{
-		AggregateSnapShot aggregateSnapShot;
+		AggregateSnapShot aggregatedSnapShots;
 		auto& allSnapShots = getAllSnapShots();
 		for (auto& snapShot : allSnapShots)
 		{
-			for (auto& entry : snapShot)
+			// Aggregate identical calls within ONE frame (i.e. same hash)
+			// E.g. 3 calls to Enemy::update() become one entry with total time
+			AggregateSnapShot aggregatedFrame;
+			for (size_t i = 0; i < snapShot.numRecords; ++i)
 			{
-				auto& sourceRecord = entry.second;
-				auto& record			 = aggregateSnapShot[entry.first];
+				auto& sourceRecord = snapShot.records[i];
+				auto& record			 = aggregatedFrame[sourceRecord.hashIndex];
+				record.ticks.total += sourceRecord.totalTicks;
+				record.callsCount.total++;
 
-				record.ticks.accumulate(sourceRecord.totalTicks);
-				record.callsCount.accumulate(sourceRecord.callCount);
+				record.function		= sourceRecord.function;
+				record.file				= sourceRecord.file;
+				record.lineNumber = sourceRecord.lineNumber;
+			}
+
+			// Aggregate identical calls over SEVERAL frames, to get averages,
+			// min, max etc.
+			for (auto& r : aggregatedFrame)
+			{
+				auto& record			 = aggregatedSnapShots[r.first];
+				auto& sourceRecord = r.second;
+
+				record.ticks.accumulate(sourceRecord.ticks.total);
+				record.callsCount.accumulate(sourceRecord.callsCount.total);
 				record.ticksPerCount.accumulate(
-					sourceRecord.totalTicks / sourceRecord.callCount);
+					sourceRecord.ticks.total / sourceRecord.callsCount.total);
 
 				record.function		= sourceRecord.function;
 				record.file				= sourceRecord.file;
@@ -325,7 +361,7 @@ struct Stats
 			}
 		}
 
-		return aggregateSnapShot;
+		return aggregatedSnapShots;
 	}
 
 };		// struct Stats
@@ -335,11 +371,9 @@ struct Stats
 //------------------------------------------------------------------------------
 struct TimedRaiiBlock
 {
-	const size_t _hashIndex;
-	uint64_t _qpcStartTicks;
-	const int _line;
-	const char* _file;
-	const char* _function;
+	const TimedRaiiBlock* _parent = nullptr;
+	const uint64_t _qpcStartTicks;
+	TimedRecord* _record = nullptr;
 
 	//----------------------------------------------------------------------------
 	TimedRaiiBlock(
@@ -347,12 +381,45 @@ struct TimedRaiiBlock
 		const int line,
 		const char* file,
 		const char* function)
-			: _hashIndex(hashIndex)
+			: _parent(getCurrentBlock())
 			, _qpcStartTicks(Timing::getCurrentTimeInTicks())
-			, _line(line)
-			, _file(file)
-			, _function(function)
 	{
+		TimedRaiiBlock* current = getCurrentBlock();
+		current									= this;
+
+		auto& currentSnapShot = Stats::getSnapShot(Stats::getCurrentSnapShotIdx());
+		auto recordIndex			= currentSnapShot.numRecords;
+
+		if (currentSnapShot.numRecords < Stats::MAX_RECORD_COUNT - 1)
+		{
+			currentSnapShot.numRecords++;
+		}
+		else
+		{
+			logMsgImp(
+				"ERROR",
+				"MAX_RECORD_COUNT exceeded. Increase Value\n",
+				__FILE__,
+				__LINE__,
+				__func__);
+		}
+
+		TimedRecord& record = currentSnapShot.records[recordIndex];
+		_record							= &record;
+		_record->hashIndex	= hashIndex;
+		_record->lineNumber = line;
+		_record->file				= file;
+		_record->function		= function;
+
+		if (_parent)
+		{
+			_parent->_record->childNodes.push_back(_record);
+		}
+		else
+		{
+			auto& head = TimedRecord::getHeadNode();
+			head			 = _record;
+		}
 	}
 
 	//----------------------------------------------------------------------------
@@ -361,39 +428,30 @@ struct TimedRaiiBlock
 		uint64_t elapsedTicks = Timing::getClampedDuration(
 			_qpcStartTicks, Timing::getCurrentTimeInTicks());
 
-		int idx								= Stats::getCurrentSnapShotIdx();
-		auto& currentSnapShot = Stats::getSnapShot(idx);
-		auto& record					= currentSnapShot[_hashIndex];
-
-		// Collision Testing
-#define TEST_HASH_COLLISIONS
-#ifdef TEST_HASH_COLLISIONS
-		if (record.callCount > 0)
-		{
-			if ((_line != record.lineNumber) || (strcmp(record.file, _file) != 0))
-			{
-				ASSERT(false);
-			}
-		}
-#endif
-
-		record.totalTicks += elapsedTicks;
-		record.callCount++;
-		record.lineNumber = _line;
-		record.file				= _file;
-		record.function		= _function;
+		_record->totalTicks = elapsedTicks;
 
 		// TEST message
 		double elapsedTimeMs = Timing::ticksToMilliSeconds(elapsedTicks);
 		logMsgImp(
 			"TIMED",
 			"%9.6fms - hash %ull\n",
-			_file,
-			_line,
-			_function,
+			_record->file,
+			_record->lineNumber,
+			_record->function,
 			elapsedTimeMs,
-			_hashIndex);
+			_record->hashIndex);
+
+		TimedRaiiBlock* current = getCurrentBlock();
+		current									= const_cast<TimedRaiiBlock*>(_parent);
 	}
+
+	//----------------------------------------------------------------------------
+	static TimedRaiiBlock* getCurrentBlock()
+	{
+		static TimedRaiiBlock* current = nullptr;
+		return current;
+	}
+
 };		// TimedRaiiBlock
 
 //----------------------------------------------------------------------------
