@@ -125,13 +125,18 @@ Game::tick()
 		render();
 	}
 
-	if (m_appContext.debugDraw)
+	switch (m_appContext.profileViz)
 	{
-		drawProfilerInfo();
-	}
-	if (m_appContext.debugDraw)
-	{
-		drawGlobalDebugInfo();
+		case ProfileViz::Basic:
+			drawBasicProfileInfo();
+			break;
+		case ProfileViz::List:
+			drawProfilerList();
+			drawBasicProfileInfo();
+			break;
+		case ProfileViz::FlameGraph:
+			drawBasicProfileInfo();
+			break;
 	}
 
 	m_appResources.m_deviceResources->Present();
@@ -148,7 +153,18 @@ Game::update()
 	m_appResources.kbTracker.Update(kbState);
 	if (m_appResources.kbTracker.IsKeyPressed(Keyboard::F1))
 	{
-		m_appContext.debugDraw = !m_appContext.debugDraw;
+		switch (m_appContext.profileViz)
+		{
+			case ProfileViz::Basic:
+				m_appContext.profileViz = ProfileViz::List;
+				break;
+			case ProfileViz::List:
+				m_appContext.profileViz = ProfileViz::FlameGraph;
+				break;
+			case ProfileViz::FlameGraph:
+				m_appContext.profileViz = ProfileViz::Basic;
+				break;
+		}
 	}
 
 	m_appResources.audioEngine->Update();
@@ -185,7 +201,7 @@ Game::render()
 
 //------------------------------------------------------------------------------
 void
-Game::drawGlobalDebugInfo()
+Game::drawBasicProfileInfo()
 {
 	float yPos		= 0.0f;
 	auto formatUI = [
@@ -221,7 +237,7 @@ Game::drawGlobalDebugInfo()
 
 //------------------------------------------------------------------------------
 void
-Game::drawProfilerInfo()
+Game::drawProfilerList()
 {
 	auto monoFont = m_appResources.fontMono8pt.get();
 

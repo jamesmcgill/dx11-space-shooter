@@ -38,8 +38,8 @@ public:
 private:
 	void update();
 	void render();
-	void drawGlobalDebugInfo();
-	void drawProfilerInfo();
+	void drawBasicProfileInfo();
+	void drawProfilerList();
 	void clear();
 
 	void createDeviceDependentResources();

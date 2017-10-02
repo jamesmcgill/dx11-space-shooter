@@ -30,6 +30,15 @@ struct UIText
 };
 
 //------------------------------------------------------------------------------
+enum class ProfileViz
+{
+	Disabled,
+	Basic,
+	List,
+	FlameGraph
+};
+
+//------------------------------------------------------------------------------
 struct AppContext
 {
 	DirectX::SimpleMath::Matrix view;
@@ -53,6 +62,7 @@ struct AppContext
 	UIText uiScore;
 	UIText uiLives;
 
+	ProfileViz profileViz		= ProfileViz::Basic;
 	bool debugDraw					= false;
 	float playerSpeed				= 200.0f;
 	float playerFriction		= 60.0f;

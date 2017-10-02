@@ -14,10 +14,10 @@ using namespace DirectX::SimpleMath;
 extern void ExitGame();
 
 //------------------------------------------------------------------------------
-constexpr float CAMERA_SPEED_X							 = 1.0f;
-constexpr float CAMERA_SPEED_Y							 = 1.0f;
-constexpr float CAMERA_MIN_DIST							 = 30.0f;
-constexpr float UNIT_DIAGONAL_LENGTH				 = 0.7071067811865475f;
+constexpr float CAMERA_SPEED_X			 = 1.0f;
+constexpr float CAMERA_SPEED_Y			 = 1.0f;
+constexpr float CAMERA_MIN_DIST			 = 30.0f;
+constexpr float UNIT_DIAGONAL_LENGTH = 0.7071067811865475f;
 
 constexpr size_t CAMERA_DIST_CONTROL				 = 16;
 constexpr size_t PLAYER_SPEED_CONTROL				 = 17;
@@ -48,6 +48,11 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 	}
 
 	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F2))
+	{
+		m_context.debugDraw = !m_context.debugDraw;
+	}
+
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F3))
 	{
 		m_gameLogic.m_enemies.debugLevel();
 		m_gameLogic.reset();
