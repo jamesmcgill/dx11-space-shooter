@@ -204,31 +204,16 @@ Game::render()
 void
 Game::drawBasicProfileInfo()
 {
-	float yPos		= 0.0f;
-	auto formatUI = [&yPos, font = m_appResources.fontMono8pt.get()](
-		UIText & ui, const wchar_t* fmt, auto&&... vars)
-	{
-		ui.font							= font;
-		ui.text							= fmt::format(fmt, vars...);
-		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
-		float height				= XMVectorGetY(dimensions);
-		ui.origin						= Vector2(0.0f, 0.0f);
-		ui.position.x				= 0.0f;
-		ui.position.y				= yPos;
-		yPos += height;
-	};
-	formatUI(
-		m_appContext.uiFrameRate,
-		L"fps: {}, Time: {:.2f}ms",
+	UIText ui;
+	ui.font			= m_appResources.fontMono8pt.get();
+	ui.origin		= Vector2(0.0f, 0.0f);
+	ui.position = Vector2(0.0f, 0.0f);
+	ui.text = fmt::format(L"fps: {}, Time: {:.2f}ms",
 		m_appResources.m_timer.GetFramesPerSecond(),
 		m_appResources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
-	auto drawUI = [& spriteBatch = m_appResources.m_spriteBatch](UIText & ui)
-	{
-		ui.draw(Colors::MediumVioletRed, *spriteBatch);
-	};
 	m_appResources.m_spriteBatch->Begin();
-	drawUI(m_appContext.uiFrameRate);
+	ui.draw(Colors::MediumVioletRed, *m_appResources.m_spriteBatch);
 	m_appResources.m_spriteBatch->End();
 }
 
@@ -238,24 +223,21 @@ Game::drawProfilerList()
 {
 	auto monoFont = m_appResources.fontMono8pt.get();
 
-	float yPos = XMVectorGetY(monoFont->MeasureString(L"X"));
-	auto createText =
-		[&yPos, font = monoFont](const wchar_t* fmt, auto&&... vars)->UIText
-	{
-		UIText ui;
-		ui.font							= font;
-		ui.text							= fmt::format(fmt, vars...);
-		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
-		float height				= XMVectorGetY(dimensions);
-		ui.origin						= Vector2(0.0f, 0.0f);
-		ui.position.x				= 0.0f;
-		ui.position.y				= yPos;
-		yPos += height;
-		return ui;
-	};
+	const int yAscent
+		= static_cast<int>(ceil(XMVectorGetY(monoFont->MeasureString(L"X"))));
+	int yPos = yAscent;
+	UIText ui;
+	ui.font				= monoFont;
+	ui.origin			= Vector2(0.0f, 0.0f);
+	ui.position.x = 0.0f;
 
-	auto drawText = [& spriteBatch = m_appResources.m_spriteBatch](UIText & ui)
+	auto drawText =
+		[&yAscent, &yPos, &ui, &spriteBatch = m_appResources.m_spriteBatch](
+			const wchar_t* fmt, auto&&... vars)
 	{
+		ui.text				= fmt::format(fmt, vars...);
+		ui.position.y = static_cast<float>(yPos);
+		yPos += yAscent;
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};
 
@@ -266,7 +248,7 @@ Game::drawProfilerList()
 	{
 		auto& record = entry.second;
 
-		UIText ui = createText(
+		drawText(
 			L"({:>7.6} / {:<7.6}ms)  hits({:>2}/{:>2})    {:>20}()      {}({})\n",
 			logger::Timing::ticksToMilliSeconds(record.ticks.min),
 			logger::Timing::ticksToMilliSeconds(record.ticks.max),
@@ -275,7 +257,6 @@ Game::drawProfilerList()
 			record.function,
 			record.file,
 			record.lineNumber);
-		drawText(ui);
 	}
 
 	m_appResources.m_spriteBatch->End();
@@ -334,23 +315,24 @@ Game::drawFlameGraph()
 		return;
 	}
 
-	auto monoFont						 = m_appResources.fontMono8pt.get();
-	const float yHeight			 = XMVectorGetY(monoFont->MeasureString(L"X"));
-	const float yStartPos		 = m_appResources.m_screenHeight - (yHeight * 6);
-	const float xStartPos		 = 0.0f;
+	auto monoFont = m_appResources.fontMono8pt.get();
+	const int yAscent
+		= static_cast<int>(ceil(XMVectorGetY(monoFont->MeasureString(L"X"))));
+	const int yStartPos			 = m_appResources.m_screenHeight - (yAscent * 6);
+	const int xStartPos			 = 0;
 	const uint64_t xBaseTick = currentSnapShot.flameHead->startTimeInTicks;
 	const float ticksToXPos	= (float)m_appResources.m_screenWidth
 														/ currentSnapShot.flameHead->totalTicks;
 
 	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
-		float yPos = yStartPos - (depth * yHeight);
+		float yPos = static_cast<float>(yStartPos - (depth * yAscent));
 
 		UIText ui;
-		ui.font = monoFont;
-		ui.text = fmt::format(L"{}", node->function);
+		ui.font		= monoFont;
+		ui.text		= fmt::format(L"{}", node->function);
 		ui.origin = Vector2(0.0f, 0.0f);
 		ui.position.x
-			= xStartPos + ((node->startTimeInTicks - xBaseTick) * ticksToXPos);
+			= ceil(xStartPos + ((node->startTimeInTicks - xBaseTick) * ticksToXPos));
 		ui.position.y = yPos;
 
 		ui.draw(Colors::MediumVioletRed, *m_appResources.m_spriteBatch);
