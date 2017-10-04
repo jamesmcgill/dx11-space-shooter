@@ -208,7 +208,8 @@ Game::drawBasicProfileInfo()
 	ui.font			= m_appResources.fontMono8pt.get();
 	ui.origin		= Vector2(0.0f, 0.0f);
 	ui.position = Vector2(0.0f, 0.0f);
-	ui.text = fmt::format(L"fps: {}, Time: {:.2f}ms",
+	ui.text			= fmt::format(
+		L"fps: {}, Time: {:.2f}ms",
 		m_appResources.m_timer.GetFramesPerSecond(),
 		m_appResources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
@@ -243,17 +244,16 @@ Game::drawProfilerList()
 
 	m_appResources.m_spriteBatch->Begin();
 
-	auto aggregate = logger::Stats::aggregateData();
+	auto aggregate = logger::Stats::computeAnalyticRecords();
 	for (auto& entry : aggregate)
 	{
 		auto& record = entry.second;
 
 		drawText(
-			L"({:>7.6} / {:<7.6}ms)  hits({:>2}/{:>2})    {:>20}()      {}({})\n",
+			L"({:>7.6} / {:<7.6})ms  hits({:>2})    {:>20}()      {}({})\n",
 			logger::Timing::ticksToMilliSeconds(record.ticks.min),
 			logger::Timing::ticksToMilliSeconds(record.ticks.max),
-			record.callsCount.min,
-			record.callsCount.max,
+			record.callsCount.average(),
 			record.function,
 			record.file,
 			record.lineNumber);

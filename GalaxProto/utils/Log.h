@@ -133,7 +133,7 @@ struct TimedRecord
 };
 
 //------------------------------------------------------------------------------
-template <typename T> struct AggregateValue
+template <typename T> struct AnalyticValue
 {
 	T total				= 0;
 	T min					= std::numeric_limits<T>::max();
@@ -161,11 +161,22 @@ template <typename T> struct AggregateValue
 };
 
 //------------------------------------------------------------------------------
+struct AnalyticRecord
+{
+	AnalyticValue<uint64_t> ticks;
+	AnalyticValue<int32_t> callsCount;
+	AnalyticValue<uint64_t> ticksPerCount;
+
+	int32_t lineNumber;
+	const char* file;
+	const char* function;
+};
+
+//------------------------------------------------------------------------------
 struct AggregateRecord
 {
-	AggregateValue<uint64_t> ticks;
-	AggregateValue<int32_t> callsCount;
-	AggregateValue<uint64_t> ticksPerCount;
+	uint64_t ticks		 = 0;
+	int32_t callsCount = 0;
 
 	int32_t lineNumber;
 	const char* file;
@@ -262,13 +273,16 @@ struct Stats
 	using Records = std::array<TimedRecord, MAX_RECORD_COUNT>;
 	struct SnapShot
 	{
-		Records records;
 		size_t numRecords			 = 0;
 		TimedRecord* flameHead = nullptr;
+		Records records;
 	};
+	using AllSnapShots = std::array<SnapShot, SNAPSHOT_COUNT>;
 
-	using AllSnapShots			= std::array<SnapShot, SNAPSHOT_COUNT>;
-	using AggregateSnapShot = std::unordered_map<size_t, AggregateRecord>;
+	using AggregatedRecords			 = std::unordered_map<size_t, AggregateRecord>;
+	using AllAggregatedSnapShots = std::array<AggregatedRecords, SNAPSHOT_COUNT>;
+
+	using AnalyticRecords = std::unordered_map<size_t, AnalyticRecord>;
 
 	//------------------------------------------------------------------------------
 	static AllSnapShots& getAllSnapShots()
@@ -281,6 +295,19 @@ struct Stats
 	static SnapShot& getSnapShot(const int snapShotIdx)
 	{
 		return getAllSnapShots()[snapShotIdx];
+	}
+
+	//------------------------------------------------------------------------------
+	static AllAggregatedSnapShots& getAggregatedFrameRecords()
+	{
+		static AllAggregatedSnapShots snapShots = AllAggregatedSnapShots();
+		return snapShots;
+	}
+
+	//------------------------------------------------------------------------------
+	static AggregatedRecords& getAggregatedRecords(const int snapShotIdx)
+	{
+		return getAggregatedFrameRecords()[snapShotIdx];
 	}
 
 	//------------------------------------------------------------------------------
@@ -310,45 +337,36 @@ struct Stats
 	}
 
 	//----------------------------------------------------------------------------
+	static void clearFrameAggregate(AggregatedRecords& snapShot)
+	{
+		AggregatedRecords temp;
+		snapShot.swap(temp);
+	}
+
+	//----------------------------------------------------------------------------
 	static void signalFrameEnd()
 	{
 		int newIdx = incrementSnapShotIdx();
 		clearSnapShot(getSnapShot(newIdx));
+		clearFrameAggregate(getAggregatedRecords(newIdx));
 	}
 
 	//----------------------------------------------------------------------------
-	static AggregateSnapShot aggregateData()
+	static AnalyticRecords computeAnalyticRecords()
 	{
-		AggregateSnapShot aggregatedSnapShots;
-		auto& allSnapShots = getAllSnapShots();
-		for (auto& snapShot : allSnapShots)
+		AnalyticRecords analyticRecords;
+		const auto& aggregatedSnapShots = getAggregatedFrameRecords();
+		for (const auto& snapShot : aggregatedSnapShots)
 		{
-			// Aggregate identical calls within ONE frame (i.e. same hash)
-			// E.g. 3 calls to Enemy::update() become one entry with total time
-			AggregateSnapShot aggregatedFrame;
-			for (size_t i = 0; i < snapShot.numRecords; ++i)
+			for (const auto& rec : snapShot)
 			{
-				auto& sourceRecord = snapShot.records[i];
-				auto& record			 = aggregatedFrame[sourceRecord.hashIndex];
-				record.ticks.total += sourceRecord.totalTicks;
-				record.callsCount.total++;
+				const auto& sourceRecord = rec.second;
+				auto& record						 = analyticRecords[rec.first];
 
-				record.function		= sourceRecord.function;
-				record.file				= sourceRecord.file;
-				record.lineNumber = sourceRecord.lineNumber;
-			}
-
-			// Aggregate identical calls over SEVERAL frames, to get averages,
-			// min, max etc.
-			for (auto& r : aggregatedFrame)
-			{
-				auto& record			 = aggregatedSnapShots[r.first];
-				auto& sourceRecord = r.second;
-
-				record.ticks.accumulate(sourceRecord.ticks.total);
-				record.callsCount.accumulate(sourceRecord.callsCount.total);
+				record.ticks.accumulate(sourceRecord.ticks);
+				record.callsCount.accumulate(sourceRecord.callsCount);
 				record.ticksPerCount.accumulate(
-					sourceRecord.ticks.total / sourceRecord.callsCount.total);
+					sourceRecord.ticks / sourceRecord.callsCount);
 
 				record.function		= sourceRecord.function;
 				record.file				= sourceRecord.file;
@@ -356,7 +374,7 @@ struct Stats
 			}
 		}
 
-		return aggregatedSnapShots;
+		return analyticRecords;
 	}
 
 };		// struct Stats
@@ -420,6 +438,16 @@ struct TimedRaiiBlock
 		ASSERT(_record);
 		_record->totalTicks = Timing::getClampedDuration(
 			_record->startTimeInTicks, Timing::getCurrentTimeInTicks());
+
+		auto& snapShotIdx = Stats::getCurrentSnapShotIdx();
+		auto& aggregateRecord
+			= Stats::getAggregatedRecords(snapShotIdx)[_record->hashIndex];
+		aggregateRecord.ticks += _record->totalTicks;
+		aggregateRecord.callsCount++;
+
+		aggregateRecord.lineNumber = _record->lineNumber;
+		aggregateRecord.file			 = _record->file;
+		aggregateRecord.function	 = _record->function;
 
 		// TEST message
 		double elapsedTimeMs = Timing::ticksToMilliSeconds(_record->totalTicks);
