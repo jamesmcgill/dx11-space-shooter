@@ -467,7 +467,6 @@ GameLogic::updateUIScore()
 	score.text					= fmt::format(L"Score: {}", m_context.playerScore);
 	XMVECTOR dimensions = score.font->MeasureString(score.text.c_str());
 	score.origin				= Vector2((XMVectorGetX(dimensions) / 2.f), 0.0f);
-	score.dimensions		= dimensions;
 	score.position.x		= m_resources.m_screenWidth / 2.f;
 	score.position.y		= 0.0f;
 }
@@ -482,7 +481,6 @@ GameLogic::updateUILives()
 	lives.text					= fmt::format(L"Lives: {}", m_context.playerLives);
 	XMVECTOR dimensions = lives.font->MeasureString(lives.text.c_str());
 	lives.origin				= Vector2(0.0f, XMVectorGetY(dimensions));
-	lives.dimensions		= dimensions;
 	lives.position.x		= 0.0f;
 	lives.position.y		= static_cast<float>(m_resources.m_screenHeight);
 }
@@ -523,7 +521,6 @@ GameLogic::updateUIDebugVariables()
 		float width					= XMVectorGetX(dimensions);
 		float height				= XMVectorGetY(dimensions);
 		ui.origin						= Vector2(width, 0.0f);
-		ui.dimensions				= dimensions;
 		ui.position.x				= static_cast<float>(screenWidth);
 		ui.position.y				= yPos;
 		yPos += height;

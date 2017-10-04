@@ -135,6 +135,7 @@ Game::tick()
 			drawBasicProfileInfo();
 			break;
 		case ProfileViz::FlameGraph:
+			drawFlameGraph();
 			drawBasicProfileInfo();
 			break;
 	}
@@ -204,18 +205,14 @@ void
 Game::drawBasicProfileInfo()
 {
 	float yPos		= 0.0f;
-	auto formatUI = [
-		&yPos,
-		font				= m_appResources.fontMono8pt.get(),
-		screenWidth = m_appResources.m_screenWidth
-	](UIText & ui, const wchar_t* fmt, auto&&... vars)
+	auto formatUI = [&yPos, font = m_appResources.fontMono8pt.get()](
+		UIText & ui, const wchar_t* fmt, auto&&... vars)
 	{
 		ui.font							= font;
 		ui.text							= fmt::format(fmt, vars...);
 		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
 		float height				= XMVectorGetY(dimensions);
 		ui.origin						= Vector2(0.0f, 0.0f);
-		ui.dimensions				= dimensions;
 		ui.position.x				= 0.0f;
 		ui.position.y				= yPos;
 		yPos += height;
@@ -243,9 +240,7 @@ Game::drawProfilerList()
 
 	float yPos = XMVectorGetY(monoFont->MeasureString(L"X"));
 	auto createText =
-		[&yPos, font = monoFont, screenWidth = m_appResources.m_screenWidth](
-			const wchar_t* fmt, auto&&... vars)
-			->UIText
+		[&yPos, font = monoFont](const wchar_t* fmt, auto&&... vars)->UIText
 	{
 		UIText ui;
 		ui.font							= font;
@@ -253,7 +248,6 @@ Game::drawProfilerList()
 		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
 		float height				= XMVectorGetY(dimensions);
 		ui.origin						= Vector2(0.0f, 0.0f);
-		ui.dimensions				= dimensions;
 		ui.position.x				= 0.0f;
 		ui.position.y				= yPos;
 		yPos += height;
@@ -284,6 +278,86 @@ Game::drawProfilerList()
 		drawText(ui);
 	}
 
+	m_appResources.m_spriteBatch->End();
+}
+
+//------------------------------------------------------------------------------
+// Typical Breadth First Traversal but with added depth tracking
+// to keep track of the current depth in the tree.
+//------------------------------------------------------------------------------
+template <typename Func>
+void
+visitFlameGraph(const logger::TimedRecord* head, Func visitFunc)
+{
+	using RecordQueue = std::queue<const logger::TimedRecord*>;
+	ASSERT(head);
+
+	int depth = 0;
+	RecordQueue queue;
+	RecordQueue nextDepthQueue;
+
+	queue.push(head);
+	while (true)
+	{
+		auto node = queue.front();
+		queue.pop();
+		visitFunc(node, depth);
+
+		for (const auto c : node->childNodes)
+		{
+			nextDepthQueue.push(c);
+		}
+
+		if (queue.empty())		// Finished this depth level
+		{
+			if (nextDepthQueue.empty())		 // No more levels left
+			{
+				return;
+			}
+			else
+			{
+				// Setup next depth level
+				std::swap(queue, nextDepthQueue);
+				depth++;
+			}
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Game::drawFlameGraph()
+{
+	auto& currentSnapShot = logger::Stats::getSnapShot(0);
+	if (!currentSnapShot.flameHead)
+	{
+		return;
+	}
+
+	auto monoFont						 = m_appResources.fontMono8pt.get();
+	const float yHeight			 = XMVectorGetY(monoFont->MeasureString(L"X"));
+	const float yStartPos		 = m_appResources.m_screenHeight - (yHeight * 6);
+	const float xStartPos		 = 0.0f;
+	const uint64_t xBaseTick = currentSnapShot.flameHead->startTimeInTicks;
+	const float ticksToXPos	= (float)m_appResources.m_screenWidth
+														/ currentSnapShot.flameHead->totalTicks;
+
+	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
+		float yPos = yStartPos - (depth * yHeight);
+
+		UIText ui;
+		ui.font = monoFont;
+		ui.text = fmt::format(L"{}", node->function);
+		ui.origin = Vector2(0.0f, 0.0f);
+		ui.position.x
+			= xStartPos + ((node->startTimeInTicks - xBaseTick) * ticksToXPos);
+		ui.position.y = yPos;
+
+		ui.draw(Colors::MediumVioletRed, *m_appResources.m_spriteBatch);
+	};
+
+	m_appResources.m_spriteBatch->Begin();
+	visitFlameGraph(currentSnapShot.flameHead, drawFunc);
 	m_appResources.m_spriteBatch->End();
 }
 

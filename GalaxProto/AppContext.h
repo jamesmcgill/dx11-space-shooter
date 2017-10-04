@@ -16,7 +16,6 @@ constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
 struct UIText
 {
 	DirectX::SimpleMath::Vector2 position;
-	DirectX::SimpleMath::Vector2 dimensions;
 	DirectX::SimpleMath::Vector2 origin;
 	DirectX::SpriteFont* font = nullptr;
 	std::wstring text;

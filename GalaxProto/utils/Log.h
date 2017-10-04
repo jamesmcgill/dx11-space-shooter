@@ -121,6 +121,7 @@ logMsgImp(
 //------------------------------------------------------------------------------
 struct TimedRecord
 {
+	uint64_t startTimeInTicks;
 	uint64_t totalTicks;
 
 	size_t hashIndex;
@@ -129,13 +130,6 @@ struct TimedRecord
 	const char* function;
 
 	std::vector<TimedRecord*> childNodes;
-
-	//----------------------------------------------------------------------------
-	static TimedRecord*& getHeadNode()
-	{
-		static TimedRecord* head = nullptr;
-		return head;
-	}
 };
 
 //------------------------------------------------------------------------------
@@ -269,7 +263,8 @@ struct Stats
 	struct SnapShot
 	{
 		Records records;
-		size_t numRecords = 0;
+		size_t numRecords			 = 0;
+		TimedRecord* flameHead = nullptr;
 	};
 
 	using AllSnapShots			= std::array<SnapShot, SNAPSHOT_COUNT>;
@@ -372,8 +367,7 @@ struct Stats
 struct TimedRaiiBlock
 {
 	const TimedRaiiBlock* _parent = nullptr;
-	const uint64_t _qpcStartTicks;
-	TimedRecord* _record = nullptr;
+	TimedRecord* _record					= nullptr;
 
 	//----------------------------------------------------------------------------
 	TimedRaiiBlock(
@@ -381,11 +375,9 @@ struct TimedRaiiBlock
 		const int line,
 		const char* file,
 		const char* function)
-			: _parent(getCurrentBlock())
-			, _qpcStartTicks(Timing::getCurrentTimeInTicks())
+			: _parent(getCurrentOpenBlockByRef())
 	{
-		TimedRaiiBlock* current = getCurrentBlock();
-		current									= this;
+		getCurrentOpenBlockByRef() = this;
 
 		auto& currentSnapShot = Stats::getSnapShot(Stats::getCurrentSnapShotIdx());
 		auto recordIndex			= currentSnapShot.numRecords;
@@ -404,12 +396,13 @@ struct TimedRaiiBlock
 				__func__);
 		}
 
-		TimedRecord& record = currentSnapShot.records[recordIndex];
-		_record							= &record;
-		_record->hashIndex	= hashIndex;
-		_record->lineNumber = line;
-		_record->file				= file;
-		_record->function		= function;
+		TimedRecord& record				= currentSnapShot.records[recordIndex];
+		_record										= &record;
+		_record->hashIndex				= hashIndex;
+		_record->startTimeInTicks = Timing::getCurrentTimeInTicks();
+		_record->lineNumber				= line;
+		_record->file							= file;
+		_record->function					= function;
 
 		if (_parent)
 		{
@@ -417,21 +410,19 @@ struct TimedRaiiBlock
 		}
 		else
 		{
-			auto& head = TimedRecord::getHeadNode();
-			head			 = _record;
+			currentSnapShot.flameHead = _record;
 		}
 	}
 
 	//----------------------------------------------------------------------------
 	~TimedRaiiBlock()
 	{
-		uint64_t elapsedTicks = Timing::getClampedDuration(
-			_qpcStartTicks, Timing::getCurrentTimeInTicks());
-
-		_record->totalTicks = elapsedTicks;
+		ASSERT(_record);
+		_record->totalTicks = Timing::getClampedDuration(
+			_record->startTimeInTicks, Timing::getCurrentTimeInTicks());
 
 		// TEST message
-		double elapsedTimeMs = Timing::ticksToMilliSeconds(elapsedTicks);
+		double elapsedTimeMs = Timing::ticksToMilliSeconds(_record->totalTicks);
 		logMsgImp(
 			"TIMED",
 			"%9.6fms - hash %ull\n",
@@ -441,12 +432,11 @@ struct TimedRaiiBlock
 			elapsedTimeMs,
 			_record->hashIndex);
 
-		TimedRaiiBlock* current = getCurrentBlock();
-		current									= const_cast<TimedRaiiBlock*>(_parent);
+		getCurrentOpenBlockByRef() = const_cast<TimedRaiiBlock*>(_parent);
 	}
 
 	//----------------------------------------------------------------------------
-	static TimedRaiiBlock* getCurrentBlock()
+	static TimedRaiiBlock*& getCurrentOpenBlockByRef()
 	{
 		static TimedRaiiBlock* current = nullptr;
 		return current;

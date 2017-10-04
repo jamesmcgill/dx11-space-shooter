@@ -40,6 +40,7 @@ private:
 	void render();
 	void drawBasicProfileInfo();
 	void drawProfilerList();
+	void drawFlameGraph();
 	void clear();
 
 	void createDeviceDependentResources();

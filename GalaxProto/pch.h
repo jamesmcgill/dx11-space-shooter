@@ -60,6 +60,7 @@
 #include <array>
 #include <map>
 #include <unordered_map>
+#include <queue>
 
 #include "fmt/format.h"
 #include <crtdbg.h>
