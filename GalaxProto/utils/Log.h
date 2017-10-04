@@ -480,12 +480,19 @@ createTimedRecordHash(const std::string_view& filePath, const int lineNumber)
 //------------------------------------------------------------------------------
 // PUBLIC INTERFACE
 //------------------------------------------------------------------------------
+#define CONCAT_IMPL(x, y) x ## y
+#define CAT(x, y) CONCAT_IMPL(x, y)
+
+#undef TIMED_TRACE_IMPL
+#define TIMED_TRACE_IMPL(N)                                                    \
+	const std::string_view& CAT(filePath_,N) = __FILE__;                         \
+	const size_t CAT(hashIndex_,N) =                                             \
+		logger::createTimedRecordHash(CAT(filePath_,N), __LINE__);                 \
+	logger::TimedRaiiBlock CAT(timedBlock_,N)(                                   \
+		CAT(hashIndex_,N), __LINE__, __FILE__, __func__);
+
 #undef TIMED_TRACE
-#define TIMED_TRACE                                                            \
-	const std::string_view& filePath = __FILE__;                                 \
-	const size_t hashIndex = logger::createTimedRecordHash(filePath, __LINE__);  \
-	logger::TimedRaiiBlock timedBlock_##__COUNTER__(                             \
-			hashIndex, __LINE__, __FILE__, __func__);
+#define TIMED_TRACE TIMED_TRACE_IMPL(__COUNTER__);
 
 //------------------------------------------------------------------------------
 #undef TRACE
