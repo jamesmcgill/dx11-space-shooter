@@ -16,7 +16,6 @@ public:
 	Explosions(AppContext& context, ID3D11ShaderResourceView* texture);
 	void update(DX::StepTimer const& timer);
 	void render(DirectX::SpriteBatch& batch);
-	void setWindowSize(int screenWidth, int screenHeight);
 	void emit(
 		const DirectX::SimpleMath::Vector3& origin,
 		const DirectX::SimpleMath::Vector3& baseVelocity,
@@ -36,9 +35,6 @@ private:
 	// Random Generators
 	std::random_device m_device;
 	std::default_random_engine m_engine;
-
-	int m_screenWidth	= 0;
-	int m_screenHeight = 0;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
 	int m_textureWidth	= 0;

@@ -3,6 +3,7 @@
 #include <array>
 #include <random>
 
+struct AppContext;
 namespace DX
 {
 class StepTimer;
@@ -12,10 +13,10 @@ class StepTimer;
 class StarField
 {
 public:
-	StarField(ID3D11ShaderResourceView* texture);
+	StarField(AppContext& context, ID3D11ShaderResourceView* texture);
 	void update(DX::StepTimer const& timer);
 	void render(DirectX::SpriteBatch& batch);
-	void setWindowSize(int screenWidth, int screenHeight);
+	void setWindowSize(float screenWidth, float screenHeight);
 
 	enum SPEED_TimePerScreenWrapMs
 	{
@@ -29,6 +30,8 @@ public:
 	}
 
 private:
+	AppContext& m_context;
+
 	struct StarParticle
 	{
 		DirectX::XMFLOAT3 position;
@@ -45,8 +48,6 @@ private:
 	std::uniform_real_distribution<float> m_xRand;
 
 	SPEED_TimePerScreenWrapMs m_timePerWrapMs = SPEED_Medium;
-	int m_screenWidth													= 0;
-	int m_screenHeight												= 0;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
 	int m_textureWidth	= 0;

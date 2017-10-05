@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ScoreBoard.h"
+#include "AppContext.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -20,6 +21,12 @@ static const XMVECTOR HIGHLIGHT_COLOR = {1.0f, 1.0f, 0.0f};
 static const XMVECTOR NORMAL_COLOR		= {1.0f, 1.0f, 1.0f};
 static const int FILE_VERSION					= 100;
 static const wchar_t* DEFAULT_NAME		= L"Jim";
+
+//------------------------------------------------------------------------------
+ScoreBoard::ScoreBoard(AppContext& context)
+		: m_context(context)
+{
+}
 
 //------------------------------------------------------------------------------
 void
@@ -204,7 +211,7 @@ ScoreBoard::render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 	//       ####
 	float fontHeight = XMVectorGetY(font->MeasureString(L"XXX"));
 	float padding		 = fontHeight * 0.3f;
-	Vector2 pos			 = {m_screenWidth / 2.0f, 0.0f};
+	Vector2 pos			 = {m_context.screenHalfWidth, 0.0f};
 
 	float numRowsAboveCenter = (m_scores.size() % 2 == 0)
 															 ? m_scores.size() / 2.0f
@@ -212,7 +219,7 @@ ScoreBoard::render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 	float numPaddingRowsAbove = numRowsAboveCenter - 0.5f;
 
 	// Screen center - text rows - padding rows
-	pos.y = (m_screenHeight / 2) - (numRowsAboveCenter * fontHeight)
+	pos.y = m_context.screenHalfHeight - (numRowsAboveCenter * fontHeight)
 					- (numPaddingRowsAbove * padding);
 
 	// Render Scoreboard
@@ -272,13 +279,5 @@ ScoreBoard::render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
 //
 //	return S_OK;
 //}
-
-//------------------------------------------------------------------------------
-void
-ScoreBoard::setWindowSize(int screenWidth, int screenHeight)
-{
-	m_screenWidth	= screenWidth;
-	m_screenHeight = screenHeight;
-}
 
 //------------------------------------------------------------------------------

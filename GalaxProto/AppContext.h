@@ -40,8 +40,14 @@ enum class ProfileViz
 //------------------------------------------------------------------------------
 struct AppContext
 {
+	float screenWidth = 0.0f;
+	float screenHeight = 0.0f;
+	float screenHalfWidth = 0.0f;
+	float screenHalfHeight = 0.0f;
+
 	DirectX::SimpleMath::Matrix view;
 	DirectX::SimpleMath::Matrix proj;
+	DirectX::SimpleMath::Matrix orthoProj;
 	float cameraRotationX = 0.0f;
 	float cameraRotationY = 0.0f;
 	float cameraDistance	= 80.0f;

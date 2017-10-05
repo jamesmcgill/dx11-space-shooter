@@ -53,8 +53,7 @@ GameOverState::render()
 	m_resources.m_spriteBatch->Begin();
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 
-	Vector2 pos
-		= {m_resources.m_screenWidth / 2.0f, m_resources.m_screenHeight / 2.0f};
+	Vector2 pos		 = {m_context.screenHalfWidth, m_context.screenHalfHeight};
 	Vector2 origin = m_resources.font32pt->MeasureString(GAMEOVER_TEXT) / 2.f;
 
 	m_resources.font32pt->DrawString(

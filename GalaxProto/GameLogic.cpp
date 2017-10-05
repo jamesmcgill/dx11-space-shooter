@@ -125,7 +125,7 @@ GameLogic::render()
 	}
 
 	// Explosions & HUD
-	CommonStates states(m_resources.m_deviceResources->GetD3DDevice());
+	auto& states = *m_resources.m_states;
 	auto& spriteBatch = m_resources.m_spriteBatch;
 	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
 
@@ -137,9 +137,9 @@ GameLogic::render()
 	// Debug Drawing
 	if (m_context.debugDraw)
 	{
-		dc->OMSetBlendState(m_resources.m_states->Opaque(), nullptr, 0xFFFFFFFF);
-		dc->OMSetDepthStencilState(m_resources.m_states->DepthNone(), 0);
-		dc->RSSetState(m_resources.m_states->CullNone());
+		dc->OMSetBlendState(states.Opaque(), nullptr, 0xFFFFFFFF);
+		dc->OMSetDepthStencilState(states.DepthNone(), 0);
+		dc->RSSetState(states.CullNone());
 
 		m_resources.m_debugEffect->SetView(m_context.view);
 		m_resources.m_debugEffect->SetProjection(m_context.proj);
@@ -467,7 +467,7 @@ GameLogic::updateUIScore()
 	score.text					= fmt::format(L"Score: {}", m_context.playerScore);
 	XMVECTOR dimensions = score.font->MeasureString(score.text.c_str());
 	score.origin				= Vector2((XMVectorGetX(dimensions) / 2.f), 0.0f);
-	score.position.x		= m_resources.m_screenWidth / 2.f;
+	score.position.x		= m_context.screenHalfWidth;
 	score.position.y		= 0.0f;
 }
 
@@ -482,7 +482,7 @@ GameLogic::updateUILives()
 	XMVECTOR dimensions = lives.font->MeasureString(lives.text.c_str());
 	lives.origin				= Vector2(0.0f, XMVectorGetY(dimensions));
 	lives.position.x		= 0.0f;
-	lives.position.y		= static_cast<float>(m_resources.m_screenHeight);
+	lives.position.y		= m_context.screenHeight;
 }
 
 //------------------------------------------------------------------------------
@@ -511,8 +511,8 @@ GameLogic::updateUIDebugVariables()
 
 	auto formatUI = [
 		&yPos,
-		font				= m_resources.font8pt.get(),
-		screenWidth = m_resources.m_screenWidth
+		font				= m_resources.fontMono8pt.get(),
+		screenWidth = m_context.screenWidth
 	](UIText & ui, const wchar_t* fmt, float fVar)
 	{
 		ui.font							= font;
@@ -521,7 +521,7 @@ GameLogic::updateUIDebugVariables()
 		float width					= XMVectorGetX(dimensions);
 		float height				= XMVectorGetY(dimensions);
 		ui.origin						= Vector2(width, 0.0f);
-		ui.position.x				= static_cast<float>(screenWidth);
+		ui.position.x				= screenWidth;
 		ui.position.y				= yPos;
 		yPos += height;
 	};

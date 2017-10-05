@@ -9,6 +9,7 @@
 #pragma once
 #include "pch.h"
 
+struct AppContext;
 namespace DX
 {
 class StepTimer;
@@ -47,12 +48,11 @@ public:
 	};
 
 public:
-	MenuManager();
+	MenuManager(AppContext& context);
 	void loadMenus(std::vector<MenuManager::Menu> const* menus);
 
 	void update(const DX::StepTimer& timer);
 	void render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch);
-	void setWindowSize(int screenWidth, int screenHeight);
 
 	// Menu navigating
 	bool isRootMenu() const;
@@ -62,8 +62,7 @@ public:
 	void prevMenu();
 
 private:
-	int m_screenWidth					 = 0;
-	int m_screenHeight				 = 0;
+	AppContext& m_context;
 	size_t m_currentMenuIdx		 = 0;
 	size_t m_selectedButtonIdx = 0;
 	std::vector<MenuManager::Menu> const* m_activeMenus;

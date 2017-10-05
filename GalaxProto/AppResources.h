@@ -38,9 +38,6 @@ enum class AudioResource
 //------------------------------------------------------------------------------
 struct AppResources
 {
-	int m_screenWidth	= 0;
-	int m_screenHeight = 0;
-
 	DX::StepTimer m_timer;
 
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;

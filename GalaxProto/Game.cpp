@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Game.h"
 #include "DebugDraw.h"
-#include <cstring>
+#include "UIDebugDraw.h"
 
 #include "utils/Log.h"
 
@@ -18,12 +18,12 @@ static const std::wstring AUDIO_PATH = L"assets/audio/";
 
 //------------------------------------------------------------------------------
 Game::Game()
-		: m_gameLogic(m_appContext, m_appResources)
-		, m_appStates(m_appContext, m_appResources, m_gameLogic)
+		: m_gameLogic(m_context, m_resources)
+		, m_appStates(m_context, m_resources, m_gameLogic)
 {
 	TRACE
-	m_appResources.m_deviceResources = std::make_unique<DX::DeviceResources>();
-	m_appResources.m_deviceResources->RegisterDeviceNotify(this);
+	m_resources.m_deviceResources = std::make_unique<DX::DeviceResources>();
+	m_resources.m_deviceResources->RegisterDeviceNotify(this);
 
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
@@ -31,19 +31,19 @@ Game::Game()
 #ifdef _DEBUG
 	eflags = eflags | AudioEngine_Debug;
 #endif
-	m_appResources.audioEngine = std::make_unique<AudioEngine>(eflags);
-	m_appResources.audioEngine->SetMasterVolume(0.5f);
+	m_resources.audioEngine = std::make_unique<AudioEngine>(eflags);
+	m_resources.audioEngine->SetMasterVolume(0.5f);
 
-	m_appResources.midiController.loadAndInitDll();
+	m_resources.midiController.loadAndInitDll();
 	midi::g_onControllerEvent
-		= [& tracker = m_appResources.midiTracker](int controllerId, int value)
+		= [& tracker = m_resources.midiTracker](int controllerId, int value)
 	{
 		tracker.onEvent(controllerId, value);
 	};
 
 	// Setup Resource Names
 	auto setModelPath = [&](ModelResource res, wchar_t* path) {
-		m_appResources.modelLocations[res] = MODEL_PATH + path;
+		m_resources.modelLocations[res] = MODEL_PATH + path;
 	};
 	setModelPath(ModelResource::Player, L"player.sdkmesh");
 	setModelPath(ModelResource::Shot, L"shot.sdkmesh");
@@ -58,7 +58,7 @@ Game::Game()
 	setModelPath(ModelResource::Enemy9, L"ship9.sdkmesh");
 
 	auto setAudioPath = [&](AudioResource res, wchar_t* path) {
-		m_appResources.soundEffectLocations[res] = AUDIO_PATH + path;
+		m_resources.soundEffectLocations[res] = AUDIO_PATH + path;
 	};
 	setAudioPath(AudioResource::GameStart, L"begin.wav");
 	setAudioPath(AudioResource::GameOver, L"gameover.wav");
@@ -70,8 +70,8 @@ Game::Game()
 	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_appContext.entities[i].isAlive	= true;
-		m_appContext.entities[i].position = PLAYER_START_POS;
+		m_context.entities[i].isAlive	= true;
+		m_context.entities[i].position = PLAYER_START_POS;
 	}
 }
 
@@ -79,9 +79,9 @@ Game::Game()
 Game::~Game()
 {
 	TRACE
-	if (m_appResources.audioEngine)
+	if (m_resources.audioEngine)
 	{
-		m_appResources.audioEngine->Reset();
+		m_resources.audioEngine->Reset();
 	}
 }
 
@@ -92,12 +92,12 @@ void
 Game::initialize(HWND window, int width, int height)
 {
 	TRACE
-	m_appResources.m_deviceResources->SetWindow(window, width, height);
+	m_resources.m_deviceResources->SetWindow(window, width, height);
 
-	m_appResources.m_deviceResources->CreateDeviceResources();
+	m_resources.m_deviceResources->CreateDeviceResources();
 	createDeviceDependentResources();
 
-	m_appResources.m_deviceResources->CreateWindowSizeDependentResources();
+	m_resources.m_deviceResources->CreateWindowSizeDependentResources();
 	createWindowSizeDependentResources();
 
 	// TODO: Change the timer settings if you want something other than the
@@ -120,12 +120,12 @@ Game::tick()
 {
 	{
 		TRACE
-		m_appResources.m_timer.Tick([&]() { update(); });
+		m_resources.m_timer.Tick([&]() { update(); });
 
 		render();
 	}
 
-	switch (m_appContext.profileViz)
+	switch (m_context.profileViz)
 	{
 		case ProfileViz::Basic:
 			drawBasicProfileInfo();
@@ -140,7 +140,7 @@ Game::tick()
 			break;
 	}
 
-	m_appResources.m_deviceResources->Present();
+	m_resources.m_deviceResources->Present();
 
 	logger::Stats::signalFrameEnd();
 }
@@ -150,29 +150,29 @@ void
 Game::update()
 {
 	TRACE
-	auto kbState = m_appResources.m_keyboard->GetState();
-	m_appResources.kbTracker.Update(kbState);
-	if (m_appResources.kbTracker.IsKeyPressed(Keyboard::F1))
+	auto kbState = m_resources.m_keyboard->GetState();
+	m_resources.kbTracker.Update(kbState);
+	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F1))
 	{
-		switch (m_appContext.profileViz)
+		switch (m_context.profileViz)
 		{
 			case ProfileViz::Basic:
-				m_appContext.profileViz = ProfileViz::List;
+				m_context.profileViz = ProfileViz::List;
 				break;
 			case ProfileViz::List:
-				m_appContext.profileViz = ProfileViz::FlameGraph;
+				m_context.profileViz = ProfileViz::FlameGraph;
 				break;
 			case ProfileViz::FlameGraph:
-				m_appContext.profileViz = ProfileViz::Basic;
+				m_context.profileViz = ProfileViz::Basic;
 				break;
 		}
 	}
 
-	m_appResources.audioEngine->Update();
+	m_resources.audioEngine->Update();
 
 	const auto& currentState = m_appStates.currentState();
-	currentState->handleInput(m_appResources.m_timer);
-	currentState->update(m_appResources.m_timer);
+	currentState->handleInput(m_resources.m_timer);
+	currentState->update(m_resources.m_timer);
 }
 
 //------------------------------------------------------------------------------
@@ -188,16 +188,16 @@ Game::render()
 {
 	TRACE
 	// Don't try to render anything before the first Update.
-	if (m_appResources.m_timer.GetFrameCount() == 0)
+	if (m_resources.m_timer.GetFrameCount() == 0)
 	{
 		return;
 	}
 
 	clear();
 
-	m_appResources.m_deviceResources->PIXBeginEvent(L"Render");
+	m_resources.m_deviceResources->PIXBeginEvent(L"Render");
 	m_appStates.currentState()->render();
-	m_appResources.m_deviceResources->PIXEndEvent();
+	m_resources.m_deviceResources->PIXEndEvent();
 }
 
 //------------------------------------------------------------------------------
@@ -205,44 +205,41 @@ void
 Game::drawBasicProfileInfo()
 {
 	UIText ui;
-	ui.font			= m_appResources.fontMono8pt.get();
-	ui.origin		= Vector2(0.0f, 0.0f);
+	ui.font			= m_resources.fontMono8pt.get();
 	ui.position = Vector2(0.0f, 0.0f);
 	ui.text			= fmt::format(
 		L"fps: {}, Time: {:.2f}ms",
-		m_appResources.m_timer.GetFramesPerSecond(),
-		m_appResources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
+		m_resources.m_timer.GetFramesPerSecond(),
+		m_resources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
-	m_appResources.m_spriteBatch->Begin();
-	ui.draw(Colors::MediumVioletRed, *m_appResources.m_spriteBatch);
-	m_appResources.m_spriteBatch->End();
+	m_resources.m_spriteBatch->Begin();
+	ui.draw(Colors::MediumVioletRed, *m_resources.m_spriteBatch);
+	m_resources.m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
 void
 Game::drawProfilerList()
 {
-	auto monoFont = m_appResources.fontMono8pt.get();
+	auto monoFont = m_resources.fontMono8pt.get();
 
-	const int yAscent
-		= static_cast<int>(ceil(XMVectorGetY(monoFont->MeasureString(L"X"))));
-	int yPos = yAscent;
+	const float yAscent = ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
+	float yPos					= yAscent;
 	UIText ui;
 	ui.font				= monoFont;
-	ui.origin			= Vector2(0.0f, 0.0f);
 	ui.position.x = 0.0f;
 
 	auto drawText =
-		[&yAscent, &yPos, &ui, &spriteBatch = m_appResources.m_spriteBatch](
+		[&yAscent, &yPos, &ui, &spriteBatch = m_resources.m_spriteBatch](
 			const wchar_t* fmt, auto&&... vars)
 	{
 		ui.text				= fmt::format(fmt, vars...);
-		ui.position.y = static_cast<float>(yPos);
+		ui.position.y = yPos;
 		yPos += yAscent;
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};
 
-	m_appResources.m_spriteBatch->Begin();
+	m_resources.m_spriteBatch->Begin();
 
 	auto aggregate = logger::Stats::computeAnalyticRecords();
 	for (auto& entry : aggregate)
@@ -257,7 +254,7 @@ Game::drawProfilerList()
 			logger::Timing::ticksToMilliSeconds(record.ticks.max));
 	}
 
-	m_appResources.m_spriteBatch->End();
+	m_resources.m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -313,36 +310,40 @@ Game::drawFlameGraph()
 		return;
 	}
 
-	auto monoFont = m_appResources.fontMono8pt.get();
-	const float yAscent
-		= ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
+	auto monoFont					= m_resources.fontMono8pt.get();
+	const float yAscent		= ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
+	const float xStartPos = 0.0f;
+	const float xWidth		= ceil(m_context.screenWidth / 7.0f);
+	const float yStartPos = yAscent;
+	const float yRange		= m_context.screenHeight - (2 * yAscent);
 
-	const int xStartPos = 0;
-	const int xWidth				= static_cast<int>(ceil(m_appResources.m_screenWidth / 7.0f));
-	const int yStartPos			 = 0;
-	
 	const uint64_t baseTick = currentSnapShot.flameHead->startTimeInTicks;
-	const float ticksToYPos	= (float)m_appResources.m_screenHeight
-														/ currentSnapShot.flameHead->totalTicks;
+	const float ticksToYPos = yRange / currentSnapShot.flameHead->totalTicks;
 
+	UIDebugDraw ui(m_context, m_resources);
+	UIText uiText;
+	uiText.font		= monoFont;
+	uiText.origin = Vector2(0.0f, yAscent * 0.5f);
 
 	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
-		float xPos = static_cast<float>(xStartPos + (depth * xWidth));
-
-		UIText ui;
-		ui.font		= monoFont;
-		ui.text		= fmt::format(L"{}", node->function);
-		ui.origin = Vector2(0.0f, -yAscent);
-		ui.position.y
+		const float xPos = xStartPos + (depth * xWidth);
+		const float yPos
 			= ceil(yStartPos + ((node->startTimeInTicks - baseTick) * ticksToYPos));
-		ui.position.x = xPos;
+		const float yHeight			= ceil(node->totalTicks * ticksToYPos);
+		const float yHalfHeight = yHeight * 0.5f;
 
-		ui.draw(Colors::MediumVioletRed, *m_appResources.m_spriteBatch);
+		ui.drawBox(xPos, yPos, xWidth - 2, yHeight, DirectX::Colors::Firebrick);
+
+		uiText.text			= fmt::format(L"{}", node->function);
+		uiText.position = Vector2(xPos + 5.0f, yPos + yHalfHeight);
+		uiText.draw(Colors::White, *m_resources.m_spriteBatch);
 	};
 
-	m_appResources.m_spriteBatch->Begin();
+	m_resources.m_spriteBatch->Begin();
+	m_resources.m_batch->Begin();
 	visitFlameGraph(currentSnapShot.flameHead, drawFunc);
-	m_appResources.m_spriteBatch->End();
+	m_resources.m_batch->End();
+	m_resources.m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -352,12 +353,12 @@ void
 Game::clear()
 {
 	TRACE
-	m_appResources.m_deviceResources->PIXBeginEvent(L"Clear");
+	m_resources.m_deviceResources->PIXBeginEvent(L"Clear");
 
 	// Clear the views.
-	auto context			= m_appResources.m_deviceResources->GetD3DDeviceContext();
-	auto renderTarget = m_appResources.m_deviceResources->GetRenderTargetView();
-	auto depthStencil = m_appResources.m_deviceResources->GetDepthStencilView();
+	auto context			= m_resources.m_deviceResources->GetD3DDeviceContext();
+	auto renderTarget = m_resources.m_deviceResources->GetRenderTargetView();
+	auto depthStencil = m_resources.m_deviceResources->GetDepthStencilView();
 
 	context->ClearRenderTargetView(renderTarget, Colors::Black);
 	context->ClearDepthStencilView(
@@ -365,10 +366,10 @@ Game::clear()
 	context->OMSetRenderTargets(1, &renderTarget, depthStencil);
 
 	// Set the viewport.
-	auto viewport = m_appResources.m_deviceResources->GetScreenViewport();
+	auto viewport = m_resources.m_deviceResources->GetScreenViewport();
 	context->RSSetViewports(1, &viewport);
 
-	m_appResources.m_deviceResources->PIXEndEvent();
+	m_resources.m_deviceResources->PIXEndEvent();
 }
 
 //------------------------------------------------------------------------------
@@ -406,7 +407,7 @@ void
 Game::onResuming()
 {
 	TRACE
-	m_appResources.m_timer.ResetElapsedTime();
+	m_resources.m_timer.ResetElapsedTime();
 
 	// TODO: Game is being power-resumed (or returning from minimize).
 }
@@ -416,7 +417,7 @@ void
 Game::onWindowSizeChanged(int width, int height)
 {
 	TRACE
-	if (!m_appResources.m_deviceResources->WindowSizeChanged(width, height))
+	if (!m_resources.m_deviceResources->WindowSizeChanged(width, height))
 		return;
 
 	createWindowSizeDependentResources();
@@ -446,60 +447,60 @@ void
 Game::createDeviceDependentResources()
 {
 	TRACE
-	auto device	= m_appResources.m_deviceResources->GetD3DDevice();
-	auto context = m_appResources.m_deviceResources->GetD3DDeviceContext();
+	auto device	= m_resources.m_deviceResources->GetD3DDevice();
+	auto context = m_resources.m_deviceResources->GetD3DDeviceContext();
 
-	m_appResources.m_states = std::make_unique<CommonStates>(
-		m_appResources.m_deviceResources->GetD3DDevice());
-	m_appResources.m_debugEffect = std::make_unique<BasicEffect>(device);
-	m_appResources.m_debugEffect->SetVertexColorEnabled(true);
+	m_resources.m_states = std::make_unique<CommonStates>(
+		m_resources.m_deviceResources->GetD3DDevice());
+	m_resources.m_debugEffect = std::make_unique<BasicEffect>(device);
+	m_resources.m_debugEffect->SetVertexColorEnabled(true);
 
-	m_appResources.m_effectFactory = std::make_unique<EffectFactory>(device);
+	m_resources.m_effectFactory = std::make_unique<EffectFactory>(device);
 
 	IEffectFactory::EffectInfo info;
-	info.ambientColor									= {0.0f, 1.0f, 0.0f};
-	m_appResources.m_debugBoundEffect = std::static_pointer_cast<BasicEffect>(
-		m_appResources.m_effectFactory->CreateEffect(info, context));
-	m_appResources.m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
+	info.ambientColor							 = {0.0f, 1.0f, 0.0f};
+	m_resources.m_debugBoundEffect = std::static_pointer_cast<BasicEffect>(
+		m_resources.m_effectFactory->CreateEffect(info, context));
+	m_resources.m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
 	// m_debugBoundEffect->SetLightingEnabled(false);
 
-	m_appResources.m_spriteBatch = std::make_unique<SpriteBatch>(context);
+	m_resources.m_spriteBatch = std::make_unique<SpriteBatch>(context);
 
 	DX::ThrowIfFailed(CreateDDSTextureFromFile(
 		device,
 		L"assets/star.dds",
 		nullptr,
-		m_appResources.m_starTexture.ReleaseAndGetAddressOf()));
-	m_appResources.starField
-		= std::make_unique<StarField>(m_appResources.m_starTexture.Get());
+		m_resources.m_starTexture.ReleaseAndGetAddressOf()));
+	m_resources.starField
+		= std::make_unique<StarField>(m_context, m_resources.m_starTexture.Get());
 
 	DX::ThrowIfFailed(CreateDDSTextureFromFile(
 		device,
 		L"assets/explosion.dds",
 		nullptr,
-		m_appResources.m_explosionTexture.ReleaseAndGetAddressOf()));
-	m_appResources.explosions = std::make_unique<Explosions>(
-		m_appContext, m_appResources.m_explosionTexture.Get());
+		m_resources.m_explosionTexture.ReleaseAndGetAddressOf()));
+	m_resources.explosions = std::make_unique<Explosions>(
+		m_context, m_resources.m_explosionTexture.Get());
 
-	m_appResources.menuManager = std::make_unique<MenuManager>();
-	m_appResources.scoreBoard	= std::make_unique<ScoreBoard>();
-	m_appResources.scoreBoard->loadFromFile();
+	m_resources.menuManager = std::make_unique<MenuManager>(m_context);
+	m_resources.scoreBoard	= std::make_unique<ScoreBoard>(m_context);
+	m_resources.scoreBoard->loadFromFile();
 
-	m_appResources.font8pt
+	m_resources.font8pt
 		= std::make_unique<SpriteFont>(device, L"assets/verdana8.spritefont");
-	m_appResources.font32pt
+	m_resources.font32pt
 		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
 
-	m_appResources.fontMono8pt
+	m_resources.fontMono8pt
 		= std::make_unique<SpriteFont>(device, L"assets/mono8.spritefont");
-	m_appResources.fontMono32pt
+	m_resources.fontMono32pt
 		= std::make_unique<SpriteFont>(device, L"assets/mono32.spritefont");
 
-	m_appResources.m_batch = std::make_unique<DX::DebugBatchType>(context);
+	m_resources.m_batch = std::make_unique<DX::DebugBatchType>(context);
 	{
 		void const* shaderByteCode;
 		size_t byteCodeLength;
-		m_appResources.m_debugEffect->GetVertexShaderBytecode(
+		m_resources.m_debugEffect->GetVertexShaderBytecode(
 			&shaderByteCode, &byteCodeLength);
 
 		DX::ThrowIfFailed(device->CreateInputLayout(
@@ -507,21 +508,20 @@ Game::createDeviceDependentResources()
 			VertexPositionColor::InputElementCount,
 			shaderByteCode,
 			byteCodeLength,
-			m_appResources.m_debugInputLayout.ReleaseAndGetAddressOf()));
+			m_resources.m_debugInputLayout.ReleaseAndGetAddressOf()));
 	}
 
-	m_appResources.m_debugBound = GeometricPrimitive::CreateSphere(context, 2.0f);
-	m_appResources.m_debugBound->CreateInputLayout(
-		m_appResources.m_debugBoundEffect.get(),
-		&m_appResources.m_debugBoundInputLayout);
+	m_resources.m_debugBound = GeometricPrimitive::CreateSphere(context, 2.0f);
+	m_resources.m_debugBound->CreateInputLayout(
+		m_resources.m_debugBoundEffect.get(), &m_resources.m_debugBoundInputLayout);
 
 	// Load the models
-	for (const auto& res : m_appResources.modelLocations)
+	for (const auto& res : m_resources.modelLocations)
 	{
-		auto& data = m_appResources.modelData[res.first];
+		auto& data = m_resources.modelData[res.first];
 		auto& path = res.second;
 		data.model = Model::CreateFromSDKMESH(
-			device, path.c_str(), *m_appResources.m_effectFactory);
+			device, path.c_str(), *m_resources.m_effectFactory);
 		data.bound				= {};
 		data.bound.Radius = 0.0f;
 		for (const auto& mesh : data.model->meshes)
@@ -532,34 +532,30 @@ Game::createDeviceDependentResources()
 	}
 
 	// Load the audio effects
-	for (const auto& res : m_appResources.soundEffectLocations)
+	for (const auto& res : m_resources.soundEffectLocations)
 	{
-		auto& effect = m_appResources.soundEffects[res.first];
+		auto& effect = m_resources.soundEffects[res.first];
 		auto& path	 = res.second;
 		effect			 = std::make_unique<SoundEffect>(
-			m_appResources.audioEngine.get(), path.c_str());
+			m_resources.audioEngine.get(), path.c_str());
 	}
 
 	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
-		m_appContext.entities[i].model
-			= &m_appResources.modelData[ModelResource::Player];
+		m_context.entities[i].model = &m_resources.modelData[ModelResource::Player];
 	}
 	for (size_t i = PLAYER_SHOTS_IDX; i < PLAYER_SHOTS_END; ++i)
 	{
-		m_appContext.entities[i].model
-			= &m_appResources.modelData[ModelResource::Shot];
+		m_context.entities[i].model = &m_resources.modelData[ModelResource::Shot];
 	}
 	for (size_t i = ENEMY_SHOTS_IDX; i < ENEMY_SHOTS_END; ++i)
 	{
-		m_appContext.entities[i].model
-			= &m_appResources.modelData[ModelResource::Shot];
+		m_context.entities[i].model = &m_resources.modelData[ModelResource::Shot];
 	}
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		m_appContext.entities[i].model
-			= &m_appResources.modelData[ModelResource::Enemy1];
+		m_context.entities[i].model = &m_resources.modelData[ModelResource::Enemy1];
 	}
 }
 
@@ -570,32 +566,33 @@ void
 Game::createWindowSizeDependentResources()
 {
 	TRACE
-	RECT outputSize = m_appResources.m_deviceResources->GetOutputSize();
+	RECT outputSize = m_resources.m_deviceResources->GetOutputSize();
+	float width			= static_cast<float>(outputSize.right - outputSize.left);
+	float height		= static_cast<float>(outputSize.bottom - outputSize.top);
+	m_context.screenWidth			 = width;
+	m_context.screenHeight		 = height;
+	m_context.screenHalfWidth	= ceil(width / 2.0f);
+	m_context.screenHalfHeight = ceil(height / 2.0f);
 
-	const float fovAngleY = 30.0f * XM_PI / 180.0f;
+	const float fovAngleY		= 30.0f * XM_PI / 180.0f;
+	const float aspectRatio = width / height;
+	const float nearPlane		= 0.01f;
+	const float farPlane		= 300.f;
 
-	float aspectRatio = float(outputSize.right - outputSize.left)
-											/ (outputSize.bottom - outputSize.top);
+	m_context.view = Matrix::Identity;
+	m_context.proj = Matrix::CreatePerspectiveFieldOfView(
+		fovAngleY, aspectRatio, nearPlane, farPlane);
+	m_context.orthoProj
+		= Matrix::CreateOrthographic(width, height, nearPlane, farPlane);
 
-	m_appContext.view = Matrix::Identity;
-	m_appContext.proj = Matrix::CreatePerspectiveFieldOfView(
-		fovAngleY, aspectRatio, 0.01f, 300.f);
-
-	m_appResources.starField->setWindowSize(outputSize.right, outputSize.bottom);
-	m_appResources.explosions->setWindowSize(outputSize.right, outputSize.bottom);
-	m_appResources.menuManager->setWindowSize(
-		outputSize.right, outputSize.bottom);
-	m_appResources.scoreBoard->setWindowSize(outputSize.right, outputSize.bottom);
-
-	m_appResources.m_screenWidth	= outputSize.right;
-	m_appResources.m_screenHeight = outputSize.bottom;
+	m_resources.starField->setWindowSize(width, height);
 
 	// Position HUD
 	m_gameLogic.updateUILives();
 	m_gameLogic.updateUIScore();
 	m_gameLogic.updateUIDebugVariables();
 
-	m_appContext.updateViewMatrix();
+	m_context.updateViewMatrix();
 }
 
 //------------------------------------------------------------------------------
@@ -603,31 +600,31 @@ void
 Game::OnDeviceLost()
 {
 	TRACE
-	for (auto& modelData : m_appResources.modelData)
+	for (auto& modelData : m_resources.modelData)
 	{
 		modelData.second.model.reset();
 	}
 
-	m_appResources.m_debugBound.reset();
-	m_appResources.m_debugBoundInputLayout.Reset();
-	m_appResources.m_debugBoundEffect.reset();
-	m_appResources.m_effectFactory.reset();
-	m_appResources.m_debugEffect.reset();
+	m_resources.m_debugBound.reset();
+	m_resources.m_debugBoundInputLayout.Reset();
+	m_resources.m_debugBoundEffect.reset();
+	m_resources.m_effectFactory.reset();
+	m_resources.m_debugEffect.reset();
 
-	m_appResources.fontMono32pt.reset();
-	m_appResources.fontMono8pt.reset();
-	m_appResources.font32pt.reset();
-	m_appResources.font8pt.reset();
-	m_appResources.starField.reset();
-	m_appResources.explosions.reset();
-	m_appResources.scoreBoard.reset();
-	m_appResources.menuManager.reset();
+	m_resources.fontMono32pt.reset();
+	m_resources.fontMono8pt.reset();
+	m_resources.font32pt.reset();
+	m_resources.font8pt.reset();
+	m_resources.starField.reset();
+	m_resources.explosions.reset();
+	m_resources.scoreBoard.reset();
+	m_resources.menuManager.reset();
 
-	m_appResources.m_batch.reset();
-	m_appResources.m_spriteBatch.reset();
-	m_appResources.m_explosionTexture.Reset();
-	m_appResources.m_starTexture.Reset();
-	m_appResources.m_states.reset();
+	m_resources.m_batch.reset();
+	m_resources.m_spriteBatch.reset();
+	m_resources.m_explosionTexture.Reset();
+	m_resources.m_starTexture.Reset();
+	m_resources.m_states.reset();
 }
 
 //------------------------------------------------------------------------------

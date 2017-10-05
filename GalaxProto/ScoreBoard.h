@@ -1,5 +1,7 @@
 #pragma once
 
+struct AppContext;
+
 //------------------------------------------------------------------------------
 class ScoreBoard
 {
@@ -11,10 +13,8 @@ public:
 	};
 
 private:
+	AppContext& m_context;
 	std::vector<Score> m_scores;
-
-	int m_screenWidth	= 0;
-	int m_screenHeight = 0;
 
 	// New Score Entry
 	bool m_isEntryModeOn = false;
@@ -23,8 +23,8 @@ private:
 	unsigned int m_unCurrentCharIdx = 0;
 
 public:
+	ScoreBoard(AppContext& context);
 	void render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch);
-	void setWindowSize(int screenWidth, int screenHeight);
 
 	// Input
 	void PrevMenu();

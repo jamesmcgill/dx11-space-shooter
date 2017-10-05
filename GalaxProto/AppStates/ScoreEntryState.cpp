@@ -95,8 +95,7 @@ ScoreEntryState::render()
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 
 	Vector2 fontDimensions = m_resources.font32pt->MeasureString(L"XXX");
-	Vector2 centerPos
-		= {m_resources.m_screenWidth / 2.0f, (m_resources.m_screenHeight / 2.0f)};
+	Vector2 centerPos = {m_context.screenHalfWidth, m_context.screenHalfHeight};
 
 	Vector2 linePos
 		= centerPos - Vector2(0.0f, (ENTER_TEXT_LINES.size() * fontDimensions.y));
@@ -130,7 +129,7 @@ ScoreEntryState::render()
 
 	linePos = Vector2(
 		0.0f,
-		m_resources.m_screenHeight
+		m_context.screenHeight
 			- ((INSTRUCTION_LINES.size() - 1) * fontDimensions.y));
 	for (auto& line : INSTRUCTION_LINES)
 	{

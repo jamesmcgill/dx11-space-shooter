@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Starfield.h"
+#include "AppContext.h"
 #include "StepTimer.h"
 
 #include "utils/Log.h"
@@ -13,8 +14,9 @@ const float MILLISECS_PER_SEC = 1000.0f;
 
 using namespace DirectX;
 //------------------------------------------------------------------------------
-StarField::StarField(ID3D11ShaderResourceView* texture)
-		: m_engine(m_device())
+StarField::StarField(AppContext& context, ID3D11ShaderResourceView* texture)
+		: m_context(context)
+		, m_engine(m_device())
 {
 	TRACE
 	m_texture = texture;
@@ -49,7 +51,7 @@ StarField::initialisePositions()
 {
 	TRACE
 	std::uniform_real_distribution<float> yRand(
-		static_cast<float>(-m_textureHeight), static_cast<float>(m_screenHeight));
+		static_cast<float>(-m_textureHeight), m_context.screenHeight);
 
 	std::uniform_real_distribution<float> zRand(ZBOUNDMIN, ZBOUNDMAX);
 	std::uniform_real_distribution<float> sizeRand(SCALE_MIN, SCALE_MAX);
@@ -76,7 +78,7 @@ void
 StarField::update(DX::StepTimer const& timer)
 {
 	TRACE
-	float speed = m_screenHeight / (m_timePerWrapMs / MILLISECS_PER_SEC);
+	float speed = m_context.screenHeight / (m_timePerWrapMs / MILLISECS_PER_SEC);
 	const float layerSpeedOffset = speed / (NUM_LAYERS + 2);
 
 	int layerCount = 0;
@@ -90,10 +92,10 @@ StarField::update(DX::StepTimer const& timer)
 			p.position.y += static_cast<float>(speed * timer.GetElapsedSeconds());
 
 			// Regenerate old particles
-			if (p.position.y > m_screenHeight)
+			if (p.position.y > m_context.screenHeight)
 			{
 				p.position.y = static_cast<float>(-m_textureHeight)
-											 + (p.position.y - m_screenHeight);
+											 + (p.position.y - m_context.screenHeight);
 				p.position.x = m_xRand(m_engine);
 			}
 		}
@@ -127,14 +129,13 @@ StarField::render(DirectX::SpriteBatch& batch)
 
 //------------------------------------------------------------------------------
 void
-StarField::setWindowSize(int screenWidth, int screenHeight)
+StarField::setWindowSize(float screenWidth, float screenHeight)
 {
-	TRACE
-	m_screenWidth	= screenWidth;
-	m_screenHeight = screenHeight;
+	UNREFERENCED_PARAMETER(screenHeight);
 
+	TRACE
 	m_xRand = std::uniform_real_distribution<float>(
-		static_cast<float>(-m_textureWidth), static_cast<float>(m_screenWidth));
+		static_cast<float>(-m_textureWidth), screenWidth);
 	initialisePositions();
 }
 

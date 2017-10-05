@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "MenuManager.h"
+#include "AppContext.h"
 #include "StepTimer.h"
 
 #include "utils/Log.h"
@@ -21,8 +22,9 @@ const XMVECTOR HIGHLIGHT_COLOR = {1.0f, 1.0f, 0.0f};
 const XMVECTOR NORMAL_COLOR		 = {1.0f, 1.0f, 1.0f};
 
 //------------------------------------------------------------------------------
-MenuManager::MenuManager()
-		: m_activeMenus(&s_nullMenu)
+MenuManager::MenuManager(AppContext& context)
+		: m_context(context)
+		, m_activeMenus(&s_nullMenu)
 {
 }
 
@@ -69,7 +71,7 @@ MenuManager::render(
 	//       ####
 	float fontHeight = XMVectorGetY(font->MeasureString(L"XXX"));
 	float padding		 = fontHeight * 0.5f;
-	Vector2 pos			 = {m_screenWidth / 2.0f, 0.0f};
+	Vector2 pos			 = {m_context.screenHalfWidth, 0.0f};
 
 	float numRowsAboveCenter
 		= (currentMenu.buttons.size() % 2 == 0)
@@ -78,7 +80,7 @@ MenuManager::render(
 	float numPaddingRowsAbove = numRowsAboveCenter - 0.5f;
 
 	// Screen center - text rows - padding rows
-	pos.y = (m_screenHeight / 2) - (numRowsAboveCenter * fontHeight)
+	pos.y = (m_context.screenHalfHeight) - (numRowsAboveCenter * fontHeight)
 					- (numPaddingRowsAbove * padding);
 
 	// Render Menu
@@ -100,14 +102,6 @@ MenuManager::render(
 
 		pos.y += fontHeight + padding;
 	}
-}
-
-//------------------------------------------------------------------------------
-void
-MenuManager::setWindowSize(int screenWidth, int screenHeight)
-{
-	m_screenWidth	= screenWidth;
-	m_screenHeight = screenHeight;
 }
 
 //------------------------------------------------------------------------------

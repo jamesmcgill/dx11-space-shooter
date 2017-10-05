@@ -117,14 +117,6 @@ Explosions::render(DirectX::SpriteBatch& batch)
 
 //------------------------------------------------------------------------------
 void
-Explosions::setWindowSize(int screenWidth, int screenHeight)
-{
-	m_screenWidth	= screenWidth;
-	m_screenHeight = screenHeight;
-}
-
-//------------------------------------------------------------------------------
-void
 Explosions::emit(
 	const Vector3& origin, const Vector3& baseVelocity, size_t numParticles)
 {
@@ -132,8 +124,8 @@ Explosions::emit(
 	// Hack to allow continue using SpriteBatch with world space objects
 	// Generate matrix to invert the default in
 	// SpriteBatch::Impl::GetViewportTransform()
-	float xScale = m_screenWidth / 2.0f;
-	float yScale = m_screenHeight / 2.0f;
+	float xScale = m_context.screenHalfWidth;
+	float yScale = m_context.screenHalfHeight;
 
 	// clang-format off
 	Matrix inv{

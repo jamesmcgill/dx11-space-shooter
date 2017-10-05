@@ -46,8 +46,8 @@ private:
 	void createDeviceDependentResources();
 	void createWindowSizeDependentResources();
 
-	AppContext m_appContext;
-	AppResources m_appResources;
+	AppContext m_context;
+	AppResources m_resources;
 	GameLogic m_gameLogic;
 	AppStates m_appStates;
 };

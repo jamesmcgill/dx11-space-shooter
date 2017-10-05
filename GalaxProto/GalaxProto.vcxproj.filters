@@ -70,6 +70,7 @@
     <ClInclude Include="utils\Log.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="UIDebugDraw.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -113,6 +114,7 @@
     <ClCompile Include="AppStates\ScoreEntryState.cpp">
       <Filter>AppStates</Filter>
     </ClCompile>
+    <ClCompile Include="UIDebugDraw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
