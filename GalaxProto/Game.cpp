@@ -250,13 +250,11 @@ Game::drawProfilerList()
 		auto& record = entry.second;
 
 		drawText(
-			L"({:>7.6} / {:<7.6})ms  hits({:>2})    {:>30}()      {}({})\n",
-			logger::Timing::ticksToMilliSeconds(record.ticks.min),
-			logger::Timing::ticksToMilliSeconds(record.ticks.max),
-			record.callsCount.average(),
+			L"{:>40}()    ({:>2})h    ({:>7.6} / {:<7.6})ms",
 			record.function,
-			record.file,
-			record.lineNumber);
+			record.callsCount.average(),
+			logger::Timing::ticksToMilliSeconds(record.ticks.min),
+			logger::Timing::ticksToMilliSeconds(record.ticks.max));
 	}
 
 	m_appResources.m_spriteBatch->End();
