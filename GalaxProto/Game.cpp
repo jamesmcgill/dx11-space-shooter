@@ -250,7 +250,7 @@ Game::drawProfilerList()
 		auto& record = entry.second;
 
 		drawText(
-			L"({:>7.6} / {:<7.6})ms  hits({:>2})    {:>20}()      {}({})\n",
+			L"({:>7.6} / {:<7.6})ms  hits({:>2})    {:>30}()      {}({})\n",
 			logger::Timing::ticksToMilliSeconds(record.ticks.min),
 			logger::Timing::ticksToMilliSeconds(record.ticks.max),
 			record.callsCount.average(),
@@ -316,24 +316,28 @@ Game::drawFlameGraph()
 	}
 
 	auto monoFont = m_appResources.fontMono8pt.get();
-	const int yAscent
-		= static_cast<int>(ceil(XMVectorGetY(monoFont->MeasureString(L"X"))));
-	const int yStartPos			 = m_appResources.m_screenHeight - (yAscent * 6);
-	const int xStartPos			 = 0;
-	const uint64_t xBaseTick = currentSnapShot.flameHead->startTimeInTicks;
-	const float ticksToXPos	= (float)m_appResources.m_screenWidth
+	const float yAscent
+		= ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
+
+	const int xStartPos = 0;
+	const int xWidth				= static_cast<int>(ceil(m_appResources.m_screenWidth / 7.0f));
+	const int yStartPos			 = 0;
+	
+	const uint64_t baseTick = currentSnapShot.flameHead->startTimeInTicks;
+	const float ticksToYPos	= (float)m_appResources.m_screenHeight
 														/ currentSnapShot.flameHead->totalTicks;
 
+
 	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
-		float yPos = static_cast<float>(yStartPos - (depth * yAscent));
+		float xPos = static_cast<float>(xStartPos + (depth * xWidth));
 
 		UIText ui;
 		ui.font		= monoFont;
 		ui.text		= fmt::format(L"{}", node->function);
-		ui.origin = Vector2(0.0f, 0.0f);
-		ui.position.x
-			= ceil(xStartPos + ((node->startTimeInTicks - xBaseTick) * ticksToXPos));
-		ui.position.y = yPos;
+		ui.origin = Vector2(0.0f, -yAscent);
+		ui.position.y
+			= ceil(yStartPos + ((node->startTimeInTicks - baseTick) * ticksToYPos));
+		ui.position.x = xPos;
 
 		ui.draw(Colors::MediumVioletRed, *m_appResources.m_spriteBatch);
 	};

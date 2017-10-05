@@ -319,11 +319,11 @@ GameLogic::collisionTestEntity(
 	const size_t rangeOnePastEndIdx,
 	Func& onCollision)
 {
-	TRACE
 	if (!entity.isAlive)
 	{
 		return;
 	}
+	TRACE
 
 	// TODO(James): Use the GCL <notnullable> to compile time enforce assertion
 	ASSERT(entity.model);

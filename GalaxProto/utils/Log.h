@@ -411,7 +411,7 @@ struct TimedRaiiBlock
 				"MAX_RECORD_COUNT exceeded. Increase Value\n",
 				__FILE__,
 				__LINE__,
-				__func__);
+				__FUNCTION__);
 		}
 
 		TimedRecord& record				= currentSnapShot.records[recordIndex];
@@ -498,7 +498,7 @@ createTimedRecordHash(const std::string_view& filePath, const int lineNumber)
 // Extract file and line number and pass them along with the message
 //------------------------------------------------------------------------------
 #define LOG_MESSAGE_IMPL(level, fmt, ...) do{                                  \
-	logger::logMsgImp(level, fmt, __FILE__, __LINE__, __func__, __VA_ARGS__);    \
+	logger::logMsgImp(level, fmt, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__);\
 }while(false)
 
 //------------------------------------------------------------------------------
@@ -517,7 +517,7 @@ createTimedRecordHash(const std::string_view& filePath, const int lineNumber)
 	const size_t CAT(hashIndex_,N) =                                             \
 		logger::createTimedRecordHash(CAT(filePath_,N), __LINE__);                 \
 	logger::TimedRaiiBlock CAT(timedBlock_,N)(                                   \
-		CAT(hashIndex_,N), __LINE__, __FILE__, __func__);
+		CAT(hashIndex_,N), __LINE__, __FILE__, __FUNCTION__);
 
 #undef TIMED_TRACE
 #define TIMED_TRACE TIMED_TRACE_IMPL(__COUNTER__);
