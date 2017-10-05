@@ -14,8 +14,8 @@ using namespace DirectX::SimpleMath;
 constexpr float PLAYER_DEATH_TIME_S			 = 1.0f;
 constexpr float PLAYER_REVIVE_TIME_S		 = 2.0f;
 static const Vector3 PLAYER_MAX_POSITION = {45.0f, 27.0f, 0.0f};
-static const Vector3 PLAYER_MIN_POSITION = -PLAYER_MAX_POSITION;
 static const Vector3 PLAYER_START_POS(0.0f, -PLAYER_MAX_POSITION.y, 0.0f);
+static const Vector3 SHOT_MAX_POSITION = {60.0f, 40.0f, 0.0f};
 
 constexpr int POINTS_PER_KILL = 1000;
 
@@ -125,7 +125,7 @@ GameLogic::render()
 	}
 
 	// Explosions & HUD
-	auto& states = *m_resources.m_states;
+	auto& states			= *m_resources.m_states;
 	auto& spriteBatch = m_resources.m_spriteBatch;
 	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
 
@@ -193,45 +193,72 @@ GameLogic::performPhysicsUpdate(const DX::StepTimer& timer)
 
 		if (isPlayer)
 		{
-			auto slide = [& incident = e.velocity](Vector3 normal)
-			{
-				return incident - 1.0f * incident.Dot(normal) * normal;
-			};
-
-			// Limit position
-			if (e.position.x < -PLAYER_MAX_POSITION.x)
-			{
-				e.position.x = -PLAYER_MAX_POSITION.x;
-				e.velocity	 = slide(Vector3(1.0f, 0.0f, 0.0f));
-			}
-			else if (e.position.x > PLAYER_MAX_POSITION.x)
-			{
-				e.position.x = PLAYER_MAX_POSITION.x;
-				e.velocity	 = slide(Vector3(-1.0f, 0.0f, 0.0f));
-			}
-			if (e.position.y < -PLAYER_MAX_POSITION.y)
-			{
-				e.position.y = -PLAYER_MAX_POSITION.y;
-				e.velocity	 = slide(Vector3(0.0f, 1.0f, 0.0f));
-			}
-			else if (e.position.y > PLAYER_MAX_POSITION.y)
-			{
-				e.position.y = PLAYER_MAX_POSITION.y;
-				e.velocity	 = slide(Vector3(0.0f, -1.0f, 0.0f));
-			}
-
-			// Clamp velocity
-			float velocityMagnitude = e.velocity.Length();
-			if (velocityMagnitude > m_context.playerMaxVelocity)
-			{
-				e.velocity.Normalize();
-				e.velocity *= m_context.playerMaxVelocity;
-			}
-			else if (velocityMagnitude < m_context.playerMinVelocity)
-			{
-				e.velocity = Vector3();
-			}
+			constrainPlayer(e);
 		}
+		else
+		{
+			constrainShot(e);
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::constrainPlayer(Entity& e)
+{
+	TRACE
+	auto slide = [& incident = e.velocity](Vector3 normal)
+	{
+		return incident - 1.0f * incident.Dot(normal) * normal;
+	};
+
+	// Limit position
+	if (e.position.x < -PLAYER_MAX_POSITION.x)
+	{
+		e.position.x = -PLAYER_MAX_POSITION.x;
+		e.velocity	 = slide(Vector3(1.0f, 0.0f, 0.0f));
+	}
+	else if (e.position.x > PLAYER_MAX_POSITION.x)
+	{
+		e.position.x = PLAYER_MAX_POSITION.x;
+		e.velocity	 = slide(Vector3(-1.0f, 0.0f, 0.0f));
+	}
+	if (e.position.y < -PLAYER_MAX_POSITION.y)
+	{
+		e.position.y = -PLAYER_MAX_POSITION.y;
+		e.velocity	 = slide(Vector3(0.0f, 1.0f, 0.0f));
+	}
+	else if (e.position.y > PLAYER_MAX_POSITION.y)
+	{
+		e.position.y = PLAYER_MAX_POSITION.y;
+		e.velocity	 = slide(Vector3(0.0f, -1.0f, 0.0f));
+	}
+
+	// Clamp velocity
+	float velocityMagnitude = e.velocity.Length();
+	if (velocityMagnitude > m_context.playerMaxVelocity)
+	{
+		e.velocity.Normalize();
+		e.velocity *= m_context.playerMaxVelocity;
+	}
+	else if (velocityMagnitude < m_context.playerMinVelocity)
+	{
+		e.velocity = Vector3();
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::constrainShot(Entity& e)
+{
+	TRACE
+	if (
+		(e.position.y < -SHOT_MAX_POSITION.y)
+		|| (e.position.y > SHOT_MAX_POSITION.y)
+		|| (e.position.x < -SHOT_MAX_POSITION.x)
+		|| (e.position.x > SHOT_MAX_POSITION.x))
+	{
+		e.isAlive = false;
 	}
 }
 
@@ -283,7 +310,7 @@ GameLogic::performCollisionTests()
 		player.isColliding = true;
 		enemy.isColliding	= true;
 
-		enemy.isAlive							= false;
+		enemy.isAlive = false;
 		LOG_VERBOSE("playerState: Normal->Dying\n");
 		context.playerState				= PlayerState::Dying;
 		context.playerDeathTimerS = PLAYER_DEATH_TIME_S;

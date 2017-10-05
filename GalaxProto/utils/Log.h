@@ -450,15 +450,15 @@ struct TimedRaiiBlock
 		aggregateRecord.function	 = _record->function;
 
 		// TEST message
-		double elapsedTimeMs = Timing::ticksToMilliSeconds(_record->totalTicks);
-		logMsgImp(
-			"TIMED",
-			"%9.6fms - hash %ull\n",
-			_record->file,
-			_record->lineNumber,
-			_record->function,
-			elapsedTimeMs,
-			_record->hashIndex);
+		//double elapsedTimeMs = Timing::ticksToMilliSeconds(_record->totalTicks);
+		//logMsgImp(
+		//	"TIMED",
+		//	"%9.6fms - hash %ull\n",
+		//	_record->file,
+		//	_record->lineNumber,
+		//	_record->function,
+		//	elapsedTimeMs,
+		//	_record->hashIndex);
 
 		getCurrentOpenBlockByRef() = const_cast<TimedRaiiBlock*>(_parent);
 	}

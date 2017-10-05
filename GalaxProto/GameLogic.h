@@ -26,6 +26,8 @@ public:
 	void render();
 
 	void performPhysicsUpdate(const DX::StepTimer& timer);
+	void constrainPlayer(Entity& e);
+	void constrainShot(Entity& e);
 	void performCollisionTests();
 
 	template <typename Func>

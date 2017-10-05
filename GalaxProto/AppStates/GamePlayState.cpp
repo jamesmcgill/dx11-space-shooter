@@ -171,13 +171,20 @@ void
 GamePlayState::render()
 {
 	TRACE
+	renderStarField();
+
+	m_gameLogic.render();
+}
+
+//------------------------------------------------------------------------------
+void GamePlayState::renderStarField()
+{
+	TRACE
 	auto& spriteBatch = m_resources.m_spriteBatch;
 
 	spriteBatch->Begin();
 	m_resources.starField->render(*spriteBatch);
 	spriteBatch->End();
-
-	m_gameLogic.render();
 }
 
 //------------------------------------------------------------------------------
