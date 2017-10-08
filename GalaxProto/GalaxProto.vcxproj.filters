@@ -115,6 +115,9 @@
       <Filter>AppStates</Filter>
     </ClCompile>
     <ClCompile Include="UIDebugDraw.cpp" />
+    <ClCompile Include="utils\Log.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

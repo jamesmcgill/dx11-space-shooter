@@ -192,75 +192,16 @@ struct Timing
 	static const uint64_t TICKS_PER_SECOND			= 10'000'000;
 	static const uint64_t TICKS_PER_MILLISECOND = 10'000;
 
-	//------------------------------------------------------------------------------
-	static uint64_t getCurrentTimeInTicks()
-	{
-		LARGE_INTEGER currentTime = {0LL};
-		if (!QueryPerformanceCounter(&currentTime))
-		{
-			throw std::exception("QueryPerformanceCounter");
-		}
-		return currentTime.QuadPart;
-	}
-
-	//------------------------------------------------------------------------------
-	static uint64_t initFrequency()
-	{
-		LARGE_INTEGER frequency;
-		if (!QueryPerformanceFrequency(&frequency))
-		{
-			throw std::exception("QueryPerformanceFrequency");
-		}
-		return frequency.QuadPart;
-	}
-
-	//------------------------------------------------------------------------------
-	static uint64_t& getQpcFrequency()
-	{
-		static uint64_t qpcFrequency = initFrequency();
-		return qpcFrequency;
-	}
-
-	//------------------------------------------------------------------------------
-	static uint64_t initMaxDelta()
-	{
-		// Initialize max delta to 1/10 of a second.
-		return getQpcFrequency() / 10;
-	}
-
-	//------------------------------------------------------------------------------
-	static uint64_t& getQpcMaxDelta()
-	{
-		static uint64_t qpcMaxDelta = initMaxDelta();
-		return qpcMaxDelta;
-	}
-
-	//------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
+	static uint64_t getCurrentTimeInTicks();
+	static uint64_t initFrequency();
+	static uint64_t& getQpcFrequency();
+	static uint64_t initMaxDelta();
+	static uint64_t& getQpcMaxDelta();
 	static uint64_t
-	getClampedDuration(const uint64_t tEarliest, const uint64_t tLatest)
-	{
-		uint64_t timeDelta = tLatest - tEarliest;
-
-		// Clamp excessively large time deltas (e.g. after paused in the
-		// debugger).
-		if (timeDelta > getQpcMaxDelta())
-		{
-			timeDelta = getQpcMaxDelta();
-		}
-		return timeDelta;
-	}
-
-	//------------------------------------------------------------------------------
-	static double ticksToMilliSeconds(uint64_t ticks)
-	{
-		// Convert QPC units into a canonical tick format. This cannot overflow
-		// due to the previous clamp.
-		ticks *= TICKS_PER_SECOND;
-		ticks /= getQpcFrequency();
-
-		return static_cast<double>(ticks) / TICKS_PER_MILLISECOND;
-	}
-};		// struct Timing
+	getClampedDuration(const uint64_t tEarliest, const uint64_t tLatest);
+	static double ticksToMilliSeconds(uint64_t ticks);
+};
 
 //------------------------------------------------------------------------------
 
@@ -284,100 +225,18 @@ struct Stats
 
 	using AnalyticRecords = std::unordered_map<size_t, AnalyticRecord>;
 
-	//------------------------------------------------------------------------------
-	static AllSnapShots& getAllSnapShots()
-	{
-		static AllSnapShots snapShots = AllSnapShots();
-		return snapShots;
-	}
-
-	//------------------------------------------------------------------------------
-	static SnapShot& getSnapShot(const int snapShotIdx)
-	{
-		return getAllSnapShots()[snapShotIdx];
-	}
-
-	//------------------------------------------------------------------------------
-	static AllAggregatedSnapShots& getAggregatedFrameRecords()
-	{
-		static AllAggregatedSnapShots snapShots = AllAggregatedSnapShots();
-		return snapShots;
-	}
-
-	//------------------------------------------------------------------------------
-	static AggregatedRecords& getAggregatedRecords(const int snapShotIdx)
-	{
-		return getAggregatedFrameRecords()[snapShotIdx];
-	}
-
-	//------------------------------------------------------------------------------
-	static int& getCurrentSnapShotIdx()
-	{
-		static int idx = 0;
-		return idx;
-	}
-
-	//------------------------------------------------------------------------------
-	static int& incrementSnapShotIdx()
-	{
-		int& idx = getCurrentSnapShotIdx();
-		if (++idx >= SNAPSHOT_COUNT)
-		{
-			idx = 0;
-		}
-		return idx;
-	}
-
 	//----------------------------------------------------------------------------
-	static void clearSnapShot(SnapShot& snapShot)
-	{
-		Records temp;
-		snapShot.records.swap(temp);
-		snapShot.numRecords = 0;
-	}
-
-	//----------------------------------------------------------------------------
-	static void clearFrameAggregate(AggregatedRecords& snapShot)
-	{
-		AggregatedRecords temp;
-		snapShot.swap(temp);
-	}
-
-	//----------------------------------------------------------------------------
-	static void signalFrameEnd()
-	{
-		int newIdx = incrementSnapShotIdx();
-		clearSnapShot(getSnapShot(newIdx));
-		clearFrameAggregate(getAggregatedRecords(newIdx));
-	}
-
-	//----------------------------------------------------------------------------
-	static AnalyticRecords computeAnalyticRecords()
-	{
-		AnalyticRecords analyticRecords;
-		const auto& aggregatedSnapShots = getAggregatedFrameRecords();
-		for (const auto& snapShot : aggregatedSnapShots)
-		{
-			for (const auto& rec : snapShot)
-			{
-				const auto& sourceRecord = rec.second;
-				auto& record						 = analyticRecords[rec.first];
-
-				record.ticks.accumulate(sourceRecord.ticks);
-				record.callsCount.accumulate(sourceRecord.callsCount);
-				record.ticksPerCount.accumulate(
-					sourceRecord.ticks / sourceRecord.callsCount);
-
-				record.function		= sourceRecord.function;
-				record.file				= sourceRecord.file;
-				record.lineNumber = sourceRecord.lineNumber;
-			}
-		}
-
-		return analyticRecords;
-	}
-
-};		// struct Stats
+	static AllSnapShots& getAllSnapShots();
+	static SnapShot& getSnapShot(const int snapShotIdx);
+	static AllAggregatedSnapShots& getAggregatedFrameRecords();
+	static AggregatedRecords& getAggregatedRecords(const int snapShotIdx);
+	static int& getCurrentSnapShotIdx();
+	static int& incrementSnapShotIdx();
+	static void clearSnapShot(SnapShot& snapShot);
+	static void clearFrameAggregate(AggregatedRecords& snapShot);
+	static void signalFrameEnd();
+	static AnalyticRecords computeAnalyticRecords();
+};
 
 //------------------------------------------------------------------------------
 
@@ -392,102 +251,18 @@ struct TimedRaiiBlock
 		const size_t hashIndex,
 		const int line,
 		const char* file,
-		const char* function)
-			: _parent(getCurrentOpenBlockByRef())
-	{
-		getCurrentOpenBlockByRef() = this;
+		const char* function);
 
-		auto& currentSnapShot = Stats::getSnapShot(Stats::getCurrentSnapShotIdx());
-		auto recordIndex			= currentSnapShot.numRecords;
+	~TimedRaiiBlock();
 
-		if (currentSnapShot.numRecords < Stats::MAX_RECORD_COUNT - 1)
-		{
-			currentSnapShot.numRecords++;
-		}
-		else
-		{
-			logMsgImp(
-				"ERROR",
-				"MAX_RECORD_COUNT exceeded. Increase Value\n",
-				__FILE__,
-				__LINE__,
-				__FUNCTION__);
-		}
-
-		TimedRecord& record				= currentSnapShot.records[recordIndex];
-		_record										= &record;
-		_record->hashIndex				= hashIndex;
-		_record->startTimeInTicks = Timing::getCurrentTimeInTicks();
-		_record->lineNumber				= line;
-		_record->file							= file;
-		_record->function					= function;
-
-		if (_parent)
-		{
-			_parent->_record->childNodes.push_back(_record);
-		}
-		else
-		{
-			currentSnapShot.flameHead = _record;
-		}
-	}
-
-	//----------------------------------------------------------------------------
-	~TimedRaiiBlock()
-	{
-		ASSERT(_record);
-		_record->totalTicks = Timing::getClampedDuration(
-			_record->startTimeInTicks, Timing::getCurrentTimeInTicks());
-
-		auto& snapShotIdx = Stats::getCurrentSnapShotIdx();
-		auto& aggregateRecord
-			= Stats::getAggregatedRecords(snapShotIdx)[_record->hashIndex];
-		aggregateRecord.ticks += _record->totalTicks;
-		aggregateRecord.callsCount++;
-
-		aggregateRecord.lineNumber = _record->lineNumber;
-		aggregateRecord.file			 = _record->file;
-		aggregateRecord.function	 = _record->function;
-
-		// TEST message
-		//double elapsedTimeMs = Timing::ticksToMilliSeconds(_record->totalTicks);
-		//logMsgImp(
-		//	"TIMED",
-		//	"%9.6fms - hash %ull\n",
-		//	_record->file,
-		//	_record->lineNumber,
-		//	_record->function,
-		//	elapsedTimeMs,
-		//	_record->hashIndex);
-
-		getCurrentOpenBlockByRef() = const_cast<TimedRaiiBlock*>(_parent);
-	}
-
-	//----------------------------------------------------------------------------
-	static TimedRaiiBlock*& getCurrentOpenBlockByRef()
-	{
-		static TimedRaiiBlock* current = nullptr;
-		return current;
-	}
-
-};		// TimedRaiiBlock
-
-//----------------------------------------------------------------------------
+	static TimedRaiiBlock*& getCurrentOpenBlockByRef();
+};
 
 //------------------------------------------------------------------------------
-static size_t
-createTimedRecordHash(const std::string_view& filePath, const int lineNumber)
-{
-	// Don't bother hashing the full path. Only the last few characters
-	// will differ enough to be useful for hashing.
-	const size_t NUM_CHARS = 12;
-	const size_t subPos
-		= (filePath.length() > NUM_CHARS) ? filePath.length() - NUM_CHARS : 0;
-	const std::string_view file = filePath.substr(subPos);
-	const std::size_t h1				= std::hash<std::string_view>{}(file);
-	const std::size_t h2				= std::hash<int>{}(lineNumber);
-	return h1 ^ (h2 << 1);
-}
+
+//------------------------------------------------------------------------------
+size_t
+createTimedRecordHash(const std::string_view& filePath, const int lineNumber);
 
 //------------------------------------------------------------------------------
 // clang-format off

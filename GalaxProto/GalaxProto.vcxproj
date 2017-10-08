@@ -237,6 +237,7 @@
     <ClCompile Include="ScoreBoard.cpp" />
     <ClCompile Include="Starfield.cpp" />
     <ClCompile Include="UIDebugDraw.cpp" />
+    <ClCompile Include="utils\Log.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
