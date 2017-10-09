@@ -4,7 +4,6 @@
 //------------------------------------------------------------------------------
 namespace logger
 {
-
 //------------------------------------------------------------------------------
 uint64_t
 Timing::getCurrentTimeInTicks()
@@ -150,11 +149,36 @@ Stats::clearFrameAggregate(AggregatedRecords& snapShot)
 
 //------------------------------------------------------------------------------
 void
+Stats::accumulateFrameRecords(int frameIdx)
+{
+	auto& accumulatedRecords		= getAggregatedRecords(frameIdx);
+	clearFrameAggregate(accumulatedRecords);
+
+	const auto& srcFrame = getSnapShot(frameIdx);
+	for (size_t i = 0; i < srcFrame.numRecords; ++i)
+	{
+		const auto& srcRecord = srcFrame.records[i];
+
+		size_t hash = createTimedRecordHash(srcRecord.file, srcRecord.lineNumber);
+		auto& accumRecord			= accumulatedRecords[hash];
+
+		accumRecord.ticks += srcRecord.totalTicks;
+		accumRecord.callsCount++;
+
+		accumRecord.lineNumber = srcRecord.lineNumber;
+		accumRecord.file			 = srcRecord.file;
+		accumRecord.function	 = srcRecord.function;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
 Stats::signalFrameEnd()
 {
+	accumulateFrameRecords(getCurrentSnapShotIdx());
+
 	int newIdx = incrementSnapShotIdx();
 	clearSnapShot(getSnapShot(newIdx));
-	clearFrameAggregate(getAggregatedRecords(newIdx));
 }
 
 //------------------------------------------------------------------------------
@@ -167,17 +191,17 @@ Stats::computeAnalyticRecords()
 	{
 		for (const auto& rec : snapShot)
 		{
-			const auto& sourceRecord = rec.second;
+			const auto& srcRecord = rec.second;
 			auto& record						 = analyticRecords[rec.first];
 
-			record.ticks.accumulate(sourceRecord.ticks);
-			record.callsCount.accumulate(sourceRecord.callsCount);
+			record.ticks.accumulate(srcRecord.ticks);
+			record.callsCount.accumulate(srcRecord.callsCount);
 			record.ticksPerCount.accumulate(
-				sourceRecord.ticks / sourceRecord.callsCount);
+				srcRecord.ticks / srcRecord.callsCount);
 
-			record.function		= sourceRecord.function;
-			record.file				= sourceRecord.file;
-			record.lineNumber = sourceRecord.lineNumber;
+			record.function		= srcRecord.function;
+			record.file				= srcRecord.file;
+			record.lineNumber = srcRecord.lineNumber;
 		}
 	}
 
@@ -188,7 +212,6 @@ Stats::computeAnalyticRecords()
 
 //------------------------------------------------------------------------------
 TimedRaiiBlock::TimedRaiiBlock(
-	const size_t hashIndex,
 	const int line,
 	const char* file,
 	const char* function)
@@ -198,6 +221,22 @@ TimedRaiiBlock::TimedRaiiBlock(
 
 	auto& currentSnapShot = Stats::getSnapShot(Stats::getCurrentSnapShotIdx());
 	auto recordIndex			= currentSnapShot.numRecords;
+
+	TimedRecord& record				= currentSnapShot.records[recordIndex];
+	_record										= &record;
+	_record->startTimeInTicks = Timing::getCurrentTimeInTicks();
+	_record->lineNumber				= line;
+	_record->file							= file;
+	_record->function					= function;
+
+	if (_parent)
+	{
+		_parent->_record->childNodes.push_back(_record);
+	}
+	else
+	{
+		currentSnapShot.flameHead = _record;
+	}
 
 	if (currentSnapShot.numRecords < Stats::MAX_RECORD_COUNT - 1)
 	{
@@ -212,23 +251,6 @@ TimedRaiiBlock::TimedRaiiBlock(
 			__LINE__,
 			__FUNCTION__);
 	}
-
-	TimedRecord& record				= currentSnapShot.records[recordIndex];
-	_record										= &record;
-	_record->hashIndex				= hashIndex;
-	_record->startTimeInTicks = Timing::getCurrentTimeInTicks();
-	_record->lineNumber				= line;
-	_record->file							= file;
-	_record->function					= function;
-
-	if (_parent)
-	{
-		_parent->_record->childNodes.push_back(_record);
-	}
-	else
-	{
-		currentSnapShot.flameHead = _record;
-	}
 }
 
 //------------------------------------------------------------------------------
@@ -237,27 +259,6 @@ TimedRaiiBlock::~TimedRaiiBlock()
 	ASSERT(_record);
 	_record->totalTicks = Timing::getClampedDuration(
 		_record->startTimeInTicks, Timing::getCurrentTimeInTicks());
-
-	auto& snapShotIdx = Stats::getCurrentSnapShotIdx();
-	auto& aggregateRecord
-		= Stats::getAggregatedRecords(snapShotIdx)[_record->hashIndex];
-	aggregateRecord.ticks += _record->totalTicks;
-	aggregateRecord.callsCount++;
-
-	aggregateRecord.lineNumber = _record->lineNumber;
-	aggregateRecord.file			 = _record->file;
-	aggregateRecord.function	 = _record->function;
-
-	// TEST message
-	// double elapsedTimeMs = Timing::ticksToMilliSeconds(_record->totalTicks);
-	// logMsgImp(
-	//	"TIMED",
-	//	"%9.6fms - hash %ull\n",
-	//	_record->file,
-	//	_record->lineNumber,
-	//	_record->function,
-	//	elapsedTimeMs,
-	//	_record->hashIndex);
 
 	getCurrentOpenBlockByRef() = const_cast<TimedRaiiBlock*>(_parent);
 }

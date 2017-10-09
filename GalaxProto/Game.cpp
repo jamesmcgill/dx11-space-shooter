@@ -241,13 +241,24 @@ Game::drawProfilerList()
 
 	m_resources.m_spriteBatch->Begin();
 
-	auto aggregate = logger::Stats::computeAnalyticRecords();
-	for (auto& entry : aggregate)
+	auto singleFrame			= logger::Stats::getAggregatedRecords(0);
+	std::vector<std::pair<size_t, logger::AggregateRecord>> sortedRecords;
+	for (const auto& rec : singleFrame)
 	{
-		auto& record = entry.second;
+		sortedRecords.push_back(std::make_pair(rec.first, rec.second));
+	}
+	std::sort(
+		sortedRecords.begin(), sortedRecords.end(), [](auto& lhs, auto& rhs) {
+			return lhs.second.ticks > rhs.second.ticks;
+		});
+
+	auto aggregateRecords = logger::Stats::computeAnalyticRecords();
+	for (auto& entry : sortedRecords)
+	{
+		auto& record = aggregateRecords[entry.first];
 
 		drawText(
-			L"{:>40}()    ({:>2})h    ({:>7.6} / {:<7.6})ms",
+			L"{:<35} ({:>2})h    ({:>5.4f} / {:<5.4f})ms",
 			record.function,
 			record.callsCount.average(),
 			logger::Timing::ticksToMilliSeconds(record.ticks.min),

@@ -124,7 +124,6 @@ struct TimedRecord
 	uint64_t startTimeInTicks;
 	uint64_t totalTicks;
 
-	size_t hashIndex;
 	int32_t lineNumber;
 	const char* file;
 	const char* function;
@@ -133,16 +132,16 @@ struct TimedRecord
 };
 
 //------------------------------------------------------------------------------
-template <typename T> struct AnalyticValue
+template <typename T> struct AccumulatedValue
 {
-	T total				= 0;
+	T sum					= 0;
 	T min					= std::numeric_limits<T>::max();
 	T max					= std::numeric_limits<T>::lowest();
 	int32_t count = 0;
 
 	void accumulate(T newValue)
 	{
-		total += newValue;
+		sum += newValue;
 		if (newValue < min)
 		{
 			min = newValue;
@@ -156,16 +155,16 @@ template <typename T> struct AnalyticValue
 
 	T average() const
 	{
-		return total / count;
+		return sum / count;
 	}
 };
 
 //------------------------------------------------------------------------------
 struct AnalyticRecord
 {
-	AnalyticValue<uint64_t> ticks;
-	AnalyticValue<int32_t> callsCount;
-	AnalyticValue<uint64_t> ticksPerCount;
+	AccumulatedValue<uint64_t> ticks;
+	AccumulatedValue<int32_t> callsCount;
+	AccumulatedValue<uint64_t> ticksPerCount;
 
 	int32_t lineNumber;
 	const char* file;
@@ -234,6 +233,8 @@ struct Stats
 	static int& incrementSnapShotIdx();
 	static void clearSnapShot(SnapShot& snapShot);
 	static void clearFrameAggregate(AggregatedRecords& snapShot);
+	static void accumulateFrameRecords(int frameIdx);
+
 	static void signalFrameEnd();
 	static AnalyticRecords computeAnalyticRecords();
 };
@@ -248,7 +249,6 @@ struct TimedRaiiBlock
 
 	//----------------------------------------------------------------------------
 	TimedRaiiBlock(
-		const size_t hashIndex,
 		const int line,
 		const char* file,
 		const char* function);
@@ -288,11 +288,7 @@ createTimedRecordHash(const std::string_view& filePath, const int lineNumber);
 
 #undef TIMED_TRACE_IMPL
 #define TIMED_TRACE_IMPL(N)                                                    \
-	const std::string_view& CAT(filePath_,N) = __FILE__;                         \
-	const size_t CAT(hashIndex_,N) =                                             \
-		logger::createTimedRecordHash(CAT(filePath_,N), __LINE__);                 \
-	logger::TimedRaiiBlock CAT(timedBlock_,N)(                                   \
-		CAT(hashIndex_,N), __LINE__, __FILE__, __FUNCTION__);
+	logger::TimedRaiiBlock CAT(timedBlock_,N)(__LINE__, __FILE__, __FUNCTION__);
 
 #undef TIMED_TRACE
 #define TIMED_TRACE TIMED_TRACE_IMPL(__COUNTER__);
