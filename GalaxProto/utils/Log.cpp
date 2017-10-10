@@ -5,10 +5,10 @@
 namespace logger
 {
 //------------------------------------------------------------------------------
-uint64_t
+Ticks
 Timing::getCurrentTimeInTicks()
 {
-	LARGE_INTEGER currentTime = {0LL};
+	LARGE_INTEGER currentTime;
 	if (!QueryPerformanceCounter(&currentTime))
 	{
 		throw std::exception("QueryPerformanceCounter");
@@ -17,7 +17,7 @@ Timing::getCurrentTimeInTicks()
 }
 
 //------------------------------------------------------------------------------
-uint64_t
+Ticks
 Timing::initFrequency()
 {
 	LARGE_INTEGER frequency;
@@ -29,15 +29,15 @@ Timing::initFrequency()
 }
 
 //------------------------------------------------------------------------------
-uint64_t&
+Ticks&
 Timing::getQpcFrequency()
 {
-	static uint64_t qpcFrequency = initFrequency();
+	static Ticks qpcFrequency = initFrequency();
 	return qpcFrequency;
 }
 
 //------------------------------------------------------------------------------
-uint64_t
+Ticks
 Timing::initMaxDelta()
 {
 	// Initialize max delta to 1/10 of a second.
@@ -45,18 +45,18 @@ Timing::initMaxDelta()
 }
 
 //------------------------------------------------------------------------------
-uint64_t&
+Ticks&
 Timing::getQpcMaxDelta()
 {
-	static uint64_t qpcMaxDelta = initMaxDelta();
+	static Ticks qpcMaxDelta = initMaxDelta();
 	return qpcMaxDelta;
 }
 
 //------------------------------------------------------------------------------
-uint64_t
-Timing::getClampedDuration(const uint64_t tEarliest, const uint64_t tLatest)
+Ticks
+Timing::getClampedDuration(const Ticks tEarliest, const Ticks tLatest)
 {
-	uint64_t timeDelta = tLatest - tEarliest;
+	Ticks timeDelta = tLatest - tEarliest;
 
 	// Clamp excessively large time deltas (e.g. after paused in the debugger).
 	if (timeDelta > getQpcMaxDelta())
@@ -68,7 +68,7 @@ Timing::getClampedDuration(const uint64_t tEarliest, const uint64_t tLatest)
 
 //------------------------------------------------------------------------------
 double
-Timing::ticksToMilliSeconds(uint64_t ticks)
+Timing::ticksToMilliSeconds(Ticks ticks)
 {
 	// Convert QPC units into a canonical tick format. This cannot overflow
 	// due to the previous clamp.
@@ -81,38 +81,38 @@ Timing::ticksToMilliSeconds(uint64_t ticks)
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-Stats::AllSnapShots&
-Stats::getAllSnapShots()
+Stats::IntervalRecords&
+Stats::getIntervalRecords()
 {
-	static AllSnapShots snapShots = AllSnapShots();
-	return snapShots;
+	static IntervalRecords interval = IntervalRecords();
+	return interval;
 }
 
 //------------------------------------------------------------------------------
-Stats::SnapShot&
-Stats::getSnapShot(const int snapShotIdx)
+Stats::FrameRecords&
+Stats::getFrameRecords(const int frameIdx)
 {
-	return getAllSnapShots()[snapShotIdx];
+	return getIntervalRecords()[frameIdx];
 }
 
 //------------------------------------------------------------------------------
-Stats::AllAggregatedSnapShots&
-Stats::getAggregatedFrameRecords()
+Stats::CollatedIntervalRecords&
+Stats::getCollatedIntervalRecords()
 {
-	static AllAggregatedSnapShots snapShots = AllAggregatedSnapShots();
-	return snapShots;
+	static CollatedIntervalRecords interval = CollatedIntervalRecords();
+	return interval;
 }
 
 //------------------------------------------------------------------------------
-Stats::AggregatedRecords&
-Stats::getAggregatedRecords(const int snapShotIdx)
+Stats::CollatedFrameRecords&
+Stats::getCollatedFrameRecords(const int frameIdx)
 {
-	return getAggregatedFrameRecords()[snapShotIdx];
+	return getCollatedIntervalRecords()[frameIdx];
 }
 
 //------------------------------------------------------------------------------
 int&
-Stats::getCurrentSnapShotIdx()
+Stats::getCurrentFrameIdx()
 {
 	static int idx = 0;
 	return idx;
@@ -120,10 +120,10 @@ Stats::getCurrentSnapShotIdx()
 
 //------------------------------------------------------------------------------
 int&
-Stats::incrementSnapShotIdx()
+Stats::incrementCurrentFramedIdx()
 {
-	int& idx = getCurrentSnapShotIdx();
-	if (++idx >= SNAPSHOT_COUNT)
+	int& idx = getCurrentFrameIdx();
+	if (++idx >= FRAME_COUNT)
 	{
 		idx = 0;
 	}
@@ -132,37 +132,38 @@ Stats::incrementSnapShotIdx()
 
 //------------------------------------------------------------------------------
 void
-Stats::clearSnapShot(SnapShot& snapShot)
+Stats::clearFrame(FrameRecords& frame)
 {
-	Records temp;
-	snapShot.records.swap(temp);
-	snapShot.numRecords = 0;
+	TimedRecordArray temp;
+	frame.records.swap(temp);
+	frame.numRecords = 0;
+	frame.callGraphHead = nullptr;
 }
 
 //------------------------------------------------------------------------------
 void
-Stats::clearFrameAggregate(AggregatedRecords& snapShot)
+Stats::clearCollatedFrame(CollatedFrameRecords& frame)
 {
-	AggregatedRecords temp;
-	snapShot.swap(temp);
+	CollatedFrameRecords temp;
+	frame.swap(temp);
 }
 
 //------------------------------------------------------------------------------
 void
-Stats::accumulateFrameRecords(int frameIdx)
+Stats::condenseFrameRecords(int frameIdx)
 {
-	auto& accumulatedRecords		= getAggregatedRecords(frameIdx);
-	clearFrameAggregate(accumulatedRecords);
+	auto& dstFrame = getCollatedFrameRecords(frameIdx);
+	clearCollatedFrame(dstFrame);
 
-	const auto& srcFrame = getSnapShot(frameIdx);
+	const auto& srcFrame = getFrameRecords(frameIdx);
 	for (size_t i = 0; i < srcFrame.numRecords; ++i)
 	{
 		const auto& srcRecord = srcFrame.records[i];
 
 		size_t hash = createTimedRecordHash(srcRecord.file, srcRecord.lineNumber);
-		auto& accumRecord			= accumulatedRecords[hash];
+		auto& accumRecord = dstFrame[hash];
 
-		accumRecord.ticks += srcRecord.totalTicks;
+		accumRecord.ticks += srcRecord.duration;
 		accumRecord.callsCount++;
 
 		accumRecord.lineNumber = srcRecord.lineNumber;
@@ -175,56 +176,49 @@ Stats::accumulateFrameRecords(int frameIdx)
 void
 Stats::signalFrameEnd()
 {
-	accumulateFrameRecords(getCurrentSnapShotIdx());
+	condenseFrameRecords(getCurrentFrameIdx());
 
-	int newIdx = incrementSnapShotIdx();
-	clearSnapShot(getSnapShot(newIdx));
+	int newIdx = incrementCurrentFramedIdx();
+	clearFrame(getFrameRecords(newIdx));
 }
 
 //------------------------------------------------------------------------------
-Stats::AnalyticRecords
-Stats::computeAnalyticRecords()
+Stats::AccumulatedRecords
+Stats::accumulateRecords()
 {
-	AnalyticRecords analyticRecords;
-	const auto& aggregatedSnapShots = getAggregatedFrameRecords();
-	for (const auto& snapShot : aggregatedSnapShots)
+	AccumulatedRecords accumulatedRecords;
+	const auto& srcFrames = getCollatedIntervalRecords();
+	for (const auto& frame : srcFrames)
 	{
-		for (const auto& rec : snapShot)
+		for (const auto& r : frame)
 		{
-			const auto& srcRecord = rec.second;
-			auto& record						 = analyticRecords[rec.first];
+			const auto& srcRecord = r.second;
+			auto& record					= accumulatedRecords[r.first];
 
 			record.ticks.accumulate(srcRecord.ticks);
 			record.callsCount.accumulate(srcRecord.callsCount);
-			record.ticksPerCount.accumulate(
-				srcRecord.ticks / srcRecord.callsCount);
-
-			record.function		= srcRecord.function;
-			record.file				= srcRecord.file;
-			record.lineNumber = srcRecord.lineNumber;
+			record.ticksPerCount.accumulate(srcRecord.ticks / srcRecord.callsCount);
 		}
 	}
 
-	return analyticRecords;
+	return accumulatedRecords;
 }
 
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 TimedRaiiBlock::TimedRaiiBlock(
-	const int line,
-	const char* file,
-	const char* function)
+	const int line, const char* file, const char* function)
 		: _parent(getCurrentOpenBlockByRef())
 {
 	getCurrentOpenBlockByRef() = this;
 
-	auto& currentSnapShot = Stats::getSnapShot(Stats::getCurrentSnapShotIdx());
-	auto recordIndex			= currentSnapShot.numRecords;
+	auto& currentFrame = Stats::getFrameRecords(Stats::getCurrentFrameIdx());
+	auto recordIndex			= currentFrame.numRecords;
 
-	TimedRecord& record				= currentSnapShot.records[recordIndex];
+	TimedRecord& record				= currentFrame.records[recordIndex];
 	_record										= &record;
-	_record->startTimeInTicks = Timing::getCurrentTimeInTicks();
+	_record->startTime = Timing::getCurrentTimeInTicks();
 	_record->lineNumber				= line;
 	_record->file							= file;
 	_record->function					= function;
@@ -235,12 +229,12 @@ TimedRaiiBlock::TimedRaiiBlock(
 	}
 	else
 	{
-		currentSnapShot.flameHead = _record;
+		currentFrame.callGraphHead = _record;
 	}
 
-	if (currentSnapShot.numRecords < Stats::MAX_RECORD_COUNT - 1)
+	if (currentFrame.numRecords < Stats::MAX_RECORD_COUNT - 1)
 	{
-		currentSnapShot.numRecords++;
+		currentFrame.numRecords++;
 	}
 	else
 	{
@@ -257,8 +251,8 @@ TimedRaiiBlock::TimedRaiiBlock(
 TimedRaiiBlock::~TimedRaiiBlock()
 {
 	ASSERT(_record);
-	_record->totalTicks = Timing::getClampedDuration(
-		_record->startTimeInTicks, Timing::getCurrentTimeInTicks());
+	_record->duration = Timing::getClampedDuration(
+		_record->startTime, Timing::getCurrentTimeInTicks());
 
 	getCurrentOpenBlockByRef() = const_cast<TimedRaiiBlock*>(_parent);
 }

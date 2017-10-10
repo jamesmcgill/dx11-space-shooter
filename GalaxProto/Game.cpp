@@ -241,8 +241,8 @@ Game::drawProfilerList()
 
 	m_resources.m_spriteBatch->Begin();
 
-	auto singleFrame			= logger::Stats::getAggregatedRecords(0);
-	std::vector<std::pair<size_t, logger::AggregateRecord>> sortedRecords;
+	auto singleFrame = logger::Stats::getCollatedFrameRecords(0);
+	std::vector<std::pair<size_t, logger::CollatedRecord>> sortedRecords;
 	for (const auto& rec : singleFrame)
 	{
 		sortedRecords.push_back(std::make_pair(rec.first, rec.second));
@@ -251,18 +251,18 @@ Game::drawProfilerList()
 		sortedRecords.begin(), sortedRecords.end(), [](auto& lhs, auto& rhs) {
 			return lhs.second.ticks > rhs.second.ticks;
 		});
+	auto accumulatedRecords = logger::Stats::accumulateRecords();
 
-	auto aggregateRecords = logger::Stats::computeAnalyticRecords();
 	for (auto& entry : sortedRecords)
 	{
-		auto& record = aggregateRecords[entry.first];
-
+		auto& record = entry.second;
+		auto& accumRecord = accumulatedRecords[entry.first];
 		drawText(
 			L"{:<35} ({:>2})h    ({:>5.4f} / {:<5.4f})ms",
 			record.function,
-			record.callsCount.average(),
-			logger::Timing::ticksToMilliSeconds(record.ticks.min),
-			logger::Timing::ticksToMilliSeconds(record.ticks.max));
+			accumRecord.callsCount.average(),
+			logger::Timing::ticksToMilliSeconds(accumRecord.ticks.min),
+			logger::Timing::ticksToMilliSeconds(accumRecord.ticks.max));
 	}
 
 	m_resources.m_spriteBatch->End();
@@ -315,8 +315,8 @@ visitFlameGraph(const logger::TimedRecord* head, Func visitFunc)
 void
 Game::drawFlameGraph()
 {
-	auto& currentSnapShot = logger::Stats::getSnapShot(0);
-	if (!currentSnapShot.flameHead)
+	auto& currentSnapShot = logger::Stats::getFrameRecords(0);
+	if (!currentSnapShot.callGraphHead)
 	{
 		return;
 	}
@@ -328,8 +328,8 @@ Game::drawFlameGraph()
 	const float yStartPos = yAscent;
 	const float yRange		= m_context.screenHeight - (2 * yAscent);
 
-	const uint64_t baseTick = currentSnapShot.flameHead->startTimeInTicks;
-	const float ticksToYPos = yRange / currentSnapShot.flameHead->totalTicks;
+	const logger::Ticks baseTick = currentSnapShot.callGraphHead->startTime;
+	const float ticksToYPos = yRange / currentSnapShot.callGraphHead->duration;
 
 	UIDebugDraw ui(m_context, m_resources);
 	UIText uiText;
@@ -339,8 +339,8 @@ Game::drawFlameGraph()
 	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
 		const float xPos = xStartPos + (depth * xWidth);
 		const float yPos
-			= ceil(yStartPos + ((node->startTimeInTicks - baseTick) * ticksToYPos));
-		const float yHeight			= ceil(node->totalTicks * ticksToYPos);
+			= ceil(yStartPos + ((node->startTime - baseTick) * ticksToYPos));
+		const float yHeight			= ceil(node->duration * ticksToYPos);
 		const float yHalfHeight = yHeight * 0.5f;
 
 		ui.drawBox(xPos, yPos, xWidth - 2, yHeight, DirectX::Colors::Firebrick);
@@ -352,7 +352,7 @@ Game::drawFlameGraph()
 
 	m_resources.m_spriteBatch->Begin();
 	m_resources.m_batch->Begin();
-	visitFlameGraph(currentSnapShot.flameHead, drawFunc);
+	visitFlameGraph(currentSnapShot.callGraphHead, drawFunc);
 	m_resources.m_batch->End();
 	m_resources.m_spriteBatch->End();
 }

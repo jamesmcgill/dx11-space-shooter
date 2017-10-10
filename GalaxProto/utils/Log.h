@@ -119,10 +119,13 @@ logMsgImp(
 }
 
 //------------------------------------------------------------------------------
+using Ticks = uint64_t;
+
+//------------------------------------------------------------------------------
 struct TimedRecord
 {
-	uint64_t startTimeInTicks;
-	uint64_t totalTicks;
+	Ticks startTime;
+	Ticks duration;
 
 	int32_t lineNumber;
 	const char* file;
@@ -155,26 +158,27 @@ template <typename T> struct AccumulatedValue
 
 	T average() const
 	{
+		if (!count)
+		{
+			return 0;
+		}
+
 		return sum / count;
 	}
 };
 
 //------------------------------------------------------------------------------
-struct AnalyticRecord
+struct AccumulatedRecord
 {
-	AccumulatedValue<uint64_t> ticks;
+	AccumulatedValue<Ticks> ticks;
 	AccumulatedValue<int32_t> callsCount;
-	AccumulatedValue<uint64_t> ticksPerCount;
-
-	int32_t lineNumber;
-	const char* file;
-	const char* function;
+	AccumulatedValue<Ticks> ticksPerCount;
 };
 
 //------------------------------------------------------------------------------
-struct AggregateRecord
+struct CollatedRecord
 {
-	uint64_t ticks		 = 0;
+	Ticks ticks				 = 0;
 	int32_t callsCount = 0;
 
 	int32_t lineNumber;
@@ -188,18 +192,17 @@ struct AggregateRecord
 struct Timing
 {
 	// Integer format represents time using 10,000,000 ticks per second.
-	static const uint64_t TICKS_PER_SECOND			= 10'000'000;
-	static const uint64_t TICKS_PER_MILLISECOND = 10'000;
+	static const Ticks TICKS_PER_SECOND			 = 10'000'000;
+	static const Ticks TICKS_PER_MILLISECOND = 10'000;
 
 	//----------------------------------------------------------------------------
-	static uint64_t getCurrentTimeInTicks();
-	static uint64_t initFrequency();
-	static uint64_t& getQpcFrequency();
-	static uint64_t initMaxDelta();
-	static uint64_t& getQpcMaxDelta();
-	static uint64_t
-	getClampedDuration(const uint64_t tEarliest, const uint64_t tLatest);
-	static double ticksToMilliSeconds(uint64_t ticks);
+	static Ticks getCurrentTimeInTicks();
+	static Ticks initFrequency();
+	static Ticks& getQpcFrequency();
+	static Ticks initMaxDelta();
+	static Ticks& getQpcMaxDelta();
+	static Ticks getClampedDuration(const Ticks tEarliest, const Ticks tLatest);
+	static double ticksToMilliSeconds(Ticks ticks);
 };
 
 //------------------------------------------------------------------------------
@@ -207,36 +210,41 @@ struct Timing
 //------------------------------------------------------------------------------
 struct Stats
 {
-	static const int SNAPSHOT_COUNT		= 120;
+	static const int FRAME_COUNT			= 120;
 	static const int MAX_RECORD_COUNT = 120;
 
-	using Records = std::array<TimedRecord, MAX_RECORD_COUNT>;
-	struct SnapShot
+	using TimedRecordArray = std::array<TimedRecord, MAX_RECORD_COUNT>;
+	struct FrameRecords
 	{
-		size_t numRecords			 = 0;
-		TimedRecord* flameHead = nullptr;
-		Records records;
+		size_t numRecords = 0;
+		TimedRecord* callGraphHead = nullptr;
+		TimedRecordArray records;
 	};
-	using AllSnapShots = std::array<SnapShot, SNAPSHOT_COUNT>;
+	using IntervalRecords = std::array<FrameRecords, FRAME_COUNT>;
 
-	using AggregatedRecords			 = std::unordered_map<size_t, AggregateRecord>;
-	using AllAggregatedSnapShots = std::array<AggregatedRecords, SNAPSHOT_COUNT>;
+	using CollatedFrameRecords = std::unordered_map<size_t, CollatedRecord>;
+	using CollatedIntervalRecords
+		= std::array<CollatedFrameRecords, FRAME_COUNT>;
 
-	using AnalyticRecords = std::unordered_map<size_t, AnalyticRecord>;
+	using AccumulatedRecords = std::unordered_map<size_t, AccumulatedRecord>;
 
 	//----------------------------------------------------------------------------
-	static AllSnapShots& getAllSnapShots();
-	static SnapShot& getSnapShot(const int snapShotIdx);
-	static AllAggregatedSnapShots& getAggregatedFrameRecords();
-	static AggregatedRecords& getAggregatedRecords(const int snapShotIdx);
-	static int& getCurrentSnapShotIdx();
-	static int& incrementSnapShotIdx();
-	static void clearSnapShot(SnapShot& snapShot);
-	static void clearFrameAggregate(AggregatedRecords& snapShot);
-	static void accumulateFrameRecords(int frameIdx);
+	static IntervalRecords& getIntervalRecords();
+	static FrameRecords& getFrameRecords(const int frameIdx);
 
+	static CollatedIntervalRecords& getCollatedIntervalRecords();
+	static CollatedFrameRecords& getCollatedFrameRecords(const int frameIdx);
+
+	static int& getCurrentFrameIdx();
+	static int& incrementCurrentFramedIdx();
+
+	static void clearFrame(FrameRecords& frame);
+	static void clearCollatedFrame(CollatedFrameRecords& frame);
+
+	static void condenseFrameRecords(int frameIdx);
 	static void signalFrameEnd();
-	static AnalyticRecords computeAnalyticRecords();
+
+	static AccumulatedRecords accumulateRecords();
 };
 
 //------------------------------------------------------------------------------
@@ -248,10 +256,7 @@ struct TimedRaiiBlock
 	TimedRecord* _record					= nullptr;
 
 	//----------------------------------------------------------------------------
-	TimedRaiiBlock(
-		const int line,
-		const char* file,
-		const char* function);
+	TimedRaiiBlock(const int line, const char* file, const char* function);
 
 	~TimedRaiiBlock();
 
