@@ -255,7 +255,7 @@ Game::drawProfilerList()
 
 	for (auto& entry : sortedRecords)
 	{
-		auto& record = entry.second;
+		auto& record			= entry.second;
 		auto& accumRecord = accumulatedRecords[entry.first];
 		drawText(
 			L"{:<35} ({:>2})h    ({:>5.4f} / {:<5.4f})ms",
@@ -336,6 +336,16 @@ Game::drawFlameGraph()
 	uiText.font		= monoFont;
 	uiText.origin = Vector2(0.0f, yAscent * 0.5f);
 
+	float colLerp									= 0.0f;
+	XMVECTORF32 color1ForDepth[2] = {
+		DirectX::Colors::Peru,
+		DirectX::Colors::SandyBrown,
+	};
+	XMVECTORF32 color2ForDepth[2] = {
+		DirectX::Colors::Firebrick,
+		DirectX::Colors::OrangeRed,
+	};
+
 	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
 		const float xPos = xStartPos + (depth * xWidth);
 		const float yPos
@@ -343,7 +353,15 @@ Game::drawFlameGraph()
 		const float yHeight			= ceil(node->duration * ticksToYPos);
 		const float yHalfHeight = yHeight * 0.5f;
 
-		ui.drawBox(xPos, yPos, xWidth - 2, yHeight, DirectX::Colors::Firebrick);
+		int colorIdx = (depth % 2) == 0 ? 1 : 0;
+		colLerp += 0.3f;
+		if (colLerp > 1.0f)
+		{
+			colLerp -= 1.0f;
+		}
+		Vector3 color = XMVectorLerp(
+			color1ForDepth[colorIdx], color2ForDepth[colorIdx], colLerp);
+		ui.drawBox(xPos, yPos, xWidth - 2, yHeight, color);
 
 		uiText.text			= fmt::format(L"{}", node->function);
 		uiText.position = Vector2(xPos + 5.0f, yPos + yHalfHeight);
