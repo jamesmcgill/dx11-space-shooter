@@ -5,6 +5,10 @@
 #include "GameLogic.h"
 #include "AppStates/AppStates.h"
 
+namespace logger {
+	struct TimedRecord;
+}
+
 //------------------------------------------------------------------------------
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -50,6 +54,8 @@ private:
 	AppResources m_resources;
 	GameLogic m_gameLogic;
 	AppStates m_appStates;
+
+	const logger::TimedRecord* overriddenFlameHead = nullptr;
 };
 
 //------------------------------------------------------------------------------

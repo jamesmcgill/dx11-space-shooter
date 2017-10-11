@@ -92,6 +92,7 @@ void
 Game::initialize(HWND window, int width, int height)
 {
 	TRACE
+	m_resources.m_mouse->SetWindow(window);
 	m_resources.m_deviceResources->SetWindow(window, width, height);
 
 	m_resources.m_deviceResources->CreateDeviceResources();
@@ -152,6 +153,10 @@ Game::update()
 	TRACE
 	auto kbState = m_resources.m_keyboard->GetState();
 	m_resources.kbTracker.Update(kbState);
+
+	auto mouseState = m_resources.m_mouse->GetState();
+	m_resources.mouseTracker.Update(mouseState);
+
 	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F1))
 	{
 		switch (m_context.profileViz)
@@ -167,7 +172,6 @@ Game::update()
 				break;
 		}
 	}
-
 	m_resources.audioEngine->Update();
 
 	const auto& currentState = m_appStates.currentState();
@@ -315,11 +319,18 @@ visitFlameGraph(const logger::TimedRecord* head, Func visitFunc)
 void
 Game::drawFlameGraph()
 {
-	auto& currentSnapShot = logger::Stats::getFrameRecords(0);
-	if (!currentSnapShot.callGraphHead)
+	auto& currentSnapShot						= logger::Stats::getFrameRecords(0);
+	const logger::TimedRecord* head = (overriddenFlameHead == nullptr)
+																			? currentSnapShot.callGraphHead
+																			: overriddenFlameHead;
+	if (!head)
 	{
 		return;
 	}
+
+	auto mouseState												 = m_resources.m_mouse->GetState();
+	bool isDrawToolTip										 = false;
+	const logger::TimedRecord* toolTipNode = nullptr;
 
 	auto monoFont					= m_resources.fontMono8pt.get();
 	const float yAscent		= ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
@@ -328,8 +339,8 @@ Game::drawFlameGraph()
 	const float yStartPos = yAscent;
 	const float yRange		= m_context.screenHeight - (2 * yAscent);
 
-	const logger::Ticks baseTick = currentSnapShot.callGraphHead->startTime;
-	const float ticksToYPos = yRange / currentSnapShot.callGraphHead->duration;
+	const logger::Ticks baseTick = head->startTime;
+	const float ticksToYPos			 = yRange / head->duration;
 
 	UIDebugDraw ui(m_context, m_resources);
 	UIText uiText;
@@ -362,17 +373,59 @@ Game::drawFlameGraph()
 		Vector3 color = XMVectorLerp(
 			color1ForDepth[colorIdx], color2ForDepth[colorIdx], colLerp);
 		ui.drawBox(xPos, yPos, xWidth - 2, yHeight, color);
+		if (
+			(mouseState.x >= xPos) && (mouseState.x <= xPos + xWidth)
+			&& (mouseState.y >= yPos) && (mouseState.y <= yPos + yHeight))
+		{
+			isDrawToolTip = true;
+			toolTipNode		= node;
+		}
 
 		uiText.text			= fmt::format(L"{}", node->function);
 		uiText.position = Vector2(xPos + 5.0f, yPos + yHalfHeight);
 		uiText.draw(Colors::White, *m_resources.m_spriteBatch);
 	};
 
+	// Draw the Graph
 	m_resources.m_spriteBatch->Begin();
 	m_resources.m_batch->Begin();
-	visitFlameGraph(currentSnapShot.callGraphHead, drawFunc);
+	visitFlameGraph(head, drawFunc);
 	m_resources.m_batch->End();
 	m_resources.m_spriteBatch->End();
+
+	// Draw Tooltip
+	if (isDrawToolTip)
+	{
+		m_resources.m_spriteBatch->Begin();
+		m_resources.m_batch->Begin();
+
+		ASSERT(toolTipNode);
+		ui.drawBox(
+			static_cast<float>(mouseState.x),
+			static_cast<float>(mouseState.y) - 20.0f,
+			2 * xWidth,
+			20.0f,
+			DirectX::Colors::DarkRed);
+		uiText.text = fmt::format(
+			L"{}({:<5.4f}ms)",
+			toolTipNode->function,
+			logger::Timing::ticksToMilliSeconds(toolTipNode->duration));
+		uiText.position = Vector2(mouseState.x + 10.0f, mouseState.y - 10.0f);
+		uiText.draw(Colors::White, *m_resources.m_spriteBatch);
+
+		m_resources.m_batch->End();
+		m_resources.m_spriteBatch->End();
+
+		using ButtonState = Mouse::ButtonStateTracker::ButtonState;
+		if (m_resources.mouseTracker.leftButton == ButtonState::PRESSED)
+		{
+			overriddenFlameHead = toolTipNode;
+		}
+	}
+	if (mouseState.rightButton)
+	{
+		overriddenFlameHead = nullptr;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -413,6 +466,8 @@ Game::onActivated()
 {
 	TRACE
 	// TODO: Game is becoming active window.
+	m_resources.kbTracker.Reset();
+	m_resources.mouseTracker.Reset();
 }
 
 //------------------------------------------------------------------------------

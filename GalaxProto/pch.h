@@ -45,6 +45,7 @@
 #include "VertexTypes.h"
 #include "SimpleMath.h"
 #include "Keyboard.h"
+#include "Mouse.h"
 #include "SpriteFont.h"
 #include "DDSTextureLoader.h"
 #include "DebugDraw.h"

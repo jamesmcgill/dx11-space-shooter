@@ -43,6 +43,9 @@ struct AppResources
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;
 	std::unique_ptr<DirectX::Keyboard> m_keyboard;
 	DirectX::Keyboard::KeyboardStateTracker kbTracker;
+	std::unique_ptr<DirectX::Mouse> m_mouse;
+	DirectX::Mouse::ButtonStateTracker mouseTracker;
+
 	std::unique_ptr<DirectX::AudioEngine> audioEngine;
 	midi::MidiController midiController;
 	midi::MidiControllerTracker midiTracker;
@@ -78,6 +81,7 @@ struct AppResources
 
 	AppResources()
 			: m_keyboard(std::make_unique<DirectX::Keyboard>())
+			, m_mouse(std::make_unique<DirectX::Mouse>())
 	{
 	}
 };
