@@ -553,6 +553,13 @@ GameLogic::updateUIDebugVariables()
 		yPos += height;
 	};
 
+	const wchar_t* title = (m_context.isMidiConnected)
+													 ? L"MIDI CONTROLLER FOUND"
+													 : L"NO MIDI CONTROLLER FOUND";
+	formatUI(m_context.uiDebugVarsTitle, title, 0.0f);
+
+	formatUI(
+		m_context.uiCameraDist, L"Camera Dist: {}", m_context.cameraDistance);
 	formatUI(m_context.uiPlayerSpeed, L"Player Speed: {}", m_context.playerSpeed);
 	formatUI(
 		m_context.uiPlayerFriction,
@@ -566,8 +573,6 @@ GameLogic::updateUIDebugVariables()
 		m_context.uiPlayerMinVelocity,
 		L"Player Min Velocity: {}",
 		m_context.playerMinVelocity);
-	formatUI(
-		m_context.uiCameraDist, L"Camera Dist: {}", m_context.cameraDistance);
 }
 
 //------------------------------------------------------------------------------
@@ -580,6 +585,7 @@ GameLogic::drawDebugVariables()
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};
 
+	drawUI(m_context.uiDebugVarsTitle);
 	drawUI(m_context.uiPlayerSpeed);
 	drawUI(m_context.uiPlayerFriction);
 	drawUI(m_context.uiPlayerMaxVelocity);

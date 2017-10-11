@@ -40,9 +40,9 @@ enum class ProfileViz
 //------------------------------------------------------------------------------
 struct AppContext
 {
-	float screenWidth = 0.0f;
-	float screenHeight = 0.0f;
-	float screenHalfWidth = 0.0f;
+	float screenWidth			 = 0.0f;
+	float screenHeight		 = 0.0f;
+	float screenHalfWidth	= 0.0f;
 	float screenHalfHeight = 0.0f;
 
 	DirectX::SimpleMath::Matrix view;
@@ -69,17 +69,19 @@ struct AppContext
 
 	ProfileViz profileViz		= ProfileViz::Basic;
 	bool debugDraw					= false;
+	bool isMidiConnected		= false;
 	float playerSpeed				= 200.0f;
 	float playerFriction		= 60.0f;
 	float playerMaxVelocity = 40.0f;
 	float playerMinVelocity = 0.3f;
 
+	UIText uiDebugVarsTitle;
 	UIText uiPlayerSpeed;
 	UIText uiPlayerFriction;
 	UIText uiPlayerMaxVelocity;
 	UIText uiPlayerMinVelocity;
 	UIText uiCameraDist;
-	UIText uiFrameRate;
+	UIText uiControlInfo;
 
 	void updateViewMatrix()
 	{

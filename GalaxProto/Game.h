@@ -45,6 +45,8 @@ private:
 	void drawBasicProfileInfo();
 	void drawProfilerList();
 	void drawFlameGraph();
+	void updateControlsInfo(UIText& ui);
+	void drawControlsInfo(UIText& ui);
 	void clear();
 
 	void createDeviceDependentResources();

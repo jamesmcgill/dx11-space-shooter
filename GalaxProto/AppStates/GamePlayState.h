@@ -19,6 +19,7 @@ public:
 	void update(const DX::StepTimer& timer) override;
 	void render() override;
 	void renderStarField();
+	void drawControlsInfo();
 
 	void load() override;
 	void unload() override;

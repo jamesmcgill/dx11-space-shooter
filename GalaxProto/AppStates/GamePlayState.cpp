@@ -114,6 +114,12 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 		m_context.cameraRotationY += elapsedTimeS * CAMERA_SPEED_Y;
 		m_context.updateViewMatrix();
 	}
+	if (kbState.R)
+	{
+		m_context.cameraRotationX = 0.0f;
+		m_context.cameraRotationY = 0.0f;
+		m_context.updateViewMatrix();
+	}
 
 	// Player Movement
 	m_context.playerAccel = Vector3();		// NB. Must be reset, even while dead.
@@ -177,7 +183,8 @@ GamePlayState::render()
 }
 
 //------------------------------------------------------------------------------
-void GamePlayState::renderStarField()
+void
+GamePlayState::renderStarField()
 {
 	TRACE
 	auto& spriteBatch = m_resources.m_spriteBatch;

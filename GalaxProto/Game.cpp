@@ -34,7 +34,7 @@ Game::Game()
 	m_resources.audioEngine = std::make_unique<AudioEngine>(eflags);
 	m_resources.audioEngine->SetMasterVolume(0.5f);
 
-	m_resources.midiController.loadAndInitDll();
+	m_context.isMidiConnected = m_resources.midiController.loadAndInitDll();
 	midi::g_onControllerEvent
 		= [& tracker = m_resources.midiTracker](int controllerId, int value)
 	{
@@ -126,20 +126,19 @@ Game::tick()
 		render();
 	}
 
+	m_resources.m_spriteBatch->Begin();
 	switch (m_context.profileViz)
 	{
-		case ProfileViz::Basic:
-			drawBasicProfileInfo();
-			break;
 		case ProfileViz::List:
 			drawProfilerList();
-			drawBasicProfileInfo();
 			break;
 		case ProfileViz::FlameGraph:
 			drawFlameGraph();
-			drawBasicProfileInfo();
 			break;
 	}
+	drawControlsInfo(m_context.uiControlInfo);
+	drawBasicProfileInfo();		 // Do this at the end to include profiler cost
+	m_resources.m_spriteBatch->End();
 
 	m_resources.m_deviceResources->Present();
 
@@ -216,9 +215,7 @@ Game::drawBasicProfileInfo()
 		m_resources.m_timer.GetFramesPerSecond(),
 		m_resources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
-	m_resources.m_spriteBatch->Begin();
 	ui.draw(Colors::MediumVioletRed, *m_resources.m_spriteBatch);
-	m_resources.m_spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -243,8 +240,6 @@ Game::drawProfilerList()
 		ui.draw(Colors::MediumVioletRed, *spriteBatch);
 	};
 
-	m_resources.m_spriteBatch->Begin();
-
 	auto singleFrame = logger::Stats::getCollatedFrameRecords(0);
 	std::vector<std::pair<size_t, logger::CollatedRecord>> sortedRecords;
 	for (const auto& rec : singleFrame)
@@ -268,8 +263,27 @@ Game::drawProfilerList()
 			logger::Timing::ticksToMilliSeconds(accumRecord.ticks.min),
 			logger::Timing::ticksToMilliSeconds(accumRecord.ticks.max));
 	}
+}
 
-	m_resources.m_spriteBatch->End();
+//------------------------------------------------------------------------------
+void
+Game::updateControlsInfo(UIText& ui)
+{
+	ui.text
+		= L"Profiler Mode(F1), Debug Draw(F2), Editor(F3), WASDR(Camera control)";
+	ui.font			= m_resources.fontMono8pt.get();
+	ui.position = Vector2(m_context.screenHalfWidth, m_context.screenHeight);
+	XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
+	const float width		= XMVectorGetX(dimensions);
+	const float height	= XMVectorGetY(dimensions);
+	ui.origin						= Vector2(width * 0.5f, height);
+}
+
+//------------------------------------------------------------------------------
+void
+Game::drawControlsInfo(UIText& ui)
+{
+	ui.draw(Colors::MediumVioletRed, *m_resources.m_spriteBatch);
 }
 
 //------------------------------------------------------------------------------
@@ -387,16 +401,17 @@ Game::drawFlameGraph()
 	};
 
 	// Draw the Graph
-	m_resources.m_spriteBatch->Begin();
 	m_resources.m_batch->Begin();
 	visitFlameGraph(head, drawFunc);
 	m_resources.m_batch->End();
-	m_resources.m_spriteBatch->End();
 
 	// Draw Tooltip
 	if (isDrawToolTip)
 	{
+		// Flush previous Sprite Batch
+		m_resources.m_spriteBatch->End();
 		m_resources.m_spriteBatch->Begin();
+
 		m_resources.m_batch->Begin();
 
 		ASSERT(toolTipNode);
@@ -414,7 +429,6 @@ Game::drawFlameGraph()
 		uiText.draw(Colors::White, *m_resources.m_spriteBatch);
 
 		m_resources.m_batch->End();
-		m_resources.m_spriteBatch->End();
 
 		using ButtonState = Mouse::ButtonStateTracker::ButtonState;
 		if (m_resources.mouseTracker.leftButton == ButtonState::PRESSED)
@@ -675,6 +689,7 @@ Game::createWindowSizeDependentResources()
 	m_gameLogic.updateUILives();
 	m_gameLogic.updateUIScore();
 	m_gameLogic.updateUIDebugVariables();
+	updateControlsInfo(m_context.uiControlInfo);
 
 	m_context.updateViewMatrix();
 }
