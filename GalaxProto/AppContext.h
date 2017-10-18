@@ -1,6 +1,10 @@
 #pragma once
 #include "pch.h"
 #include "Entity.h"
+#include "UIDebugDraw.h"
+
+//------------------------------------------------------------------------------
+constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
 
 //------------------------------------------------------------------------------
 enum class PlayerState
@@ -8,24 +12,6 @@ enum class PlayerState
 	Normal,
 	Dying,
 	Reviving,
-};
-
-constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
-
-//------------------------------------------------------------------------------
-struct UIText
-{
-	DirectX::SimpleMath::Vector2 position;
-	DirectX::SimpleMath::Vector2 origin;
-	DirectX::SpriteFont* font = nullptr;
-	std::wstring text;
-
-	void draw(DirectX::XMVECTOR color, DirectX::SpriteBatch& spriteBatch)
-	{
-		assert(font);
-
-		font->DrawString(&spriteBatch, text.c_str(), position, color, 0.f, origin);
-	}
 };
 
 //------------------------------------------------------------------------------
@@ -45,9 +31,10 @@ struct AppContext
 	float screenHalfWidth	= 0.0f;
 	float screenHalfHeight = 0.0f;
 
-	DirectX::SimpleMath::Matrix view;
-	DirectX::SimpleMath::Matrix proj;
-	DirectX::SimpleMath::Matrix orthoProj;
+	DirectX::SimpleMath::Matrix worldToView;
+	DirectX::SimpleMath::Matrix viewToProjection;
+	DirectX::SimpleMath::Matrix pixelsToProjection;
+	DirectX::SimpleMath::Matrix projectionToPixels;
 	float cameraRotationX = 0.0f;
 	float cameraRotationY = 0.0f;
 	float cameraDistance	= 80.0f;
@@ -64,8 +51,8 @@ struct AppContext
 	PlayerState playerState	= PlayerState::Normal;
 	float playerDeathTimerS	= 0.0f;
 	float playerReviveTimerS = 0.0f;
-	UIText uiScore;
-	UIText uiLives;
+	ui::Text uiScore;
+	ui::Text uiLives;
 
 	ProfileViz profileViz		= ProfileViz::Basic;
 	bool debugDraw					= false;
@@ -75,13 +62,13 @@ struct AppContext
 	float playerMaxVelocity = 40.0f;
 	float playerMinVelocity = 0.3f;
 
-	UIText uiDebugVarsTitle;
-	UIText uiPlayerSpeed;
-	UIText uiPlayerFriction;
-	UIText uiPlayerMaxVelocity;
-	UIText uiPlayerMinVelocity;
-	UIText uiCameraDist;
-	UIText uiControlInfo;
+	ui::Text uiDebugVarsTitle;
+	ui::Text uiPlayerSpeed;
+	ui::Text uiPlayerFriction;
+	ui::Text uiPlayerMaxVelocity;
+	ui::Text uiPlayerMinVelocity;
+	ui::Text uiCameraDist;
+	ui::Text uiControlInfo;
 
 	void updateViewMatrix()
 	{
@@ -107,7 +94,7 @@ struct AppContext
 
 		eyePos = XMVectorAdd(eyePos, at);
 
-		view = XMMatrixLookAtRH(eyePos, at, up);
+		worldToView = XMMatrixLookAtRH(eyePos, at, up);
 	}
 };
 

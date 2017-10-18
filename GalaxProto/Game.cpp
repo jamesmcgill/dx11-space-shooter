@@ -126,7 +126,8 @@ Game::tick()
 		render();
 	}
 
-	m_resources.m_spriteBatch->Begin();
+	ui::DebugDraw ui(m_context, m_resources);
+	ui.begin2D();
 	switch (m_context.profileViz)
 	{
 		case ProfileViz::List:
@@ -136,9 +137,11 @@ Game::tick()
 			drawFlameGraph();
 			break;
 	}
-	drawControlsInfo(m_context.uiControlInfo);
+
+	m_context.uiControlInfo.draw(
+		*m_resources.m_spriteBatch, Colors::MediumVioletRed);
 	drawBasicProfileInfo();		 // Do this at the end to include profiler cost
-	m_resources.m_spriteBatch->End();
+	ui.end2D();
 
 	m_resources.m_deviceResources->Present();
 
@@ -207,15 +210,15 @@ Game::render()
 void
 Game::drawBasicProfileInfo()
 {
-	UIText ui;
-	ui.font			= m_resources.fontMono8pt.get();
-	ui.position = Vector2(0.0f, 0.0f);
-	ui.text			= fmt::format(
+	ui::Text uiText;
+	uiText.font			= m_resources.fontMono8pt.get();
+	uiText.position = Vector2(0.0f, 0.0f);
+	uiText.text			= fmt::format(
 		L"fps: {}, Time: {:.2f}ms",
 		m_resources.m_timer.GetFramesPerSecond(),
 		m_resources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
-	ui.draw(Colors::MediumVioletRed, *m_resources.m_spriteBatch);
+	uiText.draw(*m_resources.m_spriteBatch, Colors::MediumVioletRed);
 }
 
 //------------------------------------------------------------------------------
@@ -226,18 +229,18 @@ Game::drawProfilerList()
 
 	const float yAscent = ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
 	float yPos					= yAscent;
-	UIText ui;
-	ui.font				= monoFont;
-	ui.position.x = 0.0f;
+	ui::Text uiText;
+	uiText.font				= monoFont;
+	uiText.position.x = 0.0f;
 
 	auto drawText =
-		[&yAscent, &yPos, &ui, &spriteBatch = m_resources.m_spriteBatch](
+		[&yAscent, &yPos, &uiText, &spriteBatch = m_resources.m_spriteBatch](
 			const wchar_t* fmt, auto&&... vars)
 	{
-		ui.text				= fmt::format(fmt, vars...);
-		ui.position.y = yPos;
+		uiText.text				= fmt::format(fmt, vars...);
+		uiText.position.y = yPos;
 		yPos += yAscent;
-		ui.draw(Colors::MediumVioletRed, *spriteBatch);
+		uiText.draw(*spriteBatch, Colors::MediumVioletRed);
 	};
 
 	auto singleFrame = logger::Stats::getCollatedFrameRecords(0);
@@ -267,23 +270,16 @@ Game::drawProfilerList()
 
 //------------------------------------------------------------------------------
 void
-Game::updateControlsInfo(UIText& ui)
+Game::updateControlsInfo(ui::Text& uiText)
 {
-	ui.text
+	uiText.text
 		= L"Profiler Mode(F1), Debug Draw(F2), Editor(F3), WASDR(Camera control)";
-	ui.font			= m_resources.fontMono8pt.get();
-	ui.position = Vector2(m_context.screenHalfWidth, m_context.screenHeight);
-	XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
+	uiText.font			= m_resources.fontMono8pt.get();
+	uiText.position = Vector2(m_context.screenHalfWidth, m_context.screenHeight);
+	XMVECTOR dimensions = uiText.font->MeasureString(uiText.text.c_str());
 	const float width		= XMVectorGetX(dimensions);
 	const float height	= XMVectorGetY(dimensions);
-	ui.origin						= Vector2(width * 0.5f, height);
-}
-
-//------------------------------------------------------------------------------
-void
-Game::drawControlsInfo(UIText& ui)
-{
-	ui.draw(Colors::MediumVioletRed, *m_resources.m_spriteBatch);
+	uiText.origin				= Vector2(width * 0.5f, height);
 }
 
 //------------------------------------------------------------------------------
@@ -356,8 +352,8 @@ Game::drawFlameGraph()
 	const logger::Ticks baseTick = head->startTime;
 	const float ticksToYPos			 = yRange / head->duration;
 
-	UIDebugDraw ui(m_context, m_resources);
-	UIText uiText;
+	ui::DebugDraw ui(m_context, m_resources);
+	ui::Text uiText;
 	uiText.font		= monoFont;
 	uiText.origin = Vector2(0.0f, yAscent * 0.5f);
 
@@ -373,9 +369,8 @@ Game::drawFlameGraph()
 
 	auto drawFunc = [&](const logger::TimedRecord* node, int depth) {
 		const float xPos = xStartPos + (depth * xWidth);
-		const float yPos
-			= ceil(yStartPos + ((node->startTime - baseTick) * ticksToYPos));
-		const float yHeight			= ceil(node->duration * ticksToYPos);
+		const float yPos = yStartPos + ((node->startTime - baseTick) * ticksToYPos);
+		const float yHeight			= node->duration * ticksToYPos;
 		const float yHalfHeight = yHeight * 0.5f;
 
 		int colorIdx = (depth % 2) == 0 ? 1 : 0;
@@ -386,7 +381,8 @@ Game::drawFlameGraph()
 		}
 		Vector3 color = XMVectorLerp(
 			color1ForDepth[colorIdx], color2ForDepth[colorIdx], colLerp);
-		ui.drawBox(xPos, yPos, xWidth - 2, yHeight, color);
+		ui.drawBox(*m_resources.m_batch, xPos, yPos, xWidth - 2, yHeight, color);
+
 		if (
 			(mouseState.x >= xPos) && (mouseState.x <= xPos + xWidth)
 			&& (mouseState.y >= yPos) && (mouseState.y <= yPos + yHeight))
@@ -396,39 +392,36 @@ Game::drawFlameGraph()
 		}
 
 		uiText.text			= fmt::format(L"{}", node->function);
-		uiText.position = Vector2(xPos + 5.0f, yPos + yHalfHeight);
-		uiText.draw(Colors::White, *m_resources.m_spriteBatch);
+		uiText.position = Vector2(ceil(xPos + 5.0f), ceil(yPos + yHalfHeight));
+		uiText.draw(*m_resources.m_spriteBatch, Colors::White);
 	};
 
 	// Draw the Graph
-	m_resources.m_batch->Begin();
 	visitFlameGraph(head, drawFunc);
-	m_resources.m_batch->End();
 
 	// Draw Tooltip
 	if (isDrawToolTip)
 	{
-		// Flush previous Sprite Batch
-		m_resources.m_spriteBatch->End();
-		m_resources.m_spriteBatch->Begin();
-
-		m_resources.m_batch->Begin();
-
 		ASSERT(toolTipNode);
+		static const float TOOLTIP_HEIGHT = 20.0f;
 		ui.drawBox(
+			*m_resources.m_batch,
 			static_cast<float>(mouseState.x),
-			static_cast<float>(mouseState.y) - 20.0f,
-			2 * xWidth,
-			20.0f,
-			DirectX::Colors::DarkRed);
+			static_cast<float>(mouseState.y) - TOOLTIP_HEIGHT,
+			2.0f * xWidth,
+			TOOLTIP_HEIGHT,
+			DirectX::Colors::DarkRed,
+			ui::Layer::L4_Mid_Front);
+
 		uiText.text = fmt::format(
 			L"{}({:<5.4f}ms)",
 			toolTipNode->function,
 			logger::Timing::ticksToMilliSeconds(toolTipNode->duration));
-		uiText.position = Vector2(mouseState.x + 10.0f, mouseState.y - 10.0f);
-		uiText.draw(Colors::White, *m_resources.m_spriteBatch);
-
-		m_resources.m_batch->End();
+		uiText.position = Vector2(
+			mouseState.x + (TOOLTIP_HEIGHT / 2.0f),
+			mouseState.y - (TOOLTIP_HEIGHT / 2.0f));
+		uiText.draw(
+			*m_resources.m_spriteBatch, Colors::White, ui::Layer::L4_Mid_Front);
 
 		using ButtonState = Mouse::ButtonStateTracker::ButtonState;
 		if (m_resources.mouseTracker.leftButton == ButtonState::PRESSED)
@@ -677,11 +670,18 @@ Game::createWindowSizeDependentResources()
 	const float nearPlane		= 0.01f;
 	const float farPlane		= 300.f;
 
-	m_context.view = Matrix::Identity;
-	m_context.proj = Matrix::CreatePerspectiveFieldOfView(
+	m_context.worldToView			 = Matrix::Identity;
+	m_context.viewToProjection = Matrix::CreatePerspectiveFieldOfView(
 		fovAngleY, aspectRatio, nearPlane, farPlane);
-	m_context.orthoProj
-		= Matrix::CreateOrthographic(width, height, nearPlane, farPlane);
+
+	// Screen pixel coordinates are x-right y-down, origin at top-left.
+	m_context.pixelsToProjection = Matrix::CreateOrthographic(
+		m_context.screenWidth, m_context.screenHeight, 0.0f, -1.0f);
+	m_context.pixelsToProjection.m[1][1] *= -1.0f;		// y-axis goes down
+	m_context.pixelsToProjection.m[3][0] = -1.f;		// translate x-origin to left
+	m_context.pixelsToProjection.m[3][1] = 1.f;			// translate y-origin to top
+
+	m_context.projectionToPixels = m_context.pixelsToProjection.Invert();
 
 	m_resources.starField->setWindowSize(width, height);
 

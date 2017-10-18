@@ -5,8 +5,9 @@
 #include "GameLogic.h"
 #include "AppStates/AppStates.h"
 
-namespace logger {
-	struct TimedRecord;
+namespace logger
+{
+struct TimedRecord;
 }
 
 //------------------------------------------------------------------------------
@@ -45,8 +46,7 @@ private:
 	void drawBasicProfileInfo();
 	void drawProfilerList();
 	void drawFlameGraph();
-	void updateControlsInfo(UIText& ui);
-	void drawControlsInfo(UIText& ui);
+	void updateControlsInfo(ui::Text& uiText);
 	void clear();
 
 	void createDeviceDependentResources();

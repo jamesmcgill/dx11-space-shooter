@@ -141,8 +141,8 @@ GameLogic::render()
 		dc->OMSetDepthStencilState(states.DepthNone(), 0);
 		dc->RSSetState(states.CullNone());
 
-		m_resources.m_debugEffect->SetView(m_context.view);
-		m_resources.m_debugEffect->SetProjection(m_context.proj);
+		m_resources.m_debugEffect->SetView(m_context.worldToView);
+		m_resources.m_debugEffect->SetProjection(m_context.viewToProjection);
 		m_resources.m_debugEffect->Apply(dc);
 		dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
 
@@ -425,8 +425,8 @@ GameLogic::renderEntity(Entity& entity, float orientation)
 		m_resources.m_deviceResources->GetD3DDeviceContext(),
 		*m_resources.m_states,
 		world,
-		m_context.view,
-		m_context.proj);
+		m_context.worldToView,
+		m_context.viewToProjection);
 
 #if 0
 	// DEBUG BOUND
@@ -439,8 +439,8 @@ GameLogic::renderEntity(Entity& entity, float orientation)
 		: Vector4(0.0f, 1.0f, 0.0f, 0.4f);
 	m_debugBoundEffect->SetColorAndAlpha(color);
 
-	m_debugBoundEffect->SetView(m_view);
-	m_debugBoundEffect->SetProjection(m_proj);
+	m_debugBoundEffect->SetView(worldToView);
+	m_debugBoundEffect->SetProjection(viewToProjection);
 	m_debugBoundEffect->SetWorld(boundWorld);
 	m_debugBoundEffect->Apply(context);
 
@@ -524,9 +524,9 @@ GameLogic::drawHUD()
 		updateUILives();
 	}
 
-	m_context.uiScore.draw(Colors::Yellow, *m_resources.m_spriteBatch);
+	m_context.uiScore.draw(*m_resources.m_spriteBatch, Colors::Yellow);
 
-	m_context.uiLives.draw(Colors::Yellow, *m_resources.m_spriteBatch);
+	m_context.uiLives.draw(*m_resources.m_spriteBatch, Colors::Yellow);
 }
 
 //------------------------------------------------------------------------------
@@ -540,16 +540,16 @@ GameLogic::updateUIDebugVariables()
 		&yPos,
 		font				= m_resources.fontMono8pt.get(),
 		screenWidth = m_context.screenWidth
-	](UIText & ui, const wchar_t* fmt, float fVar)
+	](ui::Text & uiText, const wchar_t* fmt, float fVar)
 	{
-		ui.font							= font;
-		ui.text							= fmt::format(fmt, fVar);
-		XMVECTOR dimensions = ui.font->MeasureString(ui.text.c_str());
+		uiText.font					= font;
+		uiText.text					= fmt::format(fmt, fVar);
+		XMVECTOR dimensions = uiText.font->MeasureString(uiText.text.c_str());
 		float width					= XMVectorGetX(dimensions);
-		float height				= XMVectorGetY(dimensions);
-		ui.origin						= Vector2(width, 0.0f);
-		ui.position.x				= screenWidth;
-		ui.position.y				= yPos;
+		float height				= ceil(XMVectorGetY(dimensions));
+		uiText.origin				= Vector2(width, 0.0f);
+		uiText.position.x		= screenWidth;
+		uiText.position.y		= yPos;
 		yPos += height;
 	};
 
@@ -580,9 +580,9 @@ void
 GameLogic::drawDebugVariables()
 {
 	TRACE
-	auto drawUI = [& spriteBatch = m_resources.m_spriteBatch](UIText & ui)
+	auto drawUI = [& spriteBatch = m_resources.m_spriteBatch](ui::Text & uiText)
 	{
-		ui.draw(Colors::MediumVioletRed, *spriteBatch);
+		uiText.draw(*spriteBatch, Colors::MediumVioletRed);
 	};
 
 	drawUI(m_context.uiDebugVarsTitle);

@@ -121,37 +121,29 @@ Explosions::emit(
 	const Vector3& origin, const Vector3& baseVelocity, size_t numParticles)
 {
 	TRACE
-	// Hack to allow continue using SpriteBatch with world space objects
-	// Generate matrix to invert the default in
-	// SpriteBatch::Impl::GetViewportTransform()
-	float xScale = m_context.screenHalfWidth;
-	float yScale = m_context.screenHalfHeight;
-
-	// clang-format off
-	Matrix inv{
-		xScale,	0,				0,	0,
-		0,			-yScale,	0,	0,
-		0,			0,				1,	0,
-		xScale,	yScale,		0,	1};
-	// clang-format on
-	Matrix viewProj = m_context.view * m_context.proj * inv;
+	// Hack to allow using SpriteBatch with world space objects.
+	// SpriteBatch requires everything in x-right y-down screen PIXEL coordinates
+	// and does it's own orthographic projection internally.
+	// See SpriteBatch::Impl::GetViewportTransform()
+	Matrix worldToScreen = m_context.worldToView * m_context.viewToProjection
+												 * m_context.projectionToPixels;
 
 	for (size_t i = 0; i < numParticles; ++i)
 	{
 		auto& p = m_particles[m_nextParticleIdx];
 
 		// Position
-		float spreadDistance = originRand(m_engine);
-		float theta					 = thetaRand(m_engine);
+		const float spreadDistance = originRand(m_engine);
+		const float theta					 = thetaRand(m_engine);
 		float sin, cos;
 		XMScalarSinCos(&sin, &cos, theta);
 		Vector3 spread(cos, sin, 0.0f);
 		Vector3 pos = origin + (spread * spreadDistance);
-		p.position	= Vector3::Transform(pos, viewProj);
+		p.position	= Vector3::Transform(pos, worldToScreen);
 
 		// Velocity
-		float velocity = velocityRand(m_engine);
-		p.velocity		 = baseVelocity + (-spread * velocity);
+		const float velocity = velocityRand(m_engine);
+		p.velocity					 = baseVelocity + (-spread * velocity);
 
 		// Energy
 		p.energy = energyRand(m_engine);
