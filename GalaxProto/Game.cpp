@@ -138,8 +138,7 @@ Game::tick()
 			break;
 	}
 
-	m_context.uiControlInfo.draw(
-		*m_resources.m_spriteBatch, Colors::MediumVioletRed);
+	m_context.uiControlInfo.draw(*m_resources.m_spriteBatch);
 	drawBasicProfileInfo();		 // Do this at the end to include profiler cost
 	ui.end2D();
 
@@ -213,12 +212,13 @@ Game::drawBasicProfileInfo()
 	ui::Text uiText;
 	uiText.font			= m_resources.fontMono8pt.get();
 	uiText.position = Vector2(0.0f, 0.0f);
+	uiText.color		= Colors::MediumVioletRed;
 	uiText.text			= fmt::format(
 		L"fps: {}, Time: {:.2f}ms",
 		m_resources.m_timer.GetFramesPerSecond(),
 		m_resources.m_timer.GetElapsedSecondsSinceTickStarted() * 1000.0f);
 
-	uiText.draw(*m_resources.m_spriteBatch, Colors::MediumVioletRed);
+	uiText.draw(*m_resources.m_spriteBatch);
 }
 
 //------------------------------------------------------------------------------
@@ -232,6 +232,7 @@ Game::drawProfilerList()
 	ui::Text uiText;
 	uiText.font				= monoFont;
 	uiText.position.x = 0.0f;
+	uiText.color			= Colors::MediumVioletRed;
 
 	auto drawText =
 		[&yAscent, &yPos, &uiText, &spriteBatch = m_resources.m_spriteBatch](
@@ -240,7 +241,7 @@ Game::drawProfilerList()
 		uiText.text				= fmt::format(fmt, vars...);
 		uiText.position.y = yPos;
 		yPos += yAscent;
-		uiText.draw(*spriteBatch, Colors::MediumVioletRed);
+		uiText.draw(*spriteBatch);
 	};
 
 	auto singleFrame = logger::Stats::getCollatedFrameRecords(0);
@@ -280,6 +281,7 @@ Game::updateControlsInfo(ui::Text& uiText)
 	const float width		= XMVectorGetX(dimensions);
 	const float height	= XMVectorGetY(dimensions);
 	uiText.origin				= Vector2(width * 0.5f, height);
+	uiText.color				= Colors::MediumVioletRed;
 }
 
 //------------------------------------------------------------------------------
@@ -356,6 +358,7 @@ Game::drawFlameGraph()
 	ui::Text uiText;
 	uiText.font		= monoFont;
 	uiText.origin = Vector2(0.0f, yAscent * 0.5f);
+	uiText.color	= Colors::White;
 
 	float colLerp									= 0.0f;
 	XMVECTORF32 color1ForDepth[2] = {
@@ -381,7 +384,7 @@ Game::drawFlameGraph()
 		}
 		Vector3 color = XMVectorLerp(
 			color1ForDepth[colorIdx], color2ForDepth[colorIdx], colLerp);
-		ui.drawBox(*m_resources.m_batch, xPos, yPos, xWidth - 2, yHeight, color);
+		ui::drawBox(*m_resources.m_batch, xPos, yPos, xWidth - 2, yHeight, color);
 
 		if (
 			(mouseState.x >= xPos) && (mouseState.x <= xPos + xWidth)
@@ -393,7 +396,7 @@ Game::drawFlameGraph()
 
 		uiText.text			= fmt::format(L"{}", node->function);
 		uiText.position = Vector2(ceil(xPos + 5.0f), ceil(yPos + yHalfHeight));
-		uiText.draw(*m_resources.m_spriteBatch, Colors::White);
+		uiText.draw(*m_resources.m_spriteBatch);
 	};
 
 	// Draw the Graph
@@ -404,7 +407,7 @@ Game::drawFlameGraph()
 	{
 		ASSERT(toolTipNode);
 		static const float TOOLTIP_HEIGHT = 20.0f;
-		ui.drawBox(
+		ui::drawBox(
 			*m_resources.m_batch,
 			static_cast<float>(mouseState.x),
 			static_cast<float>(mouseState.y) - TOOLTIP_HEIGHT,
@@ -420,8 +423,8 @@ Game::drawFlameGraph()
 		uiText.position = Vector2(
 			mouseState.x + (TOOLTIP_HEIGHT / 2.0f),
 			mouseState.y - (TOOLTIP_HEIGHT / 2.0f));
-		uiText.draw(
-			*m_resources.m_spriteBatch, Colors::White, ui::Layer::L4_Mid_Front);
+		uiText.layer = ui::Layer::L4_Mid_Front;
+		uiText.draw(*m_resources.m_spriteBatch);
 
 		using ButtonState = Mouse::ButtonStateTracker::ButtonState;
 		if (m_resources.mouseTracker.leftButton == ButtonState::PRESSED)

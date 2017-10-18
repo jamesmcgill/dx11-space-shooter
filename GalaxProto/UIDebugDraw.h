@@ -21,19 +21,33 @@ struct Layer
 };
 
 //------------------------------------------------------------------------------
+// Requires: primitiveBatch already active via Begin() call
+//------------------------------------------------------------------------------
+void drawBox(
+	DX::DebugBatchType& primitiveBatch,
+	float x,
+	float y,
+	float width,
+	float height,
+	DirectX::FXMVECTOR color,
+	float layer = Layer::L5_Default);
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 struct Text
 {
+	DirectX::SpriteFont* font = nullptr;		// TODO(James): Create/Set via Factory
+
 	DirectX::SimpleMath::Vector2 position;
 	DirectX::SimpleMath::Vector2 origin;
-	DirectX::SpriteFont* font = nullptr;
+	DirectX::SimpleMath::Vector3 color;
+	DirectX::SimpleMath::Vector2 scale = DirectX::SimpleMath::Vector2(1.f, 1.f);
+	float layer												 = Layer::L5_Default;
+	float rotation										 = 0.0f;
 	std::wstring text;
 
-	void draw(
-		DirectX::SpriteBatch& spriteBatch,
-		DirectX::XMVECTOR color,
-		float layer												 = Layer::L5_Default,
-		float rotation										 = 0.0f,
-		DirectX::SimpleMath::Vector2 scale = DirectX::SimpleMath::Vector2(1.f, 1.f))
+	void draw(DirectX::SpriteBatch& spriteBatch)
 	{
 		ASSERT(font);
 		font->DrawString(
@@ -50,32 +64,20 @@ struct Text
 };
 
 //------------------------------------------------------------------------------
+// Initialise 2D drawing states and open/flush render batches
+//------------------------------------------------------------------------------
 class DebugDraw
 {
 public:
 	DebugDraw(AppContext& context, AppResources& resources);
 
-	//----------------------------------------------------------------------------
-	// Call before and after any 2D draw calls
-	//----------------------------------------------------------------------------
 	void begin2D();
 	void end2D();
-
-	//----------------------------------------------------------------------------
-	// Requires: primitiveBatch already active via Begin() call
-	//----------------------------------------------------------------------------
-	void drawBox(
-		DX::DebugBatchType& primitiveBatch,
-		float x,
-		float y,
-		float width,
-		float height,
-		DirectX::FXMVECTOR color,
-		float layer = Layer::L5_Default);
 
 private:
 	AppContext& m_context;
 	AppResources& m_resources;
 };
 
+//------------------------------------------------------------------------------
 };		// namespace ui

@@ -9,6 +9,37 @@ using namespace DirectX::SimpleMath;
 namespace ui
 {
 //------------------------------------------------------------------------------
+void
+drawBox(
+	DX::DebugBatchType& primitiveBatch,
+	float x,
+	float y,
+	float width,
+	float height,
+	FXMVECTOR color,
+	float layer)
+{
+	const XMVECTOR topLeft	= {x, y, layer};
+	const XMVECTOR topRight = {x + width, y, layer};
+	const XMVECTOR botRight = {x + width, y + height, layer};
+	const XMVECTOR botLeft	= {x, y + height, layer};
+
+	VertexPositionColor verts[4];
+	XMStoreFloat3(&verts[0].position, topLeft);
+	XMStoreFloat3(&verts[1].position, topRight);
+	XMStoreFloat3(&verts[2].position, botRight);
+	XMStoreFloat3(&verts[3].position, botLeft);
+
+	XMStoreFloat4(&verts[0].color, color);
+	XMStoreFloat4(&verts[1].color, color);
+	XMStoreFloat4(&verts[2].color, color);
+	XMStoreFloat4(&verts[3].color, color);
+
+	primitiveBatch.DrawQuad(verts[0], verts[1], verts[2], verts[3]);
+}
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 DebugDraw::DebugDraw(AppContext& context, AppResources& resources)
 		: m_context(context)
 		, m_resources(resources)
@@ -54,36 +85,6 @@ DebugDraw::end2D()
 {
 	m_resources.m_batch->End();
 	m_resources.m_spriteBatch->End();
-}
-
-//------------------------------------------------------------------------------
-void
-DebugDraw::drawBox(
-	DX::DebugBatchType& primitiveBatch,
-	float x,
-	float y,
-	float width,
-	float height,
-	FXMVECTOR color,
-	float layer)
-{
-	const XMVECTOR topLeft	= {x, y, layer};
-	const XMVECTOR topRight = {x + width, y, layer};
-	const XMVECTOR botRight = {x + width, y + height, layer};
-	const XMVECTOR botLeft	= {x, y + height, layer};
-
-	VertexPositionColor verts[4];
-	XMStoreFloat3(&verts[0].position, topLeft);
-	XMStoreFloat3(&verts[1].position, topRight);
-	XMStoreFloat3(&verts[2].position, botRight);
-	XMStoreFloat3(&verts[3].position, botLeft);
-
-	XMStoreFloat4(&verts[0].color, color);
-	XMStoreFloat4(&verts[1].color, color);
-	XMStoreFloat4(&verts[2].color, color);
-	XMStoreFloat4(&verts[3].color, color);
-
-	primitiveBatch.DrawQuad(verts[0], verts[1], verts[2], verts[3]);
 }
 
 //------------------------------------------------------------------------------

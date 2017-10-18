@@ -124,15 +124,17 @@ GameLogic::render()
 		++idx;
 	}
 
-	// Explosions & HUD
 	auto& states			= *m_resources.m_states;
 	auto& spriteBatch = m_resources.m_spriteBatch;
+
 	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
-
 	m_resources.explosions->render(*spriteBatch);
-	drawHUD();
-
 	spriteBatch->End();
+
+	ui::DebugDraw ui(m_context, m_resources);
+	ui.begin2D();
+	drawHUD();
+	ui.end2D();
 
 	// Debug Drawing
 	if (m_context.debugDraw)
@@ -157,9 +159,9 @@ GameLogic::render()
 		m_enemies.debugRender(m_resources.m_batch.get());
 		m_resources.m_batch->End();
 
-		spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
+		ui.begin2D();
 		drawDebugVariables();
-		spriteBatch->End();
+		ui.end2D();
 	}
 }
 
@@ -496,6 +498,7 @@ GameLogic::updateUIScore()
 	score.origin				= Vector2((XMVectorGetX(dimensions) / 2.f), 0.0f);
 	score.position.x		= m_context.screenHalfWidth;
 	score.position.y		= 0.0f;
+	score.color					= Colors::Yellow;
 }
 
 //------------------------------------------------------------------------------
@@ -510,6 +513,7 @@ GameLogic::updateUILives()
 	lives.origin				= Vector2(0.0f, XMVectorGetY(dimensions));
 	lives.position.x		= 0.0f;
 	lives.position.y		= m_context.screenHeight;
+	lives.color					= Colors::Yellow;
 }
 
 //------------------------------------------------------------------------------
@@ -524,9 +528,8 @@ GameLogic::drawHUD()
 		updateUILives();
 	}
 
-	m_context.uiScore.draw(*m_resources.m_spriteBatch, Colors::Yellow);
-
-	m_context.uiLives.draw(*m_resources.m_spriteBatch, Colors::Yellow);
+	m_context.uiScore.draw(*m_resources.m_spriteBatch);
+	m_context.uiLives.draw(*m_resources.m_spriteBatch);
 }
 
 //------------------------------------------------------------------------------
@@ -550,6 +553,7 @@ GameLogic::updateUIDebugVariables()
 		uiText.origin				= Vector2(width, 0.0f);
 		uiText.position.x		= screenWidth;
 		uiText.position.y		= yPos;
+		uiText.color				= Colors::MediumVioletRed;
 		yPos += height;
 	};
 
@@ -582,7 +586,7 @@ GameLogic::drawDebugVariables()
 	TRACE
 	auto drawUI = [& spriteBatch = m_resources.m_spriteBatch](ui::Text & uiText)
 	{
-		uiText.draw(*spriteBatch, Colors::MediumVioletRed);
+		uiText.draw(*spriteBatch);
 	};
 
 	drawUI(m_context.uiDebugVarsTitle);
