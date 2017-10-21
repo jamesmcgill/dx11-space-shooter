@@ -34,7 +34,7 @@ getDebugPath(float xPos)
 }
 
 static const Level
-getDebugLevel()
+createDebugLevel()
 {
 	const int baseEnemyIdx = static_cast<int>(ModelResource::Enemy1);
 	const int numEnemyTypes
@@ -153,8 +153,22 @@ static const Level level1 = {{
 	// EnemyWave{{section2}, 45.0f},
 }};
 
-static std::vector<Level> s_debugLevels = {{getDebugLevel()}};
-static std::vector<Level> s_levels			= {{level1}};
+static const Level level2 = { {
+		EnemyWave{ { section1, section2 }, 23.0f },
+		EnemyWave{ { section2 }, 25.0f },
+		EnemyWave{ { section3 }, 30.0f },
+		EnemyWave{ { section4 }, 34.0f },
+		// EnemyWave{{section1}, 20.0f},
+		// EnemyWave{{section2}, 25.0f},
+		// EnemyWave{{section3}, 30.0f},
+		// EnemyWave{{section4}, 35.0f},
+		// EnemyWave{{section1}, 40.0f},
+		// EnemyWave{{section2}, 45.0f},
+	} };
+
+
+static std::vector<Level> s_debugLevels = {{createDebugLevel()}};
+static std::vector<Level> s_levels			= {{level1, level2}};
 
 //------------------------------------------------------------------------------
 constexpr float SHOT_SPEED									= 40.0f;
@@ -421,8 +435,16 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 
 //------------------------------------------------------------------------------
 void
-Enemies::debugLevel()
+Enemies::debug_toggleLevel()
 {
 	s_levels.swap(s_debugLevels);
 }
+
+//------------------------------------------------------------------------------
+std::vector<Level>&
+Enemies::debug_getCurrentLevels()
+{
+	return s_levels;
+}
+
 //------------------------------------------------------------------------------

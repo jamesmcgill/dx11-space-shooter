@@ -9,6 +9,7 @@
 #include "AppStates/PauseMenuState.h"
 #include "AppStates/ShowScoresState.h"
 #include "AppStates/ScoreEntryState.h"
+#include "AppStates/EditorState.h"
 
 //------------------------------------------------------------------------------
 class AppStates
@@ -22,6 +23,7 @@ public:
 	PauseMenuState paused;
 	ShowScoresState showingScores;
 	ScoreEntryState enteringScore;
+	EditorState editing;
 
 public:
 	AppStates(AppContext& context, AppResources& resources, GameLogic& logic);

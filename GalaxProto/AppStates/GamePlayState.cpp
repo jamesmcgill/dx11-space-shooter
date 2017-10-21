@@ -52,7 +52,7 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 	}
 	if (kb.IsKeyPressed(Keyboard::F3))
 	{
-		m_states.changeState(&m_states.formationEditor);
+		m_states.changeState(&m_states.editing);
 	}
 	if (kb.IsKeyPressed(Keyboard::F4))
 	{

@@ -71,6 +71,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="UIDebugDraw.h" />
+    <ClInclude Include="AppStates\EditorState.h">
+      <Filter>AppStates</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -117,6 +120,9 @@
     <ClCompile Include="UIDebugDraw.cpp" />
     <ClCompile Include="utils\Log.cpp">
       <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="AppStates\EditorState.cpp">
+      <Filter>AppStates</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

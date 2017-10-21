@@ -11,6 +11,7 @@ AppStates::AppStates(
 		, paused(*this, context, resources, logic)
 		, showingScores(*this, context, resources, logic)
 		, enteringScore(*this, context, resources, logic)
+		, editing(*this, context, resources, logic)
 		, m_currentState(&menu)
 {
 }

@@ -55,7 +55,8 @@ public:
 	void emitPlayerShot();
 
 	void debugRender(DX::DebugBatchType* batch);
-	void debugLevel();
+	void debug_toggleLevel();
+	std::vector<Level>& debug_getCurrentLevels();
 
 private:
 	using EntityIdxToWaypointsMap
