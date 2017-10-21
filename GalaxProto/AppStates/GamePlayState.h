@@ -18,8 +18,6 @@ public:
 	void handleInput(const DX::StepTimer& timer) override;
 	void update(const DX::StepTimer& timer) override;
 	void render() override;
-	void renderStarField();
-	void drawControlsInfo();
 
 	void load() override;
 	void unload() override;
@@ -27,6 +25,9 @@ public:
 
 	void enter() override;
 	void exit() override;
+
+private:
+	void renderStarField();
 };
 
 //------------------------------------------------------------------------------

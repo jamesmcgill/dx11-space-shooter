@@ -7,9 +7,6 @@
 
 #include "utils/Log.h"
 
-using namespace DirectX;
-using namespace DirectX::SimpleMath;
-
 //------------------------------------------------------------------------------
 extern void ExitGame();
 
@@ -32,29 +29,34 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 	TRACE
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
+	auto& kb = m_resources.kbTracker;
 	auto& kbState = m_resources.kbTracker.lastState;
+	using DirectX::Keyboard;
 
-	if (kbState.Escape)
+	if (kb.IsKeyPressed(Keyboard::Escape))
 	{
 		m_states.changeState(&m_states.paused);
 	}
 
 	// Debug options
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::E))
+	if (kb.IsKeyPressed(Keyboard::E))
 	{
 		auto pos = m_context.entities[PLAYERS_IDX].position
 							 + m_context.entities[PLAYERS_IDX].model->bound.Center;
-		m_resources.explosions->emit(pos, Vector3());
+		m_resources.explosions->emit(pos, DirectX::SimpleMath::Vector3());
 	}
 
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F2))
+	if (kb.IsKeyPressed(Keyboard::F2))
 	{
 		m_context.debugDraw = !m_context.debugDraw;
 	}
-
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F3))
+	if (kb.IsKeyPressed(Keyboard::F3))
 	{
-		m_gameLogic.m_enemies.debugLevel();
+		m_states.changeState(&m_states.formationEditor);
+	}
+	if (kb.IsKeyPressed(Keyboard::F4))
+	{
+		m_gameLogic.m_enemies.debug_toggleLevel();
 		m_gameLogic.reset();
 	}
 
@@ -122,7 +124,9 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 	}
 
 	// Player Movement
-	m_context.playerAccel = Vector3();		// NB. Must be reset, even while dead.
+
+	// NB. Must be reset, even while dead.
+	m_context.playerAccel = DirectX::SimpleMath::Vector3();
 	if (m_context.playerState == PlayerState::Dying)
 	{
 		return;
@@ -152,8 +156,8 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 	}
 
 	if (
-		m_resources.kbTracker.IsKeyPressed(Keyboard::LeftControl)
-		|| m_resources.kbTracker.IsKeyPressed(Keyboard::Space))
+		kb.IsKeyPressed(Keyboard::LeftControl)
+		|| kb.IsKeyPressed(Keyboard::Space))
 	{
 		m_gameLogic.m_enemies.emitPlayerShot();
 	}

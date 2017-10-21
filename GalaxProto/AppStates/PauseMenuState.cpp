@@ -6,8 +6,6 @@
 
 #include "utils/Log.h"
 
-using namespace DirectX;
-
 //------------------------------------------------------------------------------
 extern void ExitGame();
 
@@ -30,6 +28,7 @@ PauseMenuState::handleInput(const DX::StepTimer& timer)
 	TRACE
 	auto& kb		= m_resources.kbTracker;
 	auto& menus = m_resources.menuManager;
+	using DirectX::Keyboard;
 
 	if (kb.IsKeyPressed(Keyboard::Escape))
 	{

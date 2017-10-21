@@ -8,10 +8,6 @@
 //------------------------------------------------------------------------------
 extern void ExitGame();
 
-using namespace DirectX;
-using namespace DirectX::SimpleMath;
-using Microsoft::WRL::ComPtr;
-
 //------------------------------------------------------------------------------
 static const std::wstring MODEL_PATH = L"assets/";
 static const std::wstring AUDIO_PATH = L"assets/audio/";
@@ -27,11 +23,11 @@ Game::Game()
 
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-	AUDIO_ENGINE_FLAGS eflags = AudioEngine_Default;
+	DirectX::AUDIO_ENGINE_FLAGS eflags = DirectX::AudioEngine_Default;
 #ifdef _DEBUG
-	eflags = eflags | AudioEngine_Debug;
+	eflags = eflags | DirectX::AudioEngine_Debug;
 #endif
-	m_resources.audioEngine = std::make_unique<AudioEngine>(eflags);
+	m_resources.audioEngine = std::make_unique<DirectX::AudioEngine>(eflags);
 	m_resources.audioEngine->SetMasterVolume(0.5f);
 
 	m_context.isMidiConnected = m_resources.midiController.loadAndInitDll();
@@ -67,7 +63,7 @@ Game::Game()
 	setAudioPath(AudioResource::PlayerExplode, L"playerexplode.wav");
 	setAudioPath(AudioResource::EnemyExplode, L"enemyexplode.wav");
 
-	const Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
+	const DirectX::SimpleMath::Vector3 PLAYER_START_POS(0.0f, -0.3f, 0.0f);
 	for (size_t i = PLAYERS_IDX; i < PLAYERS_END; ++i)
 	{
 		m_context.entities[i].isAlive	= true;
@@ -158,7 +154,7 @@ Game::update()
 	auto mouseState = m_resources.m_mouse->GetState();
 	m_resources.mouseTracker.Update(mouseState);
 
-	if (m_resources.kbTracker.IsKeyPressed(Keyboard::F1))
+	if (m_resources.kbTracker.IsKeyPressed(DirectX::Keyboard::F1))
 	{
 		switch (m_context.profileViz)
 		{
@@ -211,8 +207,8 @@ Game::drawBasicProfileInfo()
 {
 	ui::Text uiText;
 	uiText.font			= m_resources.fontMono8pt.get();
-	uiText.position = Vector2(0.0f, 0.0f);
-	uiText.color		= Colors::MediumVioletRed;
+	uiText.position = DirectX::SimpleMath::Vector2(0.0f, 0.0f);
+	uiText.color		= DirectX::Colors::MediumVioletRed;
 	uiText.text			= fmt::format(
 		L"fps: {}, Time: {:.2f}ms",
 		m_resources.m_timer.GetFramesPerSecond(),
@@ -227,12 +223,13 @@ Game::drawProfilerList()
 {
 	auto monoFont = m_resources.fontMono8pt.get();
 
-	const float yAscent = ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
-	float yPos					= yAscent;
+	const float yAscent
+		= ceil(DirectX::XMVectorGetY(monoFont->MeasureString(L"X")));
+	float yPos = yAscent;
 	ui::Text uiText;
 	uiText.font				= monoFont;
 	uiText.position.x = 0.0f;
-	uiText.color			= Colors::MediumVioletRed;
+	uiText.color			= DirectX::Colors::MediumVioletRed;
 
 	auto drawText =
 		[&yAscent, &yPos, &uiText, &spriteBatch = m_resources.m_spriteBatch](
@@ -273,15 +270,18 @@ Game::drawProfilerList()
 void
 Game::updateControlsInfo(ui::Text& uiText)
 {
+	using DirectX::SimpleMath::Vector2;
+	using DirectX::XMVECTOR;
+
 	uiText.text
 		= L"Profiler Mode(F1), Debug Draw(F2), Editor(F3), WASDR(Camera control)";
 	uiText.font			= m_resources.fontMono8pt.get();
 	uiText.position = Vector2(m_context.screenHalfWidth, m_context.screenHeight);
 	XMVECTOR dimensions = uiText.font->MeasureString(uiText.text.c_str());
-	const float width		= XMVectorGetX(dimensions);
-	const float height	= XMVectorGetY(dimensions);
+	const float width		= DirectX::XMVectorGetX(dimensions);
+	const float height	= DirectX::XMVectorGetY(dimensions);
 	uiText.origin				= Vector2(width * 0.5f, height);
-	uiText.color				= Colors::MediumVioletRed;
+	uiText.color				= DirectX::Colors::MediumVioletRed;
 }
 
 //------------------------------------------------------------------------------
@@ -331,6 +331,9 @@ visitFlameGraph(const logger::TimedRecord* head, Func visitFunc)
 void
 Game::drawFlameGraph()
 {
+	using DirectX::SimpleMath::Vector2;
+	using DirectX::SimpleMath::Vector3;
+
 	auto& currentSnapShot						= logger::Stats::getFrameRecords(0);
 	const logger::TimedRecord* head = (overriddenFlameHead == nullptr)
 																			? currentSnapShot.callGraphHead
@@ -344,8 +347,9 @@ Game::drawFlameGraph()
 	bool isDrawToolTip										 = false;
 	const logger::TimedRecord* toolTipNode = nullptr;
 
-	auto monoFont					= m_resources.fontMono8pt.get();
-	const float yAscent		= ceil(XMVectorGetY(monoFont->MeasureString(L"X")));
+	auto monoFont = m_resources.fontMono8pt.get();
+	const float yAscent
+		= ceil(DirectX::XMVectorGetY(monoFont->MeasureString(L"X")));
 	const float xStartPos = 0.0f;
 	const float xWidth		= ceil(m_context.screenWidth / 7.0f);
 	const float yStartPos = yAscent;
@@ -358,14 +362,14 @@ Game::drawFlameGraph()
 	ui::Text uiText;
 	uiText.font		= monoFont;
 	uiText.origin = Vector2(0.0f, yAscent * 0.5f);
-	uiText.color	= Colors::White;
+	uiText.color	= DirectX::Colors::White;
 
-	float colLerp									= 0.0f;
-	XMVECTORF32 color1ForDepth[2] = {
+	float colLerp													 = 0.0f;
+	DirectX::XMVECTORF32 color1ForDepth[2] = {
 		DirectX::Colors::Peru,
 		DirectX::Colors::SandyBrown,
 	};
-	XMVECTORF32 color2ForDepth[2] = {
+	DirectX::XMVECTORF32 color2ForDepth[2] = {
 		DirectX::Colors::Firebrick,
 		DirectX::Colors::OrangeRed,
 	};
@@ -426,7 +430,7 @@ Game::drawFlameGraph()
 		uiText.layer = ui::Layer::L4_Mid_Front;
 		uiText.draw(*m_resources.m_spriteBatch);
 
-		using ButtonState = Mouse::ButtonStateTracker::ButtonState;
+		using ButtonState = DirectX::Mouse::ButtonStateTracker::ButtonState;
 		if (m_resources.mouseTracker.leftButton == ButtonState::PRESSED)
 		{
 			overriddenFlameHead = toolTipNode;
@@ -452,7 +456,7 @@ Game::clear()
 	auto renderTarget = m_resources.m_deviceResources->GetRenderTargetView();
 	auto depthStencil = m_resources.m_deviceResources->GetDepthStencilView();
 
-	context->ClearRenderTargetView(renderTarget, Colors::Black);
+	context->ClearRenderTargetView(renderTarget, DirectX::Colors::Black);
 	context->ClearDepthStencilView(
 		depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	context->OMSetRenderTargets(1, &renderTarget, depthStencil);
@@ -544,23 +548,25 @@ Game::createDeviceDependentResources()
 	auto device	= m_resources.m_deviceResources->GetD3DDevice();
 	auto context = m_resources.m_deviceResources->GetD3DDeviceContext();
 
-	m_resources.m_states = std::make_unique<CommonStates>(
+	m_resources.m_states = std::make_unique<DirectX::CommonStates>(
 		m_resources.m_deviceResources->GetD3DDevice());
-	m_resources.m_debugEffect = std::make_unique<BasicEffect>(device);
+	m_resources.m_debugEffect = std::make_unique<DirectX::BasicEffect>(device);
 	m_resources.m_debugEffect->SetVertexColorEnabled(true);
 
-	m_resources.m_effectFactory = std::make_unique<EffectFactory>(device);
+	m_resources.m_effectFactory
+		= std::make_unique<DirectX::EffectFactory>(device);
 
-	IEffectFactory::EffectInfo info;
-	info.ambientColor							 = {0.0f, 1.0f, 0.0f};
-	m_resources.m_debugBoundEffect = std::static_pointer_cast<BasicEffect>(
-		m_resources.m_effectFactory->CreateEffect(info, context));
+	DirectX::IEffectFactory::EffectInfo info;
+	info.ambientColor = {0.0f, 1.0f, 0.0f};
+	m_resources.m_debugBoundEffect
+		= std::static_pointer_cast<DirectX::BasicEffect>(
+			m_resources.m_effectFactory->CreateEffect(info, context));
 	m_resources.m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
 	// m_debugBoundEffect->SetLightingEnabled(false);
 
-	m_resources.m_spriteBatch = std::make_unique<SpriteBatch>(context);
+	m_resources.m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(context);
 
-	DX::ThrowIfFailed(CreateDDSTextureFromFile(
+	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(
 		device,
 		L"assets/star.dds",
 		nullptr,
@@ -568,7 +574,7 @@ Game::createDeviceDependentResources()
 	m_resources.starField
 		= std::make_unique<StarField>(m_context, m_resources.m_starTexture.Get());
 
-	DX::ThrowIfFailed(CreateDDSTextureFromFile(
+	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(
 		device,
 		L"assets/explosion.dds",
 		nullptr,
@@ -580,15 +586,15 @@ Game::createDeviceDependentResources()
 	m_resources.scoreBoard	= std::make_unique<ScoreBoard>(m_context);
 	m_resources.scoreBoard->loadFromFile();
 
-	m_resources.font8pt
-		= std::make_unique<SpriteFont>(device, L"assets/verdana8.spritefont");
-	m_resources.font32pt
-		= std::make_unique<SpriteFont>(device, L"assets/verdana32.spritefont");
+	m_resources.font8pt = std::make_unique<DirectX::SpriteFont>(
+		device, L"assets/verdana8.spritefont");
+	m_resources.font32pt = std::make_unique<DirectX::SpriteFont>(
+		device, L"assets/verdana32.spritefont");
 
 	m_resources.fontMono8pt
-		= std::make_unique<SpriteFont>(device, L"assets/mono8.spritefont");
-	m_resources.fontMono32pt
-		= std::make_unique<SpriteFont>(device, L"assets/mono32.spritefont");
+		= std::make_unique<DirectX::SpriteFont>(device, L"assets/mono8.spritefont");
+	m_resources.fontMono32pt = std::make_unique<DirectX::SpriteFont>(
+		device, L"assets/mono32.spritefont");
 
 	m_resources.m_batch = std::make_unique<DX::DebugBatchType>(context);
 	{
@@ -598,14 +604,15 @@ Game::createDeviceDependentResources()
 			&shaderByteCode, &byteCodeLength);
 
 		DX::ThrowIfFailed(device->CreateInputLayout(
-			VertexPositionColor::InputElements,
-			VertexPositionColor::InputElementCount,
+			DirectX::VertexPositionColor::InputElements,
+			DirectX::VertexPositionColor::InputElementCount,
 			shaderByteCode,
 			byteCodeLength,
 			m_resources.m_debugInputLayout.ReleaseAndGetAddressOf()));
 	}
 
-	m_resources.m_debugBound = GeometricPrimitive::CreateSphere(context, 2.0f);
+	m_resources.m_debugBound
+		= DirectX::GeometricPrimitive::CreateSphere(context, 2.0f);
 	m_resources.m_debugBound->CreateInputLayout(
 		m_resources.m_debugBoundEffect.get(), &m_resources.m_debugBoundInputLayout);
 
@@ -614,13 +621,13 @@ Game::createDeviceDependentResources()
 	{
 		auto& data = m_resources.modelData[res.first];
 		auto& path = res.second;
-		data.model = Model::CreateFromSDKMESH(
+		data.model = DirectX::Model::CreateFromSDKMESH(
 			device, path.c_str(), *m_resources.m_effectFactory);
 		data.bound				= {};
 		data.bound.Radius = 0.0f;
 		for (const auto& mesh : data.model->meshes)
 		{
-			BoundingSphere::CreateMerged(
+			DirectX::BoundingSphere::CreateMerged(
 				data.bound, mesh->boundingSphere, data.bound);
 		}
 	}
@@ -630,7 +637,7 @@ Game::createDeviceDependentResources()
 	{
 		auto& effect = m_resources.soundEffects[res.first];
 		auto& path	 = res.second;
-		effect			 = std::make_unique<SoundEffect>(
+		effect			 = std::make_unique<DirectX::SoundEffect>(
 			m_resources.audioEngine.get(), path.c_str());
 	}
 
@@ -660,6 +667,7 @@ void
 Game::createWindowSizeDependentResources()
 {
 	TRACE
+	using DirectX::SimpleMath::Matrix;
 	RECT outputSize = m_resources.m_deviceResources->GetOutputSize();
 	float width			= static_cast<float>(outputSize.right - outputSize.left);
 	float height		= static_cast<float>(outputSize.bottom - outputSize.top);
@@ -668,7 +676,7 @@ Game::createWindowSizeDependentResources()
 	m_context.screenHalfWidth	= ceil(width / 2.0f);
 	m_context.screenHalfHeight = ceil(height / 2.0f);
 
-	const float fovAngleY		= 30.0f * XM_PI / 180.0f;
+	const float fovAngleY		= 30.0f * DirectX::XM_PI / 180.0f;
 	const float aspectRatio = width / height;
 	const float nearPlane		= 0.01f;
 	const float farPlane		= 300.f;
