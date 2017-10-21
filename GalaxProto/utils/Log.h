@@ -103,8 +103,8 @@ logMsgImp(
 	Args... args)
 {
 	static const size_t BUFFER_SIZE = 512;
-
 	char buffer[BUFFER_SIZE];
+
 	auto count = sprintf_s(
 		buffer,
 		BUFFER_SIZE,
@@ -113,6 +113,11 @@ logMsgImp(
 		file,
 		line,
 		function);
+
+	if (count < 0) {
+		count = 0;
+	}
+	ASSERT(count < BUFFER_SIZE);
 	sprintf_s(buffer + count, BUFFER_SIZE - count, fmt, args...);
 
 	OutputDebugStringA(buffer);
