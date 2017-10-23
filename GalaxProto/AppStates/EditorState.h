@@ -11,7 +11,7 @@ public:
 		AppContext& context,
 		AppResources& resources,
 		GameLogic& logic);
-	~EditorState();
+	~EditorState() override;
 
 	void handleInput(const DX::StepTimer& timer) override;
 	void update(const DX::StepTimer& timer) override;

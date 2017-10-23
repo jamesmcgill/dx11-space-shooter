@@ -25,6 +25,7 @@ public:
 			, m_gameLogic(logic)
 	{
 	}
+	virtual ~IAppState() = default;
 
 	virtual void handleInput(const DX::StepTimer& timer) = 0;
 	virtual void update(const DX::StepTimer& timer)			 = 0;

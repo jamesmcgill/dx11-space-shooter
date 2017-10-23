@@ -10,6 +10,57 @@
 #include "utils/Log.h"
 
 //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// struct Waypoint
+//{
+//	DirectX::SimpleMath::Vector3 wayPoint			= {};
+//	DirectX::SimpleMath::Vector3 controlPoint = {};
+//};
+//
+// struct EnemyWaveSection
+//{
+//	const std::vector<Waypoint> waypoints;
+//	const int numShips;
+//	const ModelResource model;
+//};
+//
+// struct EnemyWave
+//{
+//	const std::vector<EnemyWaveSection> sections;
+//	const float instanceTimeS;
+//};
+//
+// struct Level
+//{
+//	const std::vector<EnemyWave> waves;
+//};
+
+//	3 distinct editors (3 buttons at top + load/save)
+// Load/Save All  (Define human editable file format)
+
+// 1) Level Editor:
+// LEVEL LIST			- Create, Delete + Select (to WaveList)
+// WAVE LIST			- Create, Delete, Nav Back(to LevelList)   + Inc/Dec Time +
+// Inc/Dec FormationID
+
+// 2) Formation Editor
+// FORMATION LIST - Create, Delete,  Inc/Dec ShipCount + Inc/Dec Model +
+// Inc/Dec Path
+
+// 3) Path Editor
+// PATH LIST			- Select, Create, Delete Path
+// PATH EDITOR		- Select/Move/Delete Points  + Add Point +  Nav Back(to
+// List)
+
+// List Controls
+// Up/Down			-> Move Selection  / Inc/Decrement editable control
+// Enter				-> Edit selected / 'Create' if selected
+// Delete				-> Delete selected
+// Left/Right		-> Cycle editables controls
+
+//------------------------------------------------------------------------------
+namespace
+{
 constexpr float CAMERA_SPEED_X = 1.0f;
 constexpr float CAMERA_SPEED_Y = 1.0f;
 
@@ -21,33 +72,180 @@ const float MAIN_AREA_START_X = 20.0f;
 const float MAIN_AREA_START_Y
 	= MODE_BUTTON_POSITION_Y + (1.5f * MODE_BUTTON_HEIGHT);
 
+const DirectX::XMVECTORF32 SELECTED_ITEM_COLOR = DirectX::Colors::White;
+const DirectX::XMVECTORF32 NORMAL_ITEM_COLOR = DirectX::Colors::MediumVioletRed;
+
 //------------------------------------------------------------------------------
-class IEditorMode
+
+size_t g_levelIdx			= 0;
+size_t g_formationIdx = 0;
+size_t g_pathIdx			= 0;
+};
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+struct IMode
 {
-public:
-	IEditorMode(
-		AppStates& states,
-		AppContext& context,
-		AppResources& resources,
-		GameLogic& logic)
-			: m_states(states)
-			, m_context(context)
+	AppContext& m_context;
+	AppResources& m_resources;
+	GameLogic& m_gameLogic;
+
+	size_t m_menuSize		 = 0;
+	size_t m_selectedIdx = 0;
+
+	IMode(AppContext& context, AppResources& resources, GameLogic& logic)
+			: m_context(context)
 			, m_resources(resources)
 			, m_gameLogic(logic)
 	{
 	}
 
-	virtual void handleInput(const DX::StepTimer& timer) = 0;
-	virtual void update(const DX::StepTimer& timer)			 = 0;
-	virtual void render()																 = 0;
-	virtual void enter()																 = 0;
-	virtual void exit()																	 = 0;
+	virtual ~IMode() = default;
 
-protected:
-	AppStates& m_states;
-	AppContext& m_context;
-	AppResources& m_resources;
-	GameLogic& m_gameLogic;
+	virtual void onCreate() {}
+	virtual size_t numMenuItems() const = 0;
+	virtual wchar_t* typeString() const = 0;
+
+	void onUp()
+	{
+		const size_t lastItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+		m_selectedIdx = (m_selectedIdx > 0) ? m_selectedIdx - 1 : lastItemIdx;
+	}
+
+	void onDown()
+	{
+		const size_t lastItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+		m_selectedIdx = (m_selectedIdx < lastItemIdx) ? m_selectedIdx + 1 : 0;
+	}
+
+	void onSelect()
+	{
+		const size_t createItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+		if (m_selectedIdx == createItemIdx)
+		{
+			onCreate();
+			updateMenuSize();
+			m_selectedIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+		}
+	}
+
+	void update(const DX::StepTimer& timer){};
+	void render();
+	void updateMenuSize()
+	{
+		m_menuSize = numMenuItems() + 1;		// +1 for CREATE button
+	}
+};
+
+//------------------------------------------------------------------------------
+void
+IMode::render()
+{
+	TRACE
+	auto monoFont = m_resources.fontMono8pt.get();
+
+	float yPos = MAIN_AREA_START_Y;
+	const float yAscent
+		= ceil(DirectX::XMVectorGetY(monoFont->MeasureString(L"X")));
+
+	ui::Text uiText;
+	uiText.font				= monoFont;
+	uiText.position.x = MAIN_AREA_START_X;
+
+	auto drawMenuItem =
+		[&yAscent, &yPos, &uiText, &spriteBatch = m_resources.m_spriteBatch](
+			bool isSelected, const wchar_t* fmt, auto&&... vars)
+	{
+		uiText.color			= (isSelected) ? SELECTED_ITEM_COLOR : NORMAL_ITEM_COLOR;
+		uiText.text				= fmt::format(fmt, vars...);
+		uiText.position.y = yPos;
+		yPos += yAscent;
+		uiText.draw(*spriteBatch);
+	};
+
+	std::wstring menuTitle = fmt::format(L"{} List:", typeString());
+	drawMenuItem(false, menuTitle.c_str());
+
+	std::wstring titleUnderline(menuTitle.size(), '-');
+	drawMenuItem(false, titleUnderline.c_str());
+
+	size_t idx = 0;
+	while (idx < numMenuItems())
+	{
+		drawMenuItem((idx == m_selectedIdx), L"{}_{}", typeString(), idx);
+		idx++;
+	}
+	drawMenuItem((idx == m_selectedIdx), L"CREATE");
+}
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+struct LevelListMode : public IMode
+{
+	LevelListMode(AppContext& context, AppResources& resources, GameLogic& logic)
+			: IMode(context, resources, logic)
+	{
+		updateMenuSize();
+	}
+
+	void onCreate() override
+	{
+		m_gameLogic.m_enemies.debug_getCurrentLevels().emplace_back();
+	}
+
+	wchar_t* typeString() const override { return L"Level"; }
+	size_t numMenuItems() const override
+	{
+		return m_gameLogic.m_enemies.debug_getCurrentLevels().size();
+	}
+};
+
+//------------------------------------------------------------------------------
+struct LevelEditorMode : public IMode
+{
+	LevelEditorMode(
+		AppContext& context, AppResources& resources, GameLogic& logic)
+			: IMode(context, resources, logic)
+	{
+		updateMenuSize();
+	}
+
+	wchar_t* typeString() const override { return L"Waves"; }
+	size_t numMenuItems() const override
+	{
+		auto& levels = m_gameLogic.m_enemies.debug_getCurrentLevels();
+		ASSERT(g_levelIdx < levels.size());
+		return levels[g_levelIdx].waves.size();
+	}
+};
+
+//------------------------------------------------------------------------------
+struct FormationListMode : public IMode
+{
+	FormationListMode(
+		AppContext& context, AppResources& resources, GameLogic& logic)
+			: IMode(context, resources, logic)
+	{
+		updateMenuSize();
+	}
+
+	wchar_t* typeString() const override { return L"Formation"; }
+	size_t numMenuItems() const override { return 0; }
+};
+
+//------------------------------------------------------------------------------
+struct PathListMode : public IMode
+{
+	PathListMode(AppContext& context, AppResources& resources, GameLogic& logic)
+			: IMode(context, resources, logic)
+	{
+		updateMenuSize();
+	}
+
+	wchar_t* typeString() const override { return L"Path"; }
+	size_t numMenuItems() const override { return 0; }
 };
 
 //------------------------------------------------------------------------------
@@ -55,48 +253,46 @@ protected:
 //------------------------------------------------------------------------------
 struct EditorState::Impl
 {
-	enum class EditorMode
-	{
-		LevelList,
-		LevelEditor,
-		FormationList,
-		PathList,
-		PathEditor
-	};
 	struct ModeButton : public ui::Button
 	{
-		EditorMode gotoMode;
+		IMode* pGotoMode = nullptr;		 // TODO(James): <NOT_NULL>
 	};
 
-	//----------------------------------------------------------------------------
 	AppContext& m_context;
 	AppResources& m_resources;
 	GameLogic& m_gameLogic;
 
-	EditorMode m_currentMode								 = EditorMode::LevelList;
-	size_t m_selectedIdx										 = 0;
-	size_t m_numMenuItems										 = 0;
-	static constexpr size_t NUM_MODE_BUTTONS = 3;
-	std::array<ModeButton, NUM_MODE_BUTTONS> modeButtons;
+	LevelListMode m_levelListMode;
+	LevelEditorMode m_levelEditorMode;
 
-	//----------------------------------------------------------------------------
+	FormationListMode m_formationListMode;
+	PathListMode m_pathListMode;
+
+	IMode* m_pCurrentMode = &m_levelListMode;
+
+	static constexpr size_t NUM_BUTTONS = 3;
+	std::array<ModeButton, NUM_BUTTONS> m_modeButtons;
+
 	Impl(AppContext& context, AppResources& resources, GameLogic& logic)
 			: m_context(context)
 			, m_resources(resources)
 			, m_gameLogic(logic)
+			, m_levelListMode(m_context, m_resources, m_gameLogic)
+			, m_levelEditorMode(m_context, m_resources, m_gameLogic)
+			, m_formationListMode(m_context, m_resources, m_gameLogic)
+			, m_pathListMode(m_context, m_resources, m_gameLogic)
 	{
 	}
 
-	//----------------------------------------------------------------------------
 	void setup();
+
 	void handleInput(const DX::StepTimer& timer);
-	void enterMode(EditorMode newMode);
-	size_t numLevels() const;
-	size_t numMenuItems() const;
+	void handleModeMenuInput(const DX::StepTimer& timer);
 
 	void render();
 	void renderModeMenu();
-	void renderLevelList();
+
+	void enterMode(IMode* pNewMode);
 };
 
 //------------------------------------------------------------------------------
@@ -104,7 +300,7 @@ void
 EditorState::Impl::setup()
 {
 	TRACE
-	const float BUTTON_STEP_X			= m_context.screenWidth / NUM_MODE_BUTTONS;
+	const float BUTTON_STEP_X			= m_context.screenWidth / NUM_BUTTONS;
 	const float BUTTON_POSITION_X = BUTTON_STEP_X / 2.0f;
 
 	float xPos					= BUTTON_POSITION_X;
@@ -120,23 +316,23 @@ EditorState::Impl::setup()
 		xPos += BUTTON_STEP_X;
 	};
 
-	modeButtons[0].gotoMode		 = EditorMode::LevelList;
-	modeButtons[0].uiText.text = L"Levels";
+	m_modeButtons[0].pGotoMode	 = &m_levelListMode;
+	m_modeButtons[0].uiText.text = L"Levels";
 
-	modeButtons[1].gotoMode		 = EditorMode::FormationList;
-	modeButtons[1].uiText.text = L"Formations";
+	m_modeButtons[1].pGotoMode	 = &m_formationListMode;
+	m_modeButtons[1].uiText.text = L"Formations";
 
-	modeButtons[2].gotoMode		 = EditorMode::PathList;
-	modeButtons[2].uiText.text = L"Paths";
-	for (auto& btn : modeButtons)
+	m_modeButtons[2].pGotoMode	 = &m_pathListMode;
+	m_modeButtons[2].uiText.text = L"Paths";
+	for (auto& btn : m_modeButtons)
 	{
 		positionButton(btn);
 	}
 
-	enterMode(m_currentMode);
-	for (auto& btn : modeButtons)
+	enterMode(m_pCurrentMode);
+	for (auto& btn : m_modeButtons)
 	{
-		if (btn.gotoMode == m_currentMode)
+		if (btn.pGotoMode == m_pCurrentMode)
 		{
 			btn.appearance = ui::Button::Appearance::Selected;
 		}
@@ -148,37 +344,37 @@ void
 EditorState::Impl::handleInput(const DX::StepTimer& timer)
 {
 	TRACE
-	UNREFERENCED_PARAMETER(timer);
+	handleModeMenuInput(timer);
 
-	auto& kb			= m_resources.kbTracker;
+	auto& kb = m_resources.kbTracker;
 	using DirectX::Keyboard;
 
 	if (kb.IsKeyPressed(Keyboard::Up))
 	{
-		const size_t lastItemIdx = (m_numMenuItems > 0) ? m_numMenuItems - 1 : 0;
-		m_selectedIdx = (m_selectedIdx > 0) ? m_selectedIdx - 1 : lastItemIdx;
+		m_pCurrentMode->onUp();
 	}
 	else if (kb.IsKeyPressed(Keyboard::Down))
 	{
-		const size_t lastItemIdx = (m_numMenuItems > 0) ? m_numMenuItems - 1 : 0;
-		m_selectedIdx = (m_selectedIdx < lastItemIdx) ? m_selectedIdx + 1 : 0;
+		m_pCurrentMode->onDown();
 	}
 	if (
 		kb.IsKeyPressed(Keyboard::LeftControl) || kb.IsKeyPressed(Keyboard::Space)
 		|| kb.IsKeyPressed(Keyboard::Enter))
 	{
-		const size_t createItemIdx = (m_numMenuItems > 0) ? m_numMenuItems - 1 : 0;
-		if (m_selectedIdx == createItemIdx)
-		{
-			m_gameLogic.m_enemies.debug_getCurrentLevels().emplace_back();
-			m_numMenuItems = numMenuItems();
-			m_selectedIdx	= (m_numMenuItems > 0) ? m_numMenuItems - 1 : 0;
-		}
+		m_pCurrentMode->onSelect();
 	}
+}
+
+//------------------------------------------------------------------------------
+void
+EditorState::Impl::handleModeMenuInput(const DX::StepTimer& timer)
+{
+	TRACE
+	UNREFERENCED_PARAMETER(timer);
 
 	const auto& mouseBtns	= m_resources.mouseTracker;
 	const auto& mouseState = m_resources.m_mouse->GetState();
-	for (auto& button : modeButtons)
+	for (auto& button : m_modeButtons)
 	{
 		if (button.isPointInside(
 					static_cast<float>(mouseState.x), static_cast<float>(mouseState.y)))
@@ -186,12 +382,12 @@ EditorState::Impl::handleInput(const DX::StepTimer& timer)
 			using ButtonState = DirectX::Mouse::ButtonStateTracker::ButtonState;
 			if (mouseBtns.leftButton == ButtonState::PRESSED)
 			{
-				for (auto& btn : modeButtons)
+				for (auto& btn : m_modeButtons)
 				{
 					btn.appearance = ui::Button::Appearance::Normal;
 				}
 				button.appearance = ui::Button::Appearance::Selected;
-				enterMode(button.gotoMode);
+				enterMode(button.pGotoMode);
 			}
 
 			if (button.appearance != ui::Button::Appearance::Selected)
@@ -211,86 +407,11 @@ EditorState::Impl::handleInput(const DX::StepTimer& timer)
 
 //------------------------------------------------------------------------------
 void
-EditorState::Impl::enterMode(EditorMode newMode)
-{
-	TRACE
-	m_currentMode = newMode;
-	m_selectedIdx = 0;
-
-	switch (m_currentMode)
-	{
-		case EditorMode::FormationList:
-			break;
-		case EditorMode::LevelEditor:
-			break;
-		case EditorMode::LevelList:
-			m_numMenuItems = numMenuItems();
-			break;
-		case EditorMode::PathEditor:
-			break;
-		case EditorMode::PathList:
-			break;
-		default:
-			break;
-	}
-}
-
-//------------------------------------------------------------------------------
-size_t
-EditorState::Impl::numLevels() const
-{
-	return m_gameLogic.m_enemies.debug_getCurrentLevels().size();
-}
-
-//------------------------------------------------------------------------------
-size_t
-EditorState::Impl::numMenuItems() const
-{
-	switch (m_currentMode)
-	{
-		case EditorMode::FormationList:
-			return 0;
-			break;
-		case EditorMode::LevelEditor:
-			return 0;
-			break;
-		case EditorMode::LevelList:
-			return numLevels() + 1;		 // +1 for CREATE button
-			break;
-		case EditorMode::PathEditor:
-			return 0;
-			break;
-		case EditorMode::PathList:
-			return 0;
-			break;
-		default:
-			return 0;
-			break;
-	}
-}
-
-//------------------------------------------------------------------------------
-void
 EditorState::Impl::render()
 {
 	TRACE
 	renderModeMenu();
-	switch (m_currentMode)
-	{
-		case EditorMode::FormationList:
-			break;
-		case EditorMode::LevelEditor:
-			break;
-		case EditorMode::LevelList:
-			renderLevelList();
-			break;
-		case EditorMode::PathEditor:
-			break;
-		case EditorMode::PathList:
-			break;
-		default:
-			break;
-	}
+	m_pCurrentMode->render();
 }
 
 //------------------------------------------------------------------------------
@@ -298,7 +419,7 @@ void
 EditorState::Impl::renderModeMenu()
 {
 	TRACE
-	for (auto& btn : modeButtons)
+	for (auto& btn : m_modeButtons)
 	{
 		btn.draw(*m_resources.m_batch, *m_resources.m_spriteBatch);
 	}
@@ -306,41 +427,12 @@ EditorState::Impl::renderModeMenu()
 
 //------------------------------------------------------------------------------
 void
-EditorState::Impl::renderLevelList()
+EditorState::Impl::enterMode(IMode* pNewMode)
 {
 	TRACE
-	auto monoFont = m_resources.fontMono8pt.get();
-
-	float yPos = MAIN_AREA_START_Y;
-	const float yAscent
-		= ceil(DirectX::XMVectorGetY(monoFont->MeasureString(L"X")));
-
-	ui::Text uiText;
-	uiText.font				= monoFont;
-	uiText.position.x = MAIN_AREA_START_X;
-	uiText.color			= DirectX::Colors::MediumVioletRed;
-
-	auto drawMenuItem =
-		[&yAscent, &yPos, &uiText, &spriteBatch = m_resources.m_spriteBatch](
-			bool isSelected, const wchar_t* fmt, auto&&... vars)
-	{
-		uiText.color
-			= (isSelected) ? DirectX::Colors::Red : DirectX::Colors::MediumVioletRed;
-		uiText.text				= fmt::format(fmt, vars...);
-		uiText.position.y = yPos;
-		yPos += yAscent;
-		uiText.draw(*spriteBatch);
-	};
-
-	drawMenuItem(false, L"Level List:");
-	drawMenuItem(false, L"-----------");
-	size_t idx = 0;
-	while (idx < numLevels())
-	{
-		drawMenuItem((idx == m_selectedIdx), L"Level_{}", idx);
-		idx++;
-	}
-	drawMenuItem((idx == m_selectedIdx), L"CREATE");
+	ASSERT(pNewMode);
+	m_pCurrentMode = pNewMode;
+	g_levelIdx		 = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -413,61 +505,11 @@ EditorState::handleInput(const DX::StepTimer& timer)
 }
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-// struct Waypoint
-//{
-//	DirectX::SimpleMath::Vector3 wayPoint			= {};
-//	DirectX::SimpleMath::Vector3 controlPoint = {};
-//};
-//
-// struct EnemyWaveSection
-//{
-//	const std::vector<Waypoint> waypoints;
-//	const int numShips;
-//	const ModelResource model;
-//};
-//
-// struct EnemyWave
-//{
-//	const std::vector<EnemyWaveSection> sections;
-//	const float instanceTimeS;
-//};
-//
-// struct Level
-//{
-//	const std::vector<EnemyWave> waves;
-//};
-
-//	3 distinct editors (3 buttons at top + load/save)
-// Load/Save All  (Define human editable file format)
-
-// 1) Level Editor:
-// LEVEL LIST			- Create, Delete + Select (to WaveList)
-// WAVE LIST			- Create, Delete, Nav Back(to LevelList)   + Inc/Dec Time +
-// Inc/Dec FormationID
-
-// 2) Formation Editor
-// FORMATION LIST - Create, Delete,  Inc/Dec ShipCount + Inc/Dec Model +
-// Inc/Dec Path
-
-// 3) Path Editor
-// PATH LIST			- Select, Create, Delete Path
-// PATH EDITOR		- Select/Move/Delete Points  + Add Point +  Nav Back(to
-// List)
-
-// List Controls
-// Up/Down			-> Move Selection  / Inc/Decrement editable control
-// Enter				-> Edit selected / 'Create' if selected
-// Delete				-> Delete selected
-// Left/Right		-> Cycle editables controls
-
-//------------------------------------------------------------------------------
 void
 EditorState::update(const DX::StepTimer& timer)
 {
 	TRACE
 	m_resources.starField->update(timer);
-	// m_gameLogic.update(timer);
 }
 
 //------------------------------------------------------------------------------
@@ -476,7 +518,6 @@ EditorState::render()
 {
 	TRACE
 	renderStarField();
-	// m_gameLogic.render();
 
 	ui::DebugDraw ui(m_context, m_resources);
 	ui.begin2D();
