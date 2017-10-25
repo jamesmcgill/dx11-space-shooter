@@ -6,6 +6,8 @@
 class EditorState : public IAppState
 {
 public:
+	struct Impl;
+
 	EditorState(
 		AppStates& states,
 		AppContext& context,
@@ -28,7 +30,6 @@ private:
 	void renderStarField();
 
 private:
-	struct Impl;
 	std::unique_ptr<Impl> m_pImpl;
 };
 

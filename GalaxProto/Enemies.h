@@ -17,24 +17,30 @@ struct Waypoint
 	DirectX::SimpleMath::Vector3 controlPoint = {};
 };
 
-struct EnemyWaveSection
+struct EnemyFormationSection
 {
 	const std::vector<Waypoint> waypoints;
-	const int numShips;
-	const ModelResource model;
+	int numShips;
+	ModelResource model;
+};
+
+struct EnemyFormation {
+	std::wstring id;
+	std::vector<EnemyFormationSection> sections;
 };
 
 struct EnemyWave
 {
-	const std::vector<EnemyWaveSection> sections;
-	const float instanceTimeS;
+	float spawnTimeS;
+	size_t formationIdx;
 };
 
 struct Level
 {
-	const std::vector<EnemyWave> waves;
+	std::vector<EnemyWave> waves;
 };
 
+using EnemyFormationPool = std::vector<EnemyFormation>;
 //------------------------------------------------------------------------------
 class Enemies
 {
@@ -56,7 +62,10 @@ public:
 
 	void debugRender(DX::DebugBatchType* batch);
 	void debug_toggleLevel();
+
 	std::vector<Level>& debug_getCurrentLevels();
+	EnemyFormationPool& debug_getFormations() {return m_formationPool;}
+
 
 private:
 	using EntityIdxToWaypointsMap
@@ -69,6 +78,9 @@ private:
 	float m_nextEventTimeS;
 	size_t m_nextEventWaveIdx;
 	size_t m_activeWaveIdx;
+
+	static constexpr size_t MAX_WAVES = 256;
+	EnemyFormationPool m_formationPool;		// Shared pool of all available
 };
 
 //------------------------------------------------------------------------------

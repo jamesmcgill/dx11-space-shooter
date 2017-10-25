@@ -34,7 +34,7 @@ getDebugPath(float xPos)
 }
 
 static const Level
-createDebugLevel()
+createDebugLevel(EnemyFormationPool& formationPool)
 {
 	const int baseEnemyIdx = static_cast<int>(ModelResource::Enemy1);
 	const int numEnemyTypes
@@ -44,15 +44,17 @@ createDebugLevel()
 	const float xRange = xStart * -2;
 	const float xStep = (numEnemyTypes > 1) ? xRange / (numEnemyTypes - 1) : 0.0f;
 
-	std::vector<EnemyWaveSection> sections;
+	auto& formation = formationPool.emplace_back(EnemyFormation());
+	formation.id		= L"DebugFormation";
 	for (int i = 0; i < numEnemyTypes; ++i)
 	{
 		ModelResource res = static_cast<ModelResource>(baseEnemyIdx + i);
 		const float xPos	= xStart + (xStep * i);
-		sections.emplace_back(EnemyWaveSection{getDebugPath(xPos), 1, res});
+		formation.sections.emplace_back(
+			EnemyFormationSection{getDebugPath(xPos), 1, res});
 	}
 
-	return Level{{EnemyWave{sections, 3.0f}}};
+	return Level{{EnemyWave{3.0f, formationPool.size() - 1}}};
 }
 
 //------------------------------------------------------------------------------
@@ -133,42 +135,51 @@ static const std::vector<Waypoint> path92 = {
 	{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
 };
 
-static const EnemyWaveSection section1
+static const EnemyFormationSection section1
 	= {getPath2a(), 3, ModelResource::Enemy9};
-static const EnemyWaveSection section2
+static const EnemyFormationSection section2
 	= {getPath2b(), 3, ModelResource::Enemy2};
-static const EnemyWaveSection section3 = {path1, 5, ModelResource::Enemy3};
-static const EnemyWaveSection section4 = {path92, 5, ModelResource::Player};
+static const EnemyFormationSection section3 = {path1, 5, ModelResource::Enemy3};
+static const EnemyFormationSection section4
+	= {path92, 5, ModelResource::Player};
 
-static const Level level1 = {{
-	EnemyWave{{section1, section2}, 3.0f},
-	EnemyWave{{section2}, 5.0f},
-	EnemyWave{{section3}, 10.0f},
-	EnemyWave{{section4}, 14.0f},
-	// EnemyWave{{section1}, 20.0f},
-	// EnemyWave{{section2}, 25.0f},
-	// EnemyWave{{section3}, 30.0f},
-	// EnemyWave{{section4}, 35.0f},
-	// EnemyWave{{section1}, 40.0f},
-	// EnemyWave{{section2}, 45.0f},
-}};
+static EnemyFormationPool s_formations = {
+	{L"simple", {section1}},
+	{L"multi", {section1, section2}},
+	{L"many", {section3}},
+	{L"players", {section4}},
+};
 
-static const Level level2 = { {
-		EnemyWave{ { section1, section2 }, 23.0f },
-		EnemyWave{ { section2 }, 25.0f },
-		EnemyWave{ { section3 }, 30.0f },
-		EnemyWave{ { section4 }, 34.0f },
-		// EnemyWave{{section1}, 20.0f},
-		// EnemyWave{{section2}, 25.0f},
-		// EnemyWave{{section3}, 30.0f},
-		// EnemyWave{{section4}, 35.0f},
-		// EnemyWave{{section1}, 40.0f},
-		// EnemyWave{{section2}, 45.0f},
-	} };
+//------------------------------------------------------------------------------
+static const std::vector<Level>
+createTestLevels(EnemyFormationPool& formationPool)
+{
+	size_t offset = formationPool.size();
+	formationPool.insert(
+		formationPool.end(), s_formations.begin(), s_formations.end());
 
+	ASSERT(formationPool.size() > 3);
+	static Level level1 = {{
+		EnemyWave{3.0f, offset + 0},
+		EnemyWave{5.0f, offset + 1},
+		EnemyWave{10.0f, offset + 2},
+		EnemyWave{14.0f, offset + 3},
+		EnemyWave{18.0f, offset + 0},
+	}};
 
-static std::vector<Level> s_debugLevels = {{createDebugLevel()}};
-static std::vector<Level> s_levels			= {{level1, level2}};
+	static Level level2 = {{
+		EnemyWave{23.0f, offset + 0},
+		EnemyWave{25.0f, offset + 1},
+		EnemyWave{30.0f, offset + 2},
+		EnemyWave{34.0f, offset + 3},
+	}};
+
+	return {level1, level2};
+}
+//------------------------------------------------------------------------------
+
+static std::vector<Level> s_debugLevels;
+static std::vector<Level> s_levels;
 
 //------------------------------------------------------------------------------
 constexpr float SHOT_SPEED									= 40.0f;
@@ -183,6 +194,10 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 		, m_activeWaveIdx(0)
 {
 	TRACE
+	m_formationPool.reserve(MAX_WAVES);
+	s_debugLevels = {{createDebugLevel(m_formationPool)}};
+	s_levels			= {{createTestLevels(m_formationPool)}};
+
 	reset();
 }
 
@@ -195,8 +210,6 @@ Enemies::reset()
 	m_nextEventWaveIdx = 0;
 	m_activeWaveIdx		 = 0;
 
-	ASSERT(!s_levels[m_currentLevel].waves.empty());
-	m_nextEventTimeS = s_levels[m_currentLevel].waves[0].instanceTimeS;
 	for (auto& e : m_entityIdxToWaypoints)
 	{
 		e = nullptr;
@@ -206,6 +219,14 @@ Enemies::reset()
 	{
 		m_context.entities[i].isAlive			= false;
 		m_context.entities[i].isColliding = false;
+	}
+
+	m_nextEventTimeS = 0.0f;
+	if (
+		(m_currentLevel < s_levels.size())
+		&& (!s_levels[m_currentLevel].waves.empty()))
+	{
+		m_nextEventTimeS = s_levels[m_currentLevel].waves[0].spawnTimeS;
 	}
 }
 
@@ -218,11 +239,19 @@ Enemies::update(const DX::StepTimer& timer)
 	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
 
 	// Spawn enemies
+	if (m_currentLevel >= s_levels.size())
+	{
+		return;
+	}
 	auto& level = s_levels[m_currentLevel];
 	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS)
 	{
 		// Spawn wave
-		for (auto& sec : level.waves[m_nextEventWaveIdx].sections)
+		ASSERT(m_nextEventWaveIdx < level.waves.size());
+		const auto& formationIdx = level.waves[m_nextEventWaveIdx].formationIdx;
+		ASSERT(formationIdx < m_formationPool.size());
+		auto& formation = m_formationPool[formationIdx];
+		for (auto& sec : formation.sections)
 		{
 			auto& numShips = sec.numShips;
 			float delayS	 = 0.0f;
@@ -249,7 +278,7 @@ Enemies::update(const DX::StepTimer& timer)
 		m_nextEventWaveIdx++;
 		if (m_nextEventWaveIdx < level.waves.size())
 		{
-			m_nextEventTimeS = level.waves[m_nextEventWaveIdx].instanceTimeS;
+			m_nextEventTimeS = level.waves[m_nextEventWaveIdx].spawnTimeS;
 			m_activeWaveIdx	= m_nextEventWaveIdx - 1;
 		}
 		else
