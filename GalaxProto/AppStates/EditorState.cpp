@@ -10,60 +10,25 @@
 #include "utils/Log.h"
 
 //------------------------------------------------------------------------------
+// TODO:
 //------------------------------------------------------------------------------
-// struct Waypoint
-//{
-//	DirectX::SimpleMath::Vector3 wayPoint = {};
-//	DirectX::SimpleMath::Vector3 controlPoint = {};
-//};
+// - Enemies mapEnemyToPath can now use indices to the pathPool
 //
-// struct EnemyFormationSection
-//{
-//	const std::vector<Waypoint> waypoints;
-//	int numShips;
-//	ModelResource model;
-//};
-//
-// struct EnemyFormation {
-//	std::wstring id;
-//	std::vector<EnemyFormationSection> sections;
-//};
-//
-// using EnemyFormationPool = std::vector<EnemyFormation>;
-//------------------------------------------------------------------------------
-
-//	3 distinct editors (3 buttons at top + load/save)
-// Load/Save All  (Define human editable file format)
-
-// 1) Level Editor:
-// LEVEL LIST			- Create, Delete + Select (to WaveList)
-// WAVE LIST			- Create, Delete, Nav Back(to LevelList)
-//											- Inc/Dec Time
-//											- Inc/Dec FormationID
-
-// 2) Formation Editor
-// FORMATION LIST - Create, Delete, + Select (to FormationEditor)+  [Type Name]
+// - Handle deletion of formation that is in-use
+// - Handle deletion of path that is in-use
 //			*** How can we Delete without invalidating the level data? ***
+//						- on delete, scan through all levels for uses of the formation
+//						- give them all a special 'null' idx. I.e. to a formation that is
+// never deleted.
 //
-// FORMATION EDITOR - Create, Delete + Select Section(->FormationSectionEditor)
+// - Customise names for formations and paths
 //
-// FORMATION SECTION EDITOR
-//		Inc/Dec ShipCount
-//		Inc/Dec Model (from list)
-//		Inc/Dec Path (from list)
-
-// 3) Path Editor
-// PATH LIST			- Select, Create, Delete Path, [Type Name]
+// - PATH EDITOR [special visual editor for waypoints]
+//	- Select, Create, Delete, Move [Points]
 //
-// PATH EDITOR [special visual editor]
-//	- Select, Create, Delete, Move Points
-
-// List Controls
-// Up/Down			-> Move Selection  / Inc/Decrement editable control
-// Enter				-> Edit selected / 'Create' if selected
-// Delete				-> Delete selected
-// Left/Right		-> Cycle editables controls
-
+// - Play current selection in background (i.e. level, formation, path)
+//
+// - Load/Save All  (Define human editable file format)
 //------------------------------------------------------------------------------
 namespace
 {
@@ -83,28 +48,45 @@ const DirectX::XMVECTORF32 SELECTED_ITEM_COLOR = DirectX::Colors::White;
 const DirectX::XMVECTORF32 NORMAL_ITEM_COLOR = DirectX::Colors::MediumVioletRed;
 
 //------------------------------------------------------------------------------
-
+// Current menu selections
 size_t g_levelIdx			= 0;
 size_t g_formationIdx = 0;
 size_t g_pathIdx			= 0;
 
-std::vector<EnemyWave>&
+std::vector<Wave>&
 currentLevelWavesRef(GameLogic& logic)
 {
 	auto& levels = logic.m_enemies.debug_getCurrentLevels();
 	ASSERT(g_levelIdx < levels.size());
-
 	return levels[g_levelIdx].waves;
 }
 
-EnemyWave&
+Wave&
 currentLevelWaveRef(size_t waveIdx, GameLogic& logic)
 {
 	auto& waves = currentLevelWavesRef(logic);
 	ASSERT(waveIdx < waves.size());
 	return waves[waveIdx];
 }
-};
+
+Formation&
+currentFormationRef(GameLogic& logic)
+{
+	auto& formations = logic.m_enemies.debug_getFormations();
+	ASSERT(g_formationIdx < formations.size());
+	return formations[g_formationIdx];
+}
+
+FormationSection&
+currentFormationSectionRef(size_t sectionIdx, GameLogic& logic)
+{
+	auto& formation = currentFormationRef(logic);
+
+	ASSERT(sectionIdx < formation.sections.size());
+	return formation.sections[sectionIdx];
+}
+
+};		// anon namespace
 
 //------------------------------------------------------------------------------
 
@@ -136,7 +118,14 @@ struct IMode
 
 	virtual ~IMode() = default;
 
-	virtual void onEnterMode() { updateMenuSize(); }
+	virtual void onEnterMode(bool isNavigatingForward = true)
+	{
+		if (isNavigatingForward)
+		{
+			m_selectedIdx = 0;
+		}
+		updateMenuSize();
+	}
 
 	virtual std::wstring controlInfoText() const				= 0;
 	virtual std::wstring menuTitle() const							= 0;
@@ -145,11 +134,18 @@ struct IMode
 	virtual void onBack() {}
 	virtual void onCreate() {}
 	virtual void onDeleteItem(size_t itemIdx) { UNREFERENCED_PARAMETER(itemIdx); }
-	virtual void onItemSelected(size_t itemIdx){};
-	virtual void onAdd(size_t itemIdx) { UNREFERENCED_PARAMETER(itemIdx); }
-	virtual void onSubtract(size_t itemIdx) { UNREFERENCED_PARAMETER(itemIdx); }
-	virtual void onPgUp(size_t itemIdx) { UNREFERENCED_PARAMETER(itemIdx); }
-	virtual void onPgDn(size_t itemIdx) { UNREFERENCED_PARAMETER(itemIdx); }
+	virtual void onItemSelected(size_t itemIdx)
+	{
+		UNREFERENCED_PARAMETER(itemIdx);
+	};
+	virtual void onPlus() {}
+	virtual void onSubtract() {}
+	virtual void onPgUp() {}
+	virtual void onPgDn() {}
+	virtual void onLeft() {}
+	virtual void onRight() {}
+	virtual void onHome() {}
+	virtual void onEnd() {}
 
 	virtual size_t numMenuItems() const = 0;
 
@@ -210,25 +206,36 @@ IMode::handleInput(const DX::StepTimer& timer)
 
 	if (kb.IsKeyPressed(Keyboard::Left))
 	{
+		onLeft();
 	}
 	else if (kb.IsKeyPressed(Keyboard::Right))
 	{
+		onRight();
 	}
-	if (kb.IsKeyPressed(Keyboard::Add))
+	if (kb.IsKeyPressed(Keyboard::Add) || kb.IsKeyPressed(Keyboard::OemPlus))
 	{
-		onAdd(m_selectedIdx);
+		onPlus();
 	}
-	else if (kb.IsKeyPressed(Keyboard::Subtract))
+	else if (
+		kb.IsKeyPressed(Keyboard::Subtract) || kb.IsKeyPressed(Keyboard::OemMinus))
 	{
-		onSubtract(m_selectedIdx);
+		onSubtract();
 	}
 	if (kb.IsKeyPressed(Keyboard::PageUp))
 	{
-		onPgUp(m_selectedIdx);
+		onPgUp();
 	}
 	else if (kb.IsKeyPressed(Keyboard::PageDown))
 	{
-		onPgDn(m_selectedIdx);
+		onPgDn();
+	}
+	if (kb.IsKeyPressed(Keyboard::Home))
+	{
+		onHome();
+	}
+	else if (kb.IsKeyPressed(Keyboard::End))
+	{
+		onEnd();
 	}
 
 	if (
@@ -316,7 +323,7 @@ struct LevelListMode : public IMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter)";
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del)";
 	}
 	std::wstring menuTitle() const override { return L"Level List"; }
 	std::wstring itemName(size_t itemIdx) const override;
@@ -339,12 +346,6 @@ struct LevelEditorMode : public IMode
 	{
 	}
 
-	void onEnterMode() override
-	{
-		IMode::onEnterMode();
-		m_selectedIdx = 0;
-	}
-
 	std::wstring controlInfoText() const override
 	{
 		return L"Navigate(Up/Down), Select(Enter), Delete(Del), "
@@ -356,10 +357,10 @@ struct LevelEditorMode : public IMode
 	void onBack() override;
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
-	void onAdd(size_t itemIdx) override;
-	void onSubtract(size_t itemIdx) override;
-	void onPgUp(size_t itemIdx) override;
-	void onPgDn(size_t itemIdx) override;
+	void onPlus() override;
+	void onSubtract() override;
+	void onPgUp() override;
+	void onPgDn() override;
 
 	size_t numMenuItems() const override;
 };
@@ -376,10 +377,50 @@ struct FormationListMode : public IMode
 	{
 	}
 
-	std::wstring controlInfoText() const override { return L""; }
+	std::wstring controlInfoText() const override
+	{
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del)";
+	}
 	std::wstring menuTitle() const override { return L"Formation List"; }
-	std::wstring itemName(size_t itemIdx) const override { return L"Formation"; }
-	size_t numMenuItems() const override { return 0; }
+	std::wstring itemName(size_t itemIdx) const override;
+
+	void onCreate() override;
+	void onDeleteItem(size_t itemIdx) override;
+	void onItemSelected(size_t itemIdx) override;
+	size_t numMenuItems() const override;
+};
+
+//------------------------------------------------------------------------------
+struct FormationSectionEditorMode : public IMode
+{
+	FormationSectionEditorMode(
+		Modes& modes,
+		AppContext& context,
+		AppResources& resources,
+		GameLogic& logic)
+			: IMode(modes, context, resources, logic)
+	{
+	}
+
+	std::wstring controlInfoText() const override
+	{
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del), "
+					 "Model(Home/End), Num Ships(-/+), Path(PgUp/PgDn), Back(Esc)";
+	}
+	std::wstring menuTitle() const override { return L"Formation Section"; }
+	std::wstring itemName(size_t itemIdx) const override;
+
+	void onBack() override;
+	void onCreate() override;
+	void onDeleteItem(size_t itemIdx) override;
+	void onPlus() override;
+	void onSubtract() override;
+	void onPgUp() override;
+	void onPgDn() override;
+	void onHome() override;
+	void onEnd() override;
+
+	size_t numMenuItems() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -394,10 +435,17 @@ struct PathListMode : public IMode
 	{
 	}
 
-	std::wstring controlInfoText() const override { return L""; }
+	std::wstring controlInfoText() const override
+	{
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del)";
+	}
 	std::wstring menuTitle() const override { return L"Path List"; }
-	std::wstring itemName(size_t itemIdx) const override { return L"Path"; }
-	size_t numMenuItems() const override { return 0; }
+	std::wstring itemName(size_t itemIdx) const override;
+
+	void onCreate() override;
+	void onDeleteItem(size_t itemIdx) override;
+	void onItemSelected(size_t itemIdx) override;
+	size_t numMenuItems() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -407,6 +455,8 @@ struct Modes
 	LevelEditorMode levelEditorMode;
 
 	FormationListMode formationListMode;
+	FormationSectionEditorMode formationSectionEditorMode;
+
 	PathListMode pathListMode;
 
 	IMode* pCurrentMode = &levelListMode;
@@ -415,6 +465,7 @@ struct Modes
 			: levelListMode(*this, context, resources, logic)
 			, levelEditorMode(*this, context, resources, logic)
 			, formationListMode(*this, context, resources, logic)
+			, formationSectionEditorMode(*this, context, resources, logic)
 			, pathListMode(*this, context, resources, logic)
 	{
 	}
@@ -424,15 +475,16 @@ struct Modes
 		levelListMode.init();
 		levelEditorMode.init();
 		formationListMode.init();
+		formationSectionEditorMode.init();
 		pathListMode.init();
 	}
 
-	void enterMode(IMode* pNewMode)
+	void enterMode(IMode* pNewMode, bool isNavigatingForward = true)
 	{
 		TRACE
 		ASSERT(pNewMode);
 		pCurrentMode = pNewMode;
-		pCurrentMode->onEnterMode();
+		pCurrentMode->onEnterMode(isNavigatingForward);
 	}
 };
 
@@ -497,7 +549,7 @@ LevelEditorMode::itemName(size_t itemIdx) const
 void
 LevelEditorMode::onBack()
 {
-	m_modes.enterMode(&m_modes.levelListMode);
+	m_modes.enterMode(&m_modes.levelListMode, false);
 }
 
 //------------------------------------------------------------------------------
@@ -507,7 +559,7 @@ LevelEditorMode::onCreate()
 	auto& waves = currentLevelWavesRef(m_gameLogic);
 	float t			= (waves.empty()) ? MIN_SPAWN_TIME : waves.back().spawnTimeS;
 
-	EnemyWave newWave{t, 0};
+	Wave newWave{t, 0};
 	waves.emplace_back(newWave);
 }
 
@@ -523,18 +575,18 @@ LevelEditorMode::onDeleteItem(size_t itemIdx)
 
 //------------------------------------------------------------------------------
 void
-LevelEditorMode::onAdd(size_t itemIdx)
+LevelEditorMode::onPlus()
 {
-	auto& t = currentLevelWaveRef(itemIdx, m_gameLogic).spawnTimeS;
+	auto& t = currentLevelWaveRef(m_selectedIdx, m_gameLogic).spawnTimeS;
 	t += 1.0f;
 	t = round(t);
 }
 
 //------------------------------------------------------------------------------
 void
-LevelEditorMode::onSubtract(size_t itemIdx)
+LevelEditorMode::onSubtract()
 {
-	auto& t = currentLevelWaveRef(itemIdx, m_gameLogic).spawnTimeS;
+	auto& t = currentLevelWaveRef(m_selectedIdx, m_gameLogic).spawnTimeS;
 	t -= 1.0f;
 	if (t < MIN_SPAWN_TIME)
 	{
@@ -544,10 +596,10 @@ LevelEditorMode::onSubtract(size_t itemIdx)
 
 //------------------------------------------------------------------------------
 void
-LevelEditorMode::onPgUp(size_t itemIdx)
+LevelEditorMode::onPgUp()
 {
-	auto& formations		 = m_gameLogic.m_enemies.debug_getFormations();
-	auto& curIdx				 = currentLevelWaveRef(itemIdx, m_gameLogic).formationIdx;
+	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	auto& curIdx = currentLevelWaveRef(m_selectedIdx, m_gameLogic).formationIdx;
 	const size_t lastIdx = (formations.size() > 0) ? formations.size() - 1 : 0;
 
 	curIdx = (curIdx > 0) ? curIdx - 1 : lastIdx;
@@ -555,10 +607,10 @@ LevelEditorMode::onPgUp(size_t itemIdx)
 
 //------------------------------------------------------------------------------
 void
-LevelEditorMode::onPgDn(size_t itemIdx)
+LevelEditorMode::onPgDn()
 {
-	auto& formations		 = m_gameLogic.m_enemies.debug_getFormations();
-	auto& curIdx				 = currentLevelWaveRef(itemIdx, m_gameLogic).formationIdx;
+	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	auto& curIdx = currentLevelWaveRef(m_selectedIdx, m_gameLogic).formationIdx;
 	const size_t lastIdx = (formations.size() > 0) ? formations.size() - 1 : 0;
 
 	curIdx = (curIdx < lastIdx) ? curIdx + 1 : 0;
@@ -571,6 +623,229 @@ LevelEditorMode::numMenuItems() const
 	auto& waves = currentLevelWavesRef(m_gameLogic);
 	return waves.size();
 }
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+std::wstring
+FormationListMode::itemName(size_t itemIdx) const
+{
+	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	ASSERT(itemIdx < formations.size());
+
+	return formations[itemIdx].id;
+}
+
+//------------------------------------------------------------------------------
+void
+FormationListMode::onCreate()
+{
+	Formation formation{L"New"};
+	m_gameLogic.m_enemies.debug_getFormations().emplace_back(formation);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationListMode::onDeleteItem(size_t itemIdx)
+{
+	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	ASSERT(itemIdx < formations.size());
+
+	formations.erase(formations.begin() + itemIdx);
+	// TODO(James): Handle levels which were using this formation
+}
+
+//------------------------------------------------------------------------------
+size_t
+FormationListMode::numMenuItems() const
+{
+	return m_gameLogic.m_enemies.debug_getFormations().size();
+}
+
+//------------------------------------------------------------------------------
+void
+FormationListMode::onItemSelected(size_t itemIdx)
+{
+	g_formationIdx = itemIdx;
+	m_modes.enterMode(&m_modes.formationSectionEditorMode);
+};
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+std::wstring
+FormationSectionEditorMode::itemName(size_t itemIdx) const
+{
+	auto& section = currentFormationSectionRef(itemIdx, m_gameLogic);
+
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(section.pathIdx < paths.size());
+	auto& path = paths[section.pathIdx];
+
+	return fmt::format(
+		L"{}: Model:{}, numShips:{}, Path:{} ",
+		itemIdx,
+		static_cast<int>(section.model),
+		section.numShips,
+		path.id);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onBack()
+{
+	m_modes.enterMode(&m_modes.formationListMode, false);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onCreate()
+{
+	auto& formation = currentFormationRef(m_gameLogic);
+
+	FormationSection section;
+	section.pathIdx	= 0;
+	section.numShips = 3;
+	section.model		 = ModelResource::Enemy1;
+	formation.sections.emplace_back(section);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onDeleteItem(size_t itemIdx)
+{
+	auto& formation = currentFormationRef(m_gameLogic);
+	formation.sections.erase(formation.sections.begin() + itemIdx);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onPlus()
+{
+	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	static const int MAX_NUM_SHIPS = 10;
+	section.numShips
+		= (section.numShips < MAX_NUM_SHIPS) ? section.numShips + 1 : MAX_NUM_SHIPS;
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onSubtract()
+{
+	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	if (section.numShips > 1)
+	{
+		--section.numShips;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onPgUp()
+{
+	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	auto& paths		= m_gameLogic.m_enemies.debug_getPaths();
+
+	auto& curIdx				 = section.pathIdx;
+	const size_t lastIdx = (paths.size() > 0) ? paths.size() - 1 : 0;
+
+	curIdx = (curIdx > 0) ? curIdx - 1 : lastIdx;
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onPgDn()
+{
+	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	auto& paths		= m_gameLogic.m_enemies.debug_getPaths();
+
+	auto& curIdx				 = section.pathIdx;
+	const size_t lastIdx = (paths.size() > 0) ? paths.size() - 1 : 0;
+
+	curIdx = (curIdx < lastIdx) ? curIdx + 1 : 0;
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onHome()
+{
+	auto& section		 = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	const int minIdx = static_cast<int>(ModelResource::Enemy1);
+	const int maxIdx = static_cast<int>(ModelResource::Player);
+
+	int curIdx		= static_cast<int>(section.model);
+	curIdx				= (curIdx > minIdx) ? curIdx - 1 : maxIdx;
+	section.model = static_cast<ModelResource>(curIdx);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationSectionEditorMode::onEnd()
+{
+	auto& section		 = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	const int minIdx = static_cast<int>(ModelResource::Enemy1);
+	const int maxIdx = static_cast<int>(ModelResource::Player);
+
+	int curIdx		= static_cast<int>(section.model);
+	curIdx				= (curIdx < maxIdx) ? curIdx + 1 : minIdx;
+	section.model = static_cast<ModelResource>(curIdx);
+}
+
+//------------------------------------------------------------------------------
+size_t
+FormationSectionEditorMode::numMenuItems() const
+{
+	auto& formation = currentFormationRef(m_gameLogic);
+	return formation.sections.size();
+}
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+std::wstring
+PathListMode::itemName(size_t itemIdx) const
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(itemIdx < paths.size());
+
+	return paths[itemIdx].id;
+}
+
+//------------------------------------------------------------------------------
+void
+PathListMode::onCreate()
+{
+	Path path{L"New"};
+	m_gameLogic.m_enemies.debug_getPaths().emplace_back(path);
+}
+
+//------------------------------------------------------------------------------
+void
+PathListMode::onDeleteItem(size_t itemIdx)
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(itemIdx < paths.size());
+
+	paths.erase(paths.begin() + itemIdx);
+	// TODO(James): Handle formations which were using this path
+}
+
+//------------------------------------------------------------------------------
+size_t
+PathListMode::numMenuItems() const
+{
+	return m_gameLogic.m_enemies.debug_getPaths().size();
+}
+
+//------------------------------------------------------------------------------
+void
+PathListMode::onItemSelected(size_t itemIdx)
+{
+	g_pathIdx = itemIdx;
+
+	// TODO(James): Implement a path editor
+	// m_modes.enterMode(&m_modes.formationSectionEditorMode);
+};
 
 //------------------------------------------------------------------------------
 
@@ -704,6 +979,36 @@ EditorState::Impl::handleModeMenuInput(const DX::StepTimer& timer)
 			}
 		}
 	}
+
+	auto& kb = m_resources.kbTracker;
+	using DirectX::Keyboard;
+	if (kb.IsKeyPressed(Keyboard::Tab))
+	{
+		bool getIteratorOnNextLoop = false;
+		auto nextButtonIt					 = m_modeButtons.end();
+		for (auto it = m_modeButtons.begin(); it != m_modeButtons.end(); ++it)
+		{
+			if (getIteratorOnNextLoop)
+			{
+				getIteratorOnNextLoop = false;
+				nextButtonIt					= it;
+			}
+
+			auto& button = *it;
+			if (button.appearance == ui::Button::Appearance::Selected)
+			{
+				button.appearance			= ui::Button::Appearance::Normal;
+				getIteratorOnNextLoop = true;
+			}
+		}
+		if (nextButtonIt == m_modeButtons.end())
+		{
+			nextButtonIt = m_modeButtons.begin();
+		}
+		auto& nextButton			= *nextButtonIt;
+		nextButton.appearance = ui::Button::Appearance::Selected;
+		m_modes.enterMode(nextButton.pGotoMode);
+	}		 // Tab Key
 }
 
 //------------------------------------------------------------------------------

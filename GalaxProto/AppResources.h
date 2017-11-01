@@ -12,8 +12,6 @@
 //------------------------------------------------------------------------------
 enum class ModelResource
 {
-	Player,
-	Shot,
 	Enemy1,
 	Enemy2,
 	Enemy3,
@@ -23,6 +21,11 @@ enum class ModelResource
 	Enemy7,
 	Enemy8,
 	Enemy9,
+
+	Player,
+	Shot,
+
+	COUNT
 };
 
 enum class AudioResource
@@ -33,6 +36,8 @@ enum class AudioResource
 	EnemyShot,
 	PlayerExplode,
 	EnemyExplode,
+
+	COUNT
 };
 
 //------------------------------------------------------------------------------

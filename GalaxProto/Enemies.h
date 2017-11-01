@@ -17,19 +17,26 @@ struct Waypoint
 	DirectX::SimpleMath::Vector3 controlPoint = {};
 };
 
-struct EnemyFormationSection
+struct Path
 {
-	const std::vector<Waypoint> waypoints;
+	std::wstring id;
+	std::vector<Waypoint> waypoints;
+};
+
+struct FormationSection
+{
+	size_t pathIdx;
 	int numShips;
 	ModelResource model;
 };
 
-struct EnemyFormation {
+struct Formation
+{
 	std::wstring id;
-	std::vector<EnemyFormationSection> sections;
+	std::vector<FormationSection> sections;
 };
 
-struct EnemyWave
+struct Wave
 {
 	float spawnTimeS;
 	size_t formationIdx;
@@ -37,10 +44,11 @@ struct EnemyWave
 
 struct Level
 {
-	std::vector<EnemyWave> waves;
+	std::vector<Wave> waves;
 };
 
-using EnemyFormationPool = std::vector<EnemyFormation>;
+using PathPool			= std::vector<Path>;
+using FormationPool = std::vector<Formation>;
 //------------------------------------------------------------------------------
 class Enemies
 {
@@ -64,13 +72,12 @@ public:
 	void debug_toggleLevel();
 
 	std::vector<Level>& debug_getCurrentLevels();
-	EnemyFormationPool& debug_getFormations() {return m_formationPool;}
-
+	FormationPool& debug_getFormations() { return m_formationPool; }
+	PathPool& debug_getPaths() { return m_pathPool; }
 
 private:
-	using EntityIdxToWaypointsMap
-		= std::array<const std::vector<Waypoint>*, NUM_ENEMIES>;
-	EntityIdxToWaypointsMap m_entityIdxToWaypoints;
+	using EntityIdxToPathMap = std::array<const Path*, NUM_ENEMIES>;
+	EntityIdxToPathMap m_entityIdxToPath;
 
 	AppContext& m_context;
 	AppResources& m_resources;
@@ -79,8 +86,11 @@ private:
 	size_t m_nextEventWaveIdx;
 	size_t m_activeWaveIdx;
 
-	static constexpr size_t MAX_WAVES = 256;
-	EnemyFormationPool m_formationPool;		// Shared pool of all available
+	static constexpr size_t MAX_NUM_PATHS = 256;
+	PathPool m_pathPool;		// Shared pool of all available
+
+	static constexpr size_t MAX_NUM_FORMATIONS = 256;
+	FormationPool m_formationPool;		// Shared pool of all available
 };
 
 //------------------------------------------------------------------------------

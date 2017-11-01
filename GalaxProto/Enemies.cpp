@@ -10,8 +10,8 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-static const std::vector<Waypoint>
-getDebugPath(float xPos)
+static const Path
+createDebugPath(float xPos)
 {
 	const float yStart = 20.0f;
 	const float yEnd	 = -15.0f;
@@ -19,13 +19,14 @@ getDebugPath(float xPos)
 	const float yStep	= (yEnd - yStart) / ySteps;
 	float xOscillate	 = -2.0f;
 
-	std::vector<Waypoint> ret;
-	ret.reserve(ySteps);
+	static int count = 0;
+	Path ret{fmt::format(L"debug path {} ", count++)};
+	ret.waypoints.reserve(ySteps);
 	float yPos = yStart;
 	for (int i = 0; i < ySteps; ++i)
 	{
-		ret.emplace_back(Waypoint{{xPos, yPos, 0.0f},
-															{xPos + xOscillate, yPos - (yStep / 2), 0.0f}});
+		ret.waypoints.emplace_back(Waypoint{
+			{xPos, yPos, 0.0f}, {xPos + xOscillate, yPos - (yStep / 2), 0.0f}});
 		yPos += yStep;
 		xOscillate = -xOscillate;
 	}
@@ -34,7 +35,7 @@ getDebugPath(float xPos)
 }
 
 static const Level
-createDebugLevel(EnemyFormationPool& formationPool)
+createDebugLevel(PathPool& pathPool, FormationPool& formationPool)
 {
 	const int baseEnemyIdx = static_cast<int>(ModelResource::Enemy1);
 	const int numEnemyTypes
@@ -44,42 +45,50 @@ createDebugLevel(EnemyFormationPool& formationPool)
 	const float xRange = xStart * -2;
 	const float xStep = (numEnemyTypes > 1) ? xRange / (numEnemyTypes - 1) : 0.0f;
 
-	auto& formation = formationPool.emplace_back(EnemyFormation());
+	auto& formation = formationPool.emplace_back(Formation());
 	formation.id		= L"DebugFormation";
 	for (int i = 0; i < numEnemyTypes; ++i)
 	{
 		ModelResource res = static_cast<ModelResource>(baseEnemyIdx + i);
 		const float xPos	= xStart + (xStep * i);
+		pathPool.emplace_back(createDebugPath(xPos));
+
 		formation.sections.emplace_back(
-			EnemyFormationSection{getDebugPath(xPos), 1, res});
+			FormationSection{pathPool.size() - 1, 1, res});
 	}
 
-	return Level{{EnemyWave{3.0f, formationPool.size() - 1}}};
+	return Level{{Wave{3.0f, formationPool.size() - 1}}};
 }
 
 //------------------------------------------------------------------------------
-static const std::vector<Waypoint> path1 = {
-	{Vector3(-30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-	{Vector3(20.0f, 10.0f, 0.0f), Vector3(20.0f, 10.0f, 0.0f)},
-	{Vector3(20.0f, 18.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
+static const Path path1 = {
+	L"path1",
+	{
+		{Vector3(-30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+		{Vector3(20.0f, 10.0f, 0.0f), Vector3(20.0f, 10.0f, 0.0f)},
+		{Vector3(20.0f, 18.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
 
-	{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-20.0f, 18.0f, 0.0f)},
-	{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
-	{Vector3(30.0f, -10.0f, 0.0f), Vector3(30.0f, -10.0f, 0.0f)},
+		{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-20.0f, 18.0f, 0.0f)},
+		{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
+		{Vector3(30.0f, -10.0f, 0.0f), Vector3(30.0f, -10.0f, 0.0f)},
+	},
 };
 
-static const std::vector<Waypoint> path1Reverse = {
-	{Vector3(30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-	{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-20.0f, 10.0f, 0.0f)},
-	{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
+static const Path path1Reverse = {
+	L"path1Reverse",
+	{
+		{Vector3(30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+		{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-20.0f, 10.0f, 0.0f)},
+		{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
 
-	{Vector3(20.0f, 18.0f, 0.0f), Vector3(20.0f, 18.0f, 0.0f)},
-	{Vector3(20.0f, 10.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
-	{Vector3(-30.0f, -10.0f, 0.0f), Vector3(-30.0f, -10.0f, 0.0f)},
+		{Vector3(20.0f, 18.0f, 0.0f), Vector3(20.0f, 18.0f, 0.0f)},
+		{Vector3(20.0f, 10.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
+		{Vector3(-30.0f, -10.0f, 0.0f), Vector3(-30.0f, -10.0f, 0.0f)},
+	},
 };
 
 // Anti-clockwise circle
-static const std::vector<Waypoint>
+static const Path
 getPath2a()
 {
 	Vector3 START	= Vector3(5.0f, 20.0f, 0.0f);
@@ -88,19 +97,24 @@ getPath2a()
 	Vector3 CENTER = Vector3(START.x + radius, END.y - radius, 0.0f);
 
 	return {
-		{START, Vector3()},
-		{CENTER + Vector3(-radius, 0.f, 0.f), CENTER + Vector3(-radius, 0.f, 0.f)},
-		{CENTER + Vector3(0.f, -radius, 0.0f),
-		 CENTER + Vector3(-radius, -radius, 0.f)},
-		{CENTER + Vector3(radius, 0.f, 0.f),
-		 CENTER + Vector3(radius, -radius, 0.f)},
-		{CENTER + Vector3(0.f, radius, 0.f), CENTER + Vector3(radius, radius, 0.f)},
-		{END, END},
+		L"path2a",
+		{
+			{START, Vector3()},
+			{CENTER + Vector3(-radius, 0.f, 0.f),
+			 CENTER + Vector3(-radius, 0.f, 0.f)},
+			{CENTER + Vector3(0.f, -radius, 0.0f),
+			 CENTER + Vector3(-radius, -radius, 0.f)},
+			{CENTER + Vector3(radius, 0.f, 0.f),
+			 CENTER + Vector3(radius, -radius, 0.f)},
+			{CENTER + Vector3(0.f, radius, 0.f),
+			 CENTER + Vector3(radius, radius, 0.f)},
+			{END, END},
+		},
 	};
 }
 
 // Clock-wise version of Path2A, shifted up
-static const std::vector<Waypoint>
+static const Path
 getPath2b()
 {
 	Vector3 START	= Vector3(-5.0f, 20.0f, 0.0f);
@@ -109,69 +123,93 @@ getPath2b()
 	Vector3 CENTER = Vector3(START.x - radius, END.y - radius, 0.0f);
 
 	return {
-		{START, Vector3()},
-		{CENTER + Vector3(radius, 0.f, 0.f), CENTER + Vector3(radius, 0.f, 0.f)},
-		{CENTER + Vector3(0.f, -radius, 0.0f),
-		 CENTER + Vector3(radius, -radius, 0.f)},
-		{CENTER + Vector3(-radius, 0.f, 0.f),
-		 CENTER + Vector3(-radius, -radius, 0.f)},
-		{CENTER + Vector3(0.f, radius, 0.f),
-		 CENTER + Vector3(-radius, radius, 0.f)},
-		{END, END},
+		L"path2b",
+		{
+			{START, Vector3()},
+			{CENTER + Vector3(radius, 0.f, 0.f), CENTER + Vector3(radius, 0.f, 0.f)},
+			{CENTER + Vector3(0.f, -radius, 0.0f),
+			 CENTER + Vector3(radius, -radius, 0.f)},
+			{CENTER + Vector3(-radius, 0.f, 0.f),
+			 CENTER + Vector3(-radius, -radius, 0.f)},
+			{CENTER + Vector3(0.f, radius, 0.f),
+			 CENTER + Vector3(-radius, radius, 0.f)},
+			{END, END},
+		},
 	};
 }
 
-static const std::vector<Waypoint> path91 = {
-	{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-	{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)},
-	{Vector3(-10.0f, -10.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)},
+static const Path path91 = {
+	L"path91",
+	{
+		{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+		{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)},
+		{Vector3(-10.0f, -10.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)},
+	},
 };
 
-static const std::vector<Waypoint> path92 = {
-	{Vector3(-10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-	{Vector3(10.0f, 8.0f, 0.0f), Vector3(10.0f, 10.0f, 0.0f)},
-	{Vector3(-10.0f, 6.0f, 0.0f), Vector3(-10.0f, 8.0f, 0.0f)},
-	{Vector3(10.0f, 4.0f, 0.0f), Vector3(10.0f, 8.0f, 0.0f)},
-	{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
-};
-
-static const EnemyFormationSection section1
-	= {getPath2a(), 3, ModelResource::Enemy9};
-static const EnemyFormationSection section2
-	= {getPath2b(), 3, ModelResource::Enemy2};
-static const EnemyFormationSection section3 = {path1, 5, ModelResource::Enemy3};
-static const EnemyFormationSection section4
-	= {path92, 5, ModelResource::Player};
-
-static EnemyFormationPool s_formations = {
-	{L"simple", {section1}},
-	{L"multi", {section1, section2}},
-	{L"many", {section3}},
-	{L"players", {section4}},
+static const Path path92 = {
+	L"path92",
+	{
+		{Vector3(-10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+		{Vector3(10.0f, 8.0f, 0.0f), Vector3(10.0f, 10.0f, 0.0f)},
+		{Vector3(-10.0f, 6.0f, 0.0f), Vector3(-10.0f, 8.0f, 0.0f)},
+		{Vector3(10.0f, 4.0f, 0.0f), Vector3(10.0f, 8.0f, 0.0f)},
+		{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
+	},
 };
 
 //------------------------------------------------------------------------------
 static const std::vector<Level>
-createTestLevels(EnemyFormationPool& formationPool)
+createTestLevels(PathPool& pathPool, FormationPool& formationPool)
 {
-	size_t offset = formationPool.size();
-	formationPool.insert(
-		formationPool.end(), s_formations.begin(), s_formations.end());
+	// Paths
+	size_t pathOffset = pathPool.size();
+	PathPool paths		= {
+		 path1,
+		 path1Reverse,
+		 getPath2a(),
+		 getPath2b(),
+		 path91,
+		 path92,
+	};
+	pathPool.insert(pathPool.end(), paths.begin(), paths.end());
 
-	ASSERT(formationPool.size() > 3);
+	const size_t path1Idx				 = pathOffset + 0;
+	const size_t path1ReverseIdx = pathOffset + 1;
+	const size_t path2aIdx			 = pathOffset + 2;
+	const size_t path2bIdx			 = pathOffset + 3;
+	const size_t path91Idx			 = pathOffset + 4;
+	const size_t path92Idx			 = pathOffset + 5;
+
+	// Formations
+	FormationSection section1 = {path2aIdx, 3, ModelResource::Enemy9};
+	FormationSection section2 = {path2bIdx, 3, ModelResource::Enemy2};
+	FormationSection section3 = {path1Idx, 5, ModelResource::Enemy3};
+	FormationSection section4 = {path92Idx, 5, ModelResource::Player};
+
+	size_t formOffset								= formationPool.size();
+	static FormationPool formations = {
+		{L"simple", {section1}},
+		{L"multi", {section1, section2}},
+		{L"many", {section3}},
+		{L"players", {section4}},
+	};
+
+	formationPool.insert(
+		formationPool.end(), formations.begin(), formations.end());
 	static Level level1 = {{
-		EnemyWave{3.0f, offset + 0},
-		EnemyWave{5.0f, offset + 1},
-		EnemyWave{10.0f, offset + 2},
-		EnemyWave{14.0f, offset + 3},
-		EnemyWave{18.0f, offset + 0},
+		Wave{3.0f, formOffset + 0},
+		Wave{5.0f, formOffset + 1},
+		Wave{10.0f, formOffset + 2},
+		Wave{14.0f, formOffset + 3},
+		Wave{18.0f, formOffset + 0},
 	}};
 
 	static Level level2 = {{
-		EnemyWave{23.0f, offset + 0},
-		EnemyWave{25.0f, offset + 1},
-		EnemyWave{30.0f, offset + 2},
-		EnemyWave{34.0f, offset + 3},
+		Wave{23.0f, formOffset + 0},
+		Wave{25.0f, formOffset + 1},
+		Wave{30.0f, formOffset + 2},
+		Wave{34.0f, formOffset + 3},
 	}};
 
 	return {level1, level2};
@@ -194,9 +232,11 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 		, m_activeWaveIdx(0)
 {
 	TRACE
-	m_formationPool.reserve(MAX_WAVES);
-	s_debugLevels = {{createDebugLevel(m_formationPool)}};
-	s_levels			= {{createTestLevels(m_formationPool)}};
+	m_formationPool.reserve(MAX_NUM_FORMATIONS);
+	m_pathPool.reserve(MAX_NUM_PATHS);
+
+	s_debugLevels = {{createDebugLevel(m_pathPool, m_formationPool)}};
+	s_levels			= {{createTestLevels(m_pathPool, m_formationPool)}};
 
 	reset();
 }
@@ -210,7 +250,7 @@ Enemies::reset()
 	m_nextEventWaveIdx = 0;
 	m_activeWaveIdx		 = 0;
 
-	for (auto& e : m_entityIdxToWaypoints)
+	for (auto& e : m_entityIdxToPath)
 	{
 		e = nullptr;
 	}
@@ -259,10 +299,9 @@ Enemies::update(const DX::StepTimer& timer)
 			{
 				// Spawn enemy
 				auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
-				ASSERT(
-					m_entityIdxToWaypoints.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
-				m_entityIdxToWaypoints[m_context.nextEnemyIdx - ENEMIES_IDX]
-					= &sec.waypoints;
+				ASSERT(m_entityIdxToPath.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
+				m_entityIdxToPath[m_context.nextEnemyIdx - ENEMIES_IDX]
+					= &m_pathPool[sec.pathIdx];
 				newEnemy.isAlive		= true;
 				newEnemy.birthTimeS = totalTimeS + delayS;
 				newEnemy.model			= &m_resources.modelData[sec.model];
@@ -352,21 +391,21 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		{
 			continue;
 		}
-		ASSERT(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
-		ASSERT(m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr);
-		auto& waypoints = *m_entityIdxToWaypoints[i - ENEMIES_IDX];
+		ASSERT(m_entityIdxToPath.size() > i - ENEMIES_IDX);
+		ASSERT(m_entityIdxToPath[i - ENEMIES_IDX] != nullptr);
+		auto& path = *m_entityIdxToPath[i - ENEMIES_IDX];
 
 		const float aliveS = (totalTimeS - e.birthTimeS);
 		if (aliveS < 0.0f)
 		{
-			e.position = waypoints[0].wayPoint;
+			e.position = path.waypoints[0].wayPoint;
 			continue;
 		}
 
 		// Enemy finished it's route
 		const size_t currentSegment
 			= static_cast<size_t>(floor(aliveS / SEGMENT_DURATION_S));
-		if (currentSegment >= waypoints.size() - 1)
+		if (currentSegment >= path.waypoints.size() - 1)
 		{
 			e.isAlive = false;
 			continue;
@@ -375,9 +414,9 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		const float t = fmod(aliveS, SEGMENT_DURATION_S) / SEGMENT_DURATION_S;
 		e.position		= bezier(
 			 t,
-			 waypoints[currentSegment].wayPoint,
-			 waypoints[currentSegment + 1].wayPoint,
-			 waypoints[currentSegment + 1].controlPoint);
+			 path.waypoints[currentSegment].wayPoint,
+			 path.waypoints[currentSegment + 1].wayPoint,
+			 path.waypoints[currentSegment + 1].controlPoint);
 	}
 }
 
@@ -427,13 +466,13 @@ void
 Enemies::debugRender(DX::DebugBatchType* batch)
 {
 	TRACE
-	std::set<const std::vector<Waypoint>*> waypointsToRender;
+	std::set<const Path*> pathsToRender;
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		ASSERT(m_entityIdxToWaypoints.size() > i - ENEMIES_IDX);
-		if (m_entityIdxToWaypoints[i - ENEMIES_IDX] != nullptr)
+		ASSERT(m_entityIdxToPath.size() > i - ENEMIES_IDX);
+		if (m_entityIdxToPath[i - ENEMIES_IDX] != nullptr)
 		{
-			waypointsToRender.insert(m_entityIdxToWaypoints[i - ENEMIES_IDX]);
+			pathsToRender.insert(m_entityIdxToPath[i - ENEMIES_IDX]);
 		}
 	}
 
@@ -441,9 +480,9 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
 	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
 
-	for (auto w : waypointsToRender)
+	for (const auto& p : pathsToRender)
 	{
-		const auto& waypoints = *w;
+		const auto& waypoints = (*p).waypoints;
 		auto prevPoint				= waypoints[0].wayPoint;
 		for (size_t i = 1; i < waypoints.size(); ++i)
 		{
