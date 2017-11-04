@@ -76,9 +76,6 @@ public:
 	PathPool& debug_getPaths() { return m_pathPool; }
 
 private:
-	using EntityIdxToPathMap = std::array<const Path*, NUM_ENEMIES>;
-	EntityIdxToPathMap m_entityIdxToPath;
-
 	AppContext& m_context;
 	AppResources& m_resources;
 	size_t m_currentLevel;

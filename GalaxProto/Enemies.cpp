@@ -250,11 +250,6 @@ Enemies::reset()
 	m_nextEventWaveIdx = 0;
 	m_activeWaveIdx		 = 0;
 
-	for (auto& e : m_entityIdxToPath)
-	{
-		e = nullptr;
-	}
-
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		m_context.entities[i].isAlive			= false;
@@ -298,10 +293,8 @@ Enemies::update(const DX::StepTimer& timer)
 			for (int ship = 0; ship < numShips; ++ship)
 			{
 				// Spawn enemy
-				auto& newEnemy = m_context.entities[m_context.nextEnemyIdx];
-				ASSERT(m_entityIdxToPath.size() > m_context.nextEnemyIdx - ENEMIES_IDX);
-				m_entityIdxToPath[m_context.nextEnemyIdx - ENEMIES_IDX]
-					= &m_pathPool[sec.pathIdx];
+				auto& newEnemy			= m_context.entities[m_context.nextEnemyIdx];
+				newEnemy.pathIdx		= sec.pathIdx;
 				newEnemy.isAlive		= true;
 				newEnemy.birthTimeS = totalTimeS + delayS;
 				newEnemy.model			= &m_resources.modelData[sec.model];
@@ -391,10 +384,8 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		{
 			continue;
 		}
-		ASSERT(m_entityIdxToPath.size() > i - ENEMIES_IDX);
-		ASSERT(m_entityIdxToPath[i - ENEMIES_IDX] != nullptr);
-		auto& path = *m_entityIdxToPath[i - ENEMIES_IDX];
-
+		ASSERT(e.pathIdx < m_pathPool.size());
+		const auto& path	 = m_pathPool[e.pathIdx];
 		const float aliveS = (totalTimeS - e.birthTimeS);
 		if (aliveS < 0.0f)
 		{
@@ -466,13 +457,13 @@ void
 Enemies::debugRender(DX::DebugBatchType* batch)
 {
 	TRACE
-	std::set<const Path*> pathsToRender;
+	std::set<size_t> pathsToRender;
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
-		ASSERT(m_entityIdxToPath.size() > i - ENEMIES_IDX);
-		if (m_entityIdxToPath[i - ENEMIES_IDX] != nullptr)
+		const auto& e = m_context.entities[i];
+		if (e.pathIdx < m_pathPool.size())
 		{
-			pathsToRender.insert(m_entityIdxToPath[i - ENEMIES_IDX]);
+			pathsToRender.insert(e.pathIdx);
 		}
 	}
 
@@ -480,9 +471,11 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
 	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
 
-	for (const auto& p : pathsToRender)
+	for (const auto& pathIdx : pathsToRender)
 	{
-		const auto& waypoints = (*p).waypoints;
+		ASSERT(pathIdx < m_pathPool.size());
+		const auto& path			= m_pathPool[pathIdx];
+		const auto& waypoints = path.waypoints;
 		auto prevPoint				= waypoints[0].wayPoint;
 		for (size_t i = 1; i < waypoints.size(); ++i)
 		{
