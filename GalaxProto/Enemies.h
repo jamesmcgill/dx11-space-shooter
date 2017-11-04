@@ -74,14 +74,17 @@ public:
 	std::vector<Level>& debug_getCurrentLevels();
 	FormationPool& debug_getFormations() { return m_formationPool; }
 	PathPool& debug_getPaths() { return m_pathPool; }
+	size_t nullPathIdx			= 0;
+	size_t nullFormationIdx = 0;
 
 private:
 	AppContext& m_context;
 	AppResources& m_resources;
-	size_t m_currentLevel;
-	float m_nextEventTimeS;
-	size_t m_nextEventWaveIdx;
-	size_t m_activeWaveIdx;
+
+	size_t m_currentLevel			= 0;
+	float m_nextEventTimeS		= 0.0f;
+	size_t m_nextEventWaveIdx = 0;
+	size_t m_activeWaveIdx		= 0;
 
 	static constexpr size_t MAX_NUM_PATHS = 256;
 	PathPool m_pathPool;		// Shared pool of all available

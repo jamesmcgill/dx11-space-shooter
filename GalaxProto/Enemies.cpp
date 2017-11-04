@@ -45,19 +45,40 @@ createDebugLevel(PathPool& pathPool, FormationPool& formationPool)
 	const float xRange = xStart * -2;
 	const float xStep = (numEnemyTypes > 1) ? xRange / (numEnemyTypes - 1) : 0.0f;
 
-	auto& formation = formationPool.emplace_back(Formation());
-	formation.id		= L"DebugFormation";
+	const int shipCount = 1;
+	auto& formation			= formationPool.emplace_back(Formation());
+	formation.id				= L"DebugFormation";
 	for (int i = 0; i < numEnemyTypes; ++i)
 	{
 		ModelResource res = static_cast<ModelResource>(baseEnemyIdx + i);
 		const float xPos	= xStart + (xStep * i);
 		pathPool.emplace_back(createDebugPath(xPos));
+		size_t pathIdx = pathPool.size() - 1;
 
-		formation.sections.emplace_back(
-			FormationSection{pathPool.size() - 1, 1, res});
+		formation.sections.emplace_back(FormationSection{pathIdx, shipCount, res});
 	}
 
 	return Level{{Wave{3.0f, formationPool.size() - 1}}};
+}
+
+//------------------------------------------------------------------------------
+static void
+addNullData(PathPool& pathPool, FormationPool& formationPool)
+{
+	static const Path nullPath = {
+		L"nullPath",
+		{
+			{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+		},
+	};
+	pathPool.emplace_back(nullPath);
+	size_t nullPathIdx = pathPool.size() - 1;
+
+	const int shipCount = 1;
+	auto& formation			= formationPool.emplace_back(Formation());
+	formation.id				= L"nullFormation";
+	formation.sections.emplace_back(
+		FormationSection{nullPathIdx, shipCount, ModelResource::Enemy1});
 }
 
 //------------------------------------------------------------------------------
@@ -235,6 +256,11 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 	m_formationPool.reserve(MAX_NUM_FORMATIONS);
 	m_pathPool.reserve(MAX_NUM_PATHS);
 
+	// Prevent data ever becoming truely empty with 'null' versions at the front
+	addNullData(m_pathPool, m_formationPool);
+	nullPathIdx			 = m_pathPool.size() - 1;
+	nullFormationIdx = m_formationPool.size() - 1;
+
 	s_debugLevels = {{createDebugLevel(m_pathPool, m_formationPool)}};
 	s_levels			= {{createTestLevels(m_pathPool, m_formationPool)}};
 
@@ -389,6 +415,7 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		const float aliveS = (totalTimeS - e.birthTimeS);
 		if (aliveS < 0.0f)
 		{
+			ASSERT(!path.waypoints.empty());
 			e.position = path.waypoints[0].wayPoint;
 			continue;
 		}
@@ -476,7 +503,9 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 		ASSERT(pathIdx < m_pathPool.size());
 		const auto& path			= m_pathPool[pathIdx];
 		const auto& waypoints = path.waypoints;
-		auto prevPoint				= waypoints[0].wayPoint;
+
+		ASSERT(!waypoints.empty());
+		auto prevPoint = waypoints[0].wayPoint;
 		for (size_t i = 1; i < waypoints.size(); ++i)
 		{
 			const auto& point		= waypoints[i].wayPoint;

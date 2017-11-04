@@ -12,15 +12,6 @@
 //------------------------------------------------------------------------------
 // TODO:
 //------------------------------------------------------------------------------
-// - Enemies mapEnemyToPath can now use indices to the pathPool
-//
-// - Handle deletion of formation that is in-use
-// - Handle deletion of path that is in-use
-//			*** How can we Delete without invalidating the level data? ***
-//						- on delete, scan through all levels for uses of the formation
-//						- give them all a special 'null' idx. I.e. to a formation that is
-// never deleted.
-//
 // - Customise names for formations and paths
 //
 // - PATH EDITOR [special visual editor for waypoints]
@@ -101,7 +92,8 @@ struct IMode
 	GameLogic& m_gameLogic;
 
 	ui::Text m_controlInfo;
-	size_t m_menuSize		 = 0;
+	size_t m_firstIdx		 = 0;
+	size_t m_lastIdx		 = 0;
 	size_t m_selectedIdx = 0;
 
 	IMode(
@@ -122,9 +114,9 @@ struct IMode
 	{
 		if (isNavigatingForward)
 		{
-			m_selectedIdx = 0;
+			m_selectedIdx = firstMenuIdx();
 		}
-		updateMenuSize();
+		updateIndices();
 	}
 
 	virtual std::wstring controlInfoText() const				= 0;
@@ -147,15 +139,17 @@ struct IMode
 	virtual void onHome() {}
 	virtual void onEnd() {}
 
-	virtual size_t numMenuItems() const = 0;
+	virtual size_t firstMenuIdx() const { return 0; }
+	virtual size_t lastItemIdx() const = 0;
 
 	void init();
 	void handleInput(const DX::StepTimer& timer);
 	void render();
 
-	void updateMenuSize()
+	void updateIndices()
 	{
-		m_menuSize = numMenuItems() + 1;		// +1 for CREATE button
+		m_firstIdx = firstMenuIdx();
+		m_lastIdx	= lastItemIdx() + 1;		 // +1 for CREATE button
 	}
 };
 
@@ -194,14 +188,13 @@ IMode::handleInput(const DX::StepTimer& timer)
 
 	if (kb.IsKeyPressed(Keyboard::Up))
 	{
-		const size_t lastItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
-		m_selectedIdx = (m_selectedIdx > 0) ? m_selectedIdx - 1 : lastItemIdx;
+		m_selectedIdx
+			= (m_selectedIdx > m_firstIdx) ? m_selectedIdx - 1 : m_lastIdx;
 	}
 	else if (kb.IsKeyPressed(Keyboard::Down))
 	{
-		const size_t lastItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
-
-		m_selectedIdx = (m_selectedIdx < lastItemIdx) ? m_selectedIdx + 1 : 0;
+		m_selectedIdx
+			= (m_selectedIdx < m_lastIdx) ? m_selectedIdx + 1 : m_firstIdx;
 	}
 
 	if (kb.IsKeyPressed(Keyboard::Left))
@@ -242,12 +235,12 @@ IMode::handleInput(const DX::StepTimer& timer)
 		kb.IsKeyPressed(Keyboard::LeftControl) || kb.IsKeyPressed(Keyboard::Space)
 		|| kb.IsKeyPressed(Keyboard::Enter))
 	{
-		const size_t createItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+		const size_t& createItemIdx = m_lastIdx;
 		if (m_selectedIdx == createItemIdx)
 		{
 			onCreate();
-			updateMenuSize();
-			m_selectedIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+			updateIndices();
+			m_selectedIdx = m_lastIdx;
 		}
 		else
 		{
@@ -256,11 +249,11 @@ IMode::handleInput(const DX::StepTimer& timer)
 	}
 	if (kb.IsKeyPressed(Keyboard::Delete))
 	{
-		const size_t createItemIdx = (m_menuSize > 0) ? m_menuSize - 1 : 0;
+		const size_t& createItemIdx = m_lastIdx;
 		if (m_selectedIdx < createItemIdx)
 		{
 			onDeleteItem(m_selectedIdx);
-			updateMenuSize();
+			updateIndices();
 		}
 	}
 }
@@ -298,8 +291,8 @@ IMode::render()
 	drawMenuItem(false, std::move(title));
 	drawMenuItem(false, std::wstring(titleSize, '-'));
 
-	size_t idx = 0;
-	while (idx < numMenuItems())
+	size_t idx = m_firstIdx;
+	while (idx < m_lastIdx)
 	{
 		drawMenuItem((idx == m_selectedIdx), itemName(idx));
 		idx++;
@@ -331,7 +324,7 @@ struct LevelListMode : public IMode
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
 	void onItemSelected(size_t itemIdx) override;
-	size_t numMenuItems() const override;
+	size_t lastItemIdx() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -362,7 +355,7 @@ struct LevelEditorMode : public IMode
 	void onPgUp() override;
 	void onPgDn() override;
 
-	size_t numMenuItems() const override;
+	size_t lastItemIdx() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -387,7 +380,9 @@ struct FormationListMode : public IMode
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
 	void onItemSelected(size_t itemIdx) override;
-	size_t numMenuItems() const override;
+
+	size_t firstMenuIdx() const override;
+	size_t lastItemIdx() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -420,7 +415,7 @@ struct FormationSectionEditorMode : public IMode
 	void onHome() override;
 	void onEnd() override;
 
-	size_t numMenuItems() const override;
+	size_t lastItemIdx() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -445,7 +440,9 @@ struct PathListMode : public IMode
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
 	void onItemSelected(size_t itemIdx) override;
-	size_t numMenuItems() const override;
+
+	size_t firstMenuIdx() const override;
+	size_t lastItemIdx() const override;
 };
 
 //------------------------------------------------------------------------------
@@ -513,9 +510,9 @@ LevelListMode::onDeleteItem(size_t itemIdx)
 
 //------------------------------------------------------------------------------
 size_t
-LevelListMode::numMenuItems() const
+LevelListMode::lastItemIdx() const
 {
-	return m_gameLogic.m_enemies.debug_getCurrentLevels().size();
+	return m_gameLogic.m_enemies.debug_getCurrentLevels().size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -559,7 +556,8 @@ LevelEditorMode::onCreate()
 	auto& waves = currentLevelWavesRef(m_gameLogic);
 	float t			= (waves.empty()) ? MIN_SPAWN_TIME : waves.back().spawnTimeS;
 
-	Wave newWave{t, 0};
+	size_t formationIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
+	Wave newWave{t, formationIdx};
 	waves.emplace_back(newWave);
 }
 
@@ -600,9 +598,11 @@ LevelEditorMode::onPgUp()
 {
 	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
 	auto& curIdx = currentLevelWaveRef(m_selectedIdx, m_gameLogic).formationIdx;
-	const size_t lastIdx = (formations.size() > 0) ? formations.size() - 1 : 0;
 
-	curIdx = (curIdx > 0) ? curIdx - 1 : lastIdx;
+	const size_t firstIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
+	const size_t lastIdx	= (formations.size() > 0) ? formations.size() - 1 : 0;
+
+	curIdx = (curIdx > firstIdx) ? curIdx - 1 : lastIdx;
 }
 
 //------------------------------------------------------------------------------
@@ -611,17 +611,19 @@ LevelEditorMode::onPgDn()
 {
 	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
 	auto& curIdx = currentLevelWaveRef(m_selectedIdx, m_gameLogic).formationIdx;
-	const size_t lastIdx = (formations.size() > 0) ? formations.size() - 1 : 0;
 
-	curIdx = (curIdx < lastIdx) ? curIdx + 1 : 0;
+	const size_t firstIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
+	const size_t lastIdx	= (formations.size() > 0) ? formations.size() - 1 : 0;
+
+	curIdx = (curIdx < lastIdx) ? curIdx + 1 : firstIdx;
 }
 
 //------------------------------------------------------------------------------
 size_t
-LevelEditorMode::numMenuItems() const
+LevelEditorMode::lastItemIdx() const
 {
 	auto& waves = currentLevelWavesRef(m_gameLogic);
-	return waves.size();
+	return waves.size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -652,14 +654,33 @@ FormationListMode::onDeleteItem(size_t itemIdx)
 	ASSERT(itemIdx < formations.size());
 
 	formations.erase(formations.begin() + itemIdx);
-	// TODO(James): Handle levels which were using this formation
+
+	// Refresh level indices
+	auto& levels = m_gameLogic.m_enemies.debug_getCurrentLevels();
+	for (auto& l : levels)
+	{
+		for (auto& w : l.waves)
+		{
+			if (w.formationIdx >= itemIdx)
+			{
+				--w.formationIdx;
+			}
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
 size_t
-FormationListMode::numMenuItems() const
+FormationListMode::firstMenuIdx() const
 {
-	return m_gameLogic.m_enemies.debug_getFormations().size();
+	return m_gameLogic.m_enemies.nullFormationIdx + 1;
+}
+
+//------------------------------------------------------------------------------
+size_t
+FormationListMode::lastItemIdx() const
+{
+	return m_gameLogic.m_enemies.debug_getFormations().size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -704,7 +725,7 @@ FormationSectionEditorMode::onCreate()
 	auto& formation = currentFormationRef(m_gameLogic);
 
 	FormationSection section;
-	section.pathIdx	= 0;
+	section.pathIdx	= m_gameLogic.m_enemies.nullPathIdx + 1;
 	section.numShips = 3;
 	section.model		 = ModelResource::Enemy1;
 	formation.sections.emplace_back(section);
@@ -746,10 +767,11 @@ FormationSectionEditorMode::onPgUp()
 	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
 	auto& paths		= m_gameLogic.m_enemies.debug_getPaths();
 
-	auto& curIdx				 = section.pathIdx;
-	const size_t lastIdx = (paths.size() > 0) ? paths.size() - 1 : 0;
+	auto& curIdx					= section.pathIdx;
+	const size_t firstIdx = m_gameLogic.m_enemies.nullPathIdx + 1;
+	const size_t lastIdx	= (paths.size() > 0) ? paths.size() - 1 : 0;
 
-	curIdx = (curIdx > 0) ? curIdx - 1 : lastIdx;
+	curIdx = (curIdx > firstIdx) ? curIdx - 1 : lastIdx;
 }
 
 //------------------------------------------------------------------------------
@@ -759,10 +781,11 @@ FormationSectionEditorMode::onPgDn()
 	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
 	auto& paths		= m_gameLogic.m_enemies.debug_getPaths();
 
-	auto& curIdx				 = section.pathIdx;
-	const size_t lastIdx = (paths.size() > 0) ? paths.size() - 1 : 0;
+	auto& curIdx					= section.pathIdx;
+	const size_t firstIdx = m_gameLogic.m_enemies.nullPathIdx + 1;
+	const size_t lastIdx	= (paths.size() > 0) ? paths.size() - 1 : 0;
 
-	curIdx = (curIdx < lastIdx) ? curIdx + 1 : 0;
+	curIdx = (curIdx < lastIdx) ? curIdx + 1 : firstIdx;
 }
 
 //------------------------------------------------------------------------------
@@ -793,10 +816,10 @@ FormationSectionEditorMode::onEnd()
 
 //------------------------------------------------------------------------------
 size_t
-FormationSectionEditorMode::numMenuItems() const
+FormationSectionEditorMode::lastItemIdx() const
 {
 	auto& formation = currentFormationRef(m_gameLogic);
-	return formation.sections.size();
+	return formation.sections.size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -815,7 +838,8 @@ PathListMode::itemName(size_t itemIdx) const
 void
 PathListMode::onCreate()
 {
-	Path path{L"New"};
+	using DirectX::SimpleMath::Vector3;
+	Path path{L"New", {Waypoint()}};
 	m_gameLogic.m_enemies.debug_getPaths().emplace_back(path);
 }
 
@@ -827,14 +851,33 @@ PathListMode::onDeleteItem(size_t itemIdx)
 	ASSERT(itemIdx < paths.size());
 
 	paths.erase(paths.begin() + itemIdx);
-	// TODO(James): Handle formations which were using this path
+
+	// Refresh formation indices
+	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	for (auto& f : formations)
+	{
+		for (auto& s : f.sections)
+		{
+			if (s.pathIdx >= itemIdx)
+			{
+				--s.pathIdx;
+			}
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
 size_t
-PathListMode::numMenuItems() const
+PathListMode::firstMenuIdx() const
 {
-	return m_gameLogic.m_enemies.debug_getPaths().size();
+	return m_gameLogic.m_enemies.nullPathIdx + 1;
+}
+
+//------------------------------------------------------------------------------
+size_t
+PathListMode::lastItemIdx() const
+{
+	return m_gameLogic.m_enemies.debug_getPaths().size() - 1;
 }
 
 //------------------------------------------------------------------------------
