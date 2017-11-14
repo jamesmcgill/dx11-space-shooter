@@ -12,8 +12,6 @@
 //------------------------------------------------------------------------------
 // TODO:
 //------------------------------------------------------------------------------
-// - Customise names for formations and paths
-//
 // - PATH EDITOR [special visual editor for waypoints]
 //	- Select, Create, Delete, Move [Points]
 //
@@ -122,6 +120,10 @@ struct IMode
 	virtual std::wstring controlInfoText() const				= 0;
 	virtual std::wstring menuTitle() const							= 0;
 	virtual std::wstring itemName(size_t itemIdx) const = 0;
+	virtual std::wstring itemNameToDisplay(size_t itemIdx) const
+	{
+		return itemName(itemIdx);
+	};
 
 	virtual void onBack() {}
 	virtual void onCreate() {}
@@ -143,7 +145,7 @@ struct IMode
 	virtual size_t lastItemIdx() const = 0;
 
 	void init();
-	void handleInput(const DX::StepTimer& timer);
+	virtual void handleInput(const DX::StepTimer& timer);
 	void render();
 
 	void updateIndices()
@@ -178,7 +180,7 @@ IMode::handleInput(const DX::StepTimer& timer)
 {
 	TRACE
 	UNREFERENCED_PARAMETER(timer);
-	auto& kb = m_resources.kbTracker;
+	const auto& kb = m_resources.kbTracker;
 	using DirectX::Keyboard;
 
 	if (kb.IsKeyPressed(Keyboard::Escape))
@@ -266,38 +268,177 @@ IMode::render()
 	m_controlInfo.draw(*m_resources.m_spriteBatch);
 
 	auto monoFont = m_resources.fontMono8pt.get();
-
-	float yPos = MAIN_AREA_START_Y;
 	const float yAscent
 		= ceil(DirectX::XMVectorGetY(monoFont->MeasureString(L"X")));
 
-	ui::Text uiText;
-	uiText.font				= monoFont;
-	uiText.position.x = MAIN_AREA_START_X;
+	using DirectX::SimpleMath::Vector2;
+	Vector2 position = {MAIN_AREA_START_X, MAIN_AREA_START_Y};
+	Vector2 origin	 = Vector2(0.f, 0.f);
+	Vector2 scale		 = Vector2(1.f, 1.f);
 
-	auto drawMenuItem =
-		[&yAscent, &yPos, &uiText, &spriteBatch = m_resources.m_spriteBatch](
-			bool isSelected, const std::wstring text)
+	auto drawMenuItem = [&, &spriteBatch = m_resources.m_spriteBatch](
+		bool isSelected, const std::wstring& text)
 	{
-		uiText.color			= (isSelected) ? SELECTED_ITEM_COLOR : NORMAL_ITEM_COLOR;
-		uiText.text				= std::move(text);
-		uiText.position.y = yPos;
-		yPos += yAscent;
-		uiText.draw(*spriteBatch);
+		monoFont->DrawString(
+			spriteBatch.get(),
+			text.c_str(),
+			position,
+			(isSelected) ? SELECTED_ITEM_COLOR : NORMAL_ITEM_COLOR,
+			0.0f,
+			origin,
+			scale,
+			DirectX::SpriteEffects_None,
+			ui::Layer::L5_Default);
+		position.y += yAscent;
 	};
 
 	std::wstring title = menuTitle();
 	size_t titleSize	 = title.size();
-	drawMenuItem(false, std::move(title));
+	drawMenuItem(false, title);
 	drawMenuItem(false, std::wstring(titleSize, '-'));
 
 	size_t idx = m_firstIdx;
 	while (idx < m_lastIdx)
 	{
-		drawMenuItem((idx == m_selectedIdx), itemName(idx));
+		drawMenuItem((idx == m_selectedIdx), itemNameToDisplay(idx));
 		idx++;
 	}
 	drawMenuItem((idx == m_selectedIdx), L"CREATE");
+}
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+struct IRenameableMode : public IMode
+{
+	static const size_t RENAME_DISABLED = static_cast<size_t>(-1);
+
+	size_t m_renamingIdx = RENAME_DISABLED;
+	std::wstring m_renameBuffer;
+
+	IRenameableMode(
+		Modes& modes,
+		AppContext& context,
+		AppResources& resources,
+		GameLogic& logic)
+			: IMode(modes, context, resources, logic)
+	{
+	}
+
+	// IMode
+	void onEnterMode(bool isNavigatingForward = true) override
+	{
+		m_renamingIdx = RENAME_DISABLED;
+		IMode::onEnterMode(isNavigatingForward);
+	}
+
+	void handleInput(const DX::StepTimer& timer) override;
+
+	// IRenameableMode
+	void handleInput_renaming(const DX::StepTimer& timer);
+	virtual void setItemName(size_t itemIdx, std::wstring newName) = 0;
+
+	std::wstring renameText() const
+	{
+		std::wstring rename = m_renameBuffer;
+		rename.push_back(L'|');		 // Mark that we are editting
+		return rename;
+	}
+};
+
+//------------------------------------------------------------------------------
+void
+IRenameableMode::handleInput(const DX::StepTimer& timer)
+{
+	TRACE
+	const auto& kb = m_resources.kbTracker;
+	using DirectX::Keyboard;
+
+	// Steal all input if in renaming mode
+	if (m_renamingIdx != RENAME_DISABLED)
+	{
+		handleInput_renaming(timer);
+		return;		 // Don't process any other input
+	}
+
+	if (kb.IsKeyPressed(Keyboard::E))
+	{
+		const size_t& createItemIdx = m_lastIdx;
+		if (m_selectedIdx != createItemIdx)
+		{
+			m_renamingIdx	= m_selectedIdx;
+			m_renameBuffer = itemName(m_selectedIdx);
+		}
+	}
+
+	IMode::handleInput(timer);
+}
+
+//------------------------------------------------------------------------------
+void
+IRenameableMode::handleInput_renaming(const DX::StepTimer& timer)
+{
+	TRACE
+	UNREFERENCED_PARAMETER(timer);
+	const auto& kb		 = m_resources.kbTracker;
+	const auto kbState = m_resources.m_keyboard->GetState();
+	using DirectX::Keyboard;
+
+	auto isCapitalised = [&kbState]() -> bool {
+		return kbState.IsKeyDown(Keyboard::CapsLock)
+					 || kbState.IsKeyDown(Keyboard::LeftShift)
+					 || kbState.IsKeyDown(Keyboard::RightShift);
+	};
+
+	for (int k = (int)Keyboard::A; k <= (int)Keyboard::Z; ++k)
+	{
+		if (kb.IsKeyPressed((Keyboard::Keys)k))
+		{
+			bool isCapital	 = isCapitalised();
+			wchar_t baseChar = (isCapital) ? L'A' : L'a';
+			m_renameBuffer.push_back(baseChar + wchar_t(k - (int)Keyboard::A));
+		}
+	}
+
+	for (int k = (int)Keyboard::D0; k <= (int)Keyboard::D9; ++k)
+	{
+		if (kb.IsKeyPressed((Keyboard::Keys)k))
+		{
+			m_renameBuffer.push_back(L'0' + wchar_t(k - (int)Keyboard::D0));
+		}
+	}
+
+	for (int k = (int)Keyboard::NumPad0; k <= (int)Keyboard::NumPad9; ++k)
+	{
+		if (kb.IsKeyPressed((Keyboard::Keys)k))
+		{
+			m_renameBuffer.push_back(L'0' + wchar_t(k - (int)Keyboard::NumPad0));
+		}
+	}
+
+	if (kb.IsKeyPressed(Keyboard::OemMinus))
+	{
+		m_renameBuffer.push_back(isCapitalised() ? L'_' : L'-');
+	}
+
+	if (kb.IsKeyPressed(Keyboard::Escape))
+	{
+		m_renamingIdx = RENAME_DISABLED;
+	}
+
+	if (kb.IsKeyPressed(Keyboard::Delete) || kb.IsKeyPressed(Keyboard::Back))
+	{
+		if (!m_renameBuffer.empty())
+		{
+			m_renameBuffer.pop_back();
+		}
+	}
+
+	if (kb.IsKeyPressed(Keyboard::Enter))
+	{
+		setItemName(m_renamingIdx, m_renameBuffer);
+		m_renamingIdx = RENAME_DISABLED;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -359,23 +500,25 @@ struct LevelEditorMode : public IMode
 };
 
 //------------------------------------------------------------------------------
-struct FormationListMode : public IMode
+struct FormationListMode : public IRenameableMode
 {
 	FormationListMode(
 		Modes& modes,
 		AppContext& context,
 		AppResources& resources,
 		GameLogic& logic)
-			: IMode(modes, context, resources, logic)
+			: IRenameableMode(modes, context, resources, logic)
 	{
 	}
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del)";
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del), Edit Name(E)";
 	}
 	std::wstring menuTitle() const override { return L"Formation List"; }
 	std::wstring itemName(size_t itemIdx) const override;
+	std::wstring itemNameToDisplay(size_t itemIdx) const override;
+	void setItemName(size_t itemIdx, std::wstring newName) override;
 
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
@@ -419,23 +562,25 @@ struct FormationSectionEditorMode : public IMode
 };
 
 //------------------------------------------------------------------------------
-struct PathListMode : public IMode
+struct PathListMode : public IRenameableMode
 {
 	PathListMode(
 		Modes& modes,
 		AppContext& context,
 		AppResources& resources,
 		GameLogic& logic)
-			: IMode(modes, context, resources, logic)
+			: IRenameableMode(modes, context, resources, logic)
 	{
 	}
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del)";
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del), Edit Name(E)";
 	}
 	std::wstring menuTitle() const override { return L"Path List"; }
 	std::wstring itemName(size_t itemIdx) const override;
+	std::wstring itemNameToDisplay(size_t itemIdx) const override;
+	void setItemName(size_t itemIdx, std::wstring newName) override;
 
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
@@ -444,6 +589,8 @@ struct PathListMode : public IMode
 	size_t firstMenuIdx() const override;
 	size_t lastItemIdx() const override;
 };
+
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 struct Modes
@@ -636,6 +783,23 @@ FormationListMode::itemName(size_t itemIdx) const
 	ASSERT(itemIdx < formations.size());
 
 	return formations[itemIdx].id;
+}
+
+//------------------------------------------------------------------------------
+std::wstring
+FormationListMode::itemNameToDisplay(size_t itemIdx) const
+{
+	return (itemIdx == m_renamingIdx) ? renameText() : itemName(itemIdx);
+}
+
+//------------------------------------------------------------------------------
+void
+FormationListMode::setItemName(size_t itemIdx, std::wstring newName)
+{
+	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	ASSERT(itemIdx < formations.size());
+
+	formations[itemIdx].id = newName;
 }
 
 //------------------------------------------------------------------------------
@@ -835,6 +999,23 @@ PathListMode::itemName(size_t itemIdx) const
 }
 
 //------------------------------------------------------------------------------
+std::wstring
+PathListMode::itemNameToDisplay(size_t itemIdx) const
+{
+	return (itemIdx == m_renamingIdx) ? renameText() : itemName(itemIdx);
+}
+
+//------------------------------------------------------------------------------
+void
+PathListMode::setItemName(size_t itemIdx, std::wstring newName)
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(itemIdx < paths.size());
+
+	paths[itemIdx].id = newName;
+}
+
+//------------------------------------------------------------------------------
 void
 PathListMode::onCreate()
 {
@@ -1023,7 +1204,7 @@ EditorState::Impl::handleModeMenuInput(const DX::StepTimer& timer)
 		}
 	}
 
-	auto& kb = m_resources.kbTracker;
+	const auto& kb = m_resources.kbTracker;
 	using DirectX::Keyboard;
 	if (kb.IsKeyPressed(Keyboard::Tab))
 	{
@@ -1097,8 +1278,8 @@ EditorState::handleInput(const DX::StepTimer& timer)
 	TRACE
 	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
 
-	auto& kb			= m_resources.kbTracker;
-	auto& kbState = m_resources.kbTracker.lastState;
+	const auto& kb			= m_resources.kbTracker;
+	const auto& kbState = m_resources.kbTracker.lastState;
 	using DirectX::Keyboard;
 
 	// Debug Controls
