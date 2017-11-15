@@ -15,8 +15,6 @@
 // - PATH EDITOR [special visual editor for waypoints]
 //	- Select, Create, Delete, Move [Points]
 //
-// - Play current selection in background (i.e. level, formation, path)
-//
 // - Load/Save All  (Define human editable file format)
 //------------------------------------------------------------------------------
 namespace
@@ -115,6 +113,7 @@ struct IMode
 			m_selectedIdx = firstMenuIdx();
 		}
 		updateIndices();
+		onItemSelected();
 	}
 
 	virtual std::wstring controlInfoText() const				= 0;
@@ -128,10 +127,9 @@ struct IMode
 	virtual void onBack() {}
 	virtual void onCreate() {}
 	virtual void onDeleteItem(size_t itemIdx) { UNREFERENCED_PARAMETER(itemIdx); }
-	virtual void onItemSelected(size_t itemIdx)
-	{
-		UNREFERENCED_PARAMETER(itemIdx);
-	};
+	virtual void onItemSelected() = 0;
+	virtual void onItemCommand() {}
+
 	virtual void onPlus() {}
 	virtual void onSubtract() {}
 	virtual void onPgUp() {}
@@ -145,6 +143,10 @@ struct IMode
 	virtual size_t lastItemIdx() const = 0;
 
 	void init();
+	virtual void update(const DX::StepTimer& timer)
+	{
+		UNREFERENCED_PARAMETER(timer);
+	}
 	virtual void handleInput(const DX::StepTimer& timer);
 	void render();
 
@@ -152,6 +154,26 @@ struct IMode
 	{
 		m_firstIdx = firstMenuIdx();
 		m_lastIdx	= lastItemIdx() + 1;		 // +1 for CREATE button
+	}
+
+	void jumpToLevelWave(const size_t levelIdx, const size_t waveIdx)
+	{
+		m_gameLogic.reset();
+		m_gameLogic.m_enemies.jumpToLevel(levelIdx);
+		m_gameLogic.m_enemies.jumpToWave(waveIdx);
+	}
+
+	void spawnFormation(size_t formationIdx)
+	{
+		m_gameLogic.m_enemies.reset();
+		m_gameLogic.m_enemies.spawnFormation(formationIdx, 0.0f);
+	}
+
+	void spawnPath(size_t pathIdx)
+	{
+		m_gameLogic.m_enemies.reset();
+		m_gameLogic.m_enemies.spawnFormationSection(
+			5, pathIdx, ModelResource::Enemy9, 0.0f);
 	}
 };
 
@@ -183,6 +205,7 @@ IMode::handleInput(const DX::StepTimer& timer)
 	const auto& kb = m_resources.kbTracker;
 	using DirectX::Keyboard;
 
+	// Navigation Controls
 	if (kb.IsKeyPressed(Keyboard::Escape))
 	{
 		onBack();
@@ -192,45 +215,13 @@ IMode::handleInput(const DX::StepTimer& timer)
 	{
 		m_selectedIdx
 			= (m_selectedIdx > m_firstIdx) ? m_selectedIdx - 1 : m_lastIdx;
+		onItemSelected();
 	}
 	else if (kb.IsKeyPressed(Keyboard::Down))
 	{
 		m_selectedIdx
 			= (m_selectedIdx < m_lastIdx) ? m_selectedIdx + 1 : m_firstIdx;
-	}
-
-	if (kb.IsKeyPressed(Keyboard::Left))
-	{
-		onLeft();
-	}
-	else if (kb.IsKeyPressed(Keyboard::Right))
-	{
-		onRight();
-	}
-	if (kb.IsKeyPressed(Keyboard::Add) || kb.IsKeyPressed(Keyboard::OemPlus))
-	{
-		onPlus();
-	}
-	else if (
-		kb.IsKeyPressed(Keyboard::Subtract) || kb.IsKeyPressed(Keyboard::OemMinus))
-	{
-		onSubtract();
-	}
-	if (kb.IsKeyPressed(Keyboard::PageUp))
-	{
-		onPgUp();
-	}
-	else if (kb.IsKeyPressed(Keyboard::PageDown))
-	{
-		onPgDn();
-	}
-	if (kb.IsKeyPressed(Keyboard::Home))
-	{
-		onHome();
-	}
-	else if (kb.IsKeyPressed(Keyboard::End))
-	{
-		onEnd();
+		onItemSelected();
 	}
 
 	if (
@@ -243,19 +234,58 @@ IMode::handleInput(const DX::StepTimer& timer)
 			onCreate();
 			updateIndices();
 			m_selectedIdx = m_lastIdx;
+			onItemSelected();
 		}
 		else
 		{
-			onItemSelected(m_selectedIdx);
+			onItemCommand();
 		}
 	}
-	if (kb.IsKeyPressed(Keyboard::Delete))
+
+	// Edit Item Controls
+	const size_t& createItemIdx = m_lastIdx;
+	if (m_selectedIdx < createItemIdx)
 	{
-		const size_t& createItemIdx = m_lastIdx;
-		if (m_selectedIdx < createItemIdx)
+		if (kb.IsKeyPressed(Keyboard::Left))
+		{
+			onLeft();
+		}
+		else if (kb.IsKeyPressed(Keyboard::Right))
+		{
+			onRight();
+		}
+		if (kb.IsKeyPressed(Keyboard::Add) || kb.IsKeyPressed(Keyboard::OemPlus))
+		{
+			onPlus();
+		}
+		else if (
+			kb.IsKeyPressed(Keyboard::Subtract)
+			|| kb.IsKeyPressed(Keyboard::OemMinus))
+		{
+			onSubtract();
+		}
+		if (kb.IsKeyPressed(Keyboard::PageUp))
+		{
+			onPgUp();
+		}
+		else if (kb.IsKeyPressed(Keyboard::PageDown))
+		{
+			onPgDn();
+		}
+		if (kb.IsKeyPressed(Keyboard::Home))
+		{
+			onHome();
+		}
+		else if (kb.IsKeyPressed(Keyboard::End))
+		{
+			onEnd();
+		}
+
+		if (kb.IsKeyPressed(Keyboard::Delete))
 		{
 			onDeleteItem(m_selectedIdx);
 			updateIndices();
+			onItemSelected();
 		}
 	}
 }
@@ -463,9 +493,16 @@ struct LevelListMode : public IMode
 	std::wstring itemName(size_t itemIdx) const override;
 
 	void onCreate() override;
+	void onItemSelected() override;
 	void onDeleteItem(size_t itemIdx) override;
-	void onItemSelected(size_t itemIdx) override;
+	void onItemCommand() override;
 	size_t lastItemIdx() const override;
+
+	void update(const DX::StepTimer& timer) override
+	{
+		UNREFERENCED_PARAMETER(timer);
+		m_gameLogic.m_enemies.updateLevel();
+	}
 };
 
 //------------------------------------------------------------------------------
@@ -491,12 +528,19 @@ struct LevelEditorMode : public IMode
 	void onBack() override;
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
+	void onItemSelected() override;
 	void onPlus() override;
 	void onSubtract() override;
 	void onPgUp() override;
 	void onPgDn() override;
 
 	size_t lastItemIdx() const override;
+
+	void update(const DX::StepTimer& timer) override
+	{
+		UNREFERENCED_PARAMETER(timer);
+		m_gameLogic.m_enemies.updateLevel();
+	}
 };
 
 //------------------------------------------------------------------------------
@@ -522,7 +566,8 @@ struct FormationListMode : public IRenameableMode
 
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
-	void onItemSelected(size_t itemIdx) override;
+	void onItemSelected() override;
+	void onItemCommand() override;
 
 	size_t firstMenuIdx() const override;
 	size_t lastItemIdx() const override;
@@ -551,6 +596,7 @@ struct FormationSectionEditorMode : public IMode
 	void onBack() override;
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
+	void onItemSelected() override;
 	void onPlus() override;
 	void onSubtract() override;
 	void onPgUp() override;
@@ -584,7 +630,8 @@ struct PathListMode : public IRenameableMode
 
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
-	void onItemSelected(size_t itemIdx) override;
+	void onItemSelected() override;
+	void onItemCommand() override;
 
 	size_t firstMenuIdx() const override;
 	size_t lastItemIdx() const override;
@@ -664,9 +711,20 @@ LevelListMode::lastItemIdx() const
 
 //------------------------------------------------------------------------------
 void
-LevelListMode::onItemSelected(size_t itemIdx)
+LevelListMode::onItemSelected()
 {
-	g_levelIdx = itemIdx;
+	const size_t& createItemIdx = m_lastIdx;
+	if (m_selectedIdx != createItemIdx)
+	{
+		jumpToLevelWave(m_selectedIdx, 0);
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+LevelListMode::onItemCommand()
+{
+	g_levelIdx = m_selectedIdx;
 	m_modes.enterMode(&m_modes.levelEditorMode);
 };
 
@@ -706,6 +764,17 @@ LevelEditorMode::onCreate()
 	size_t formationIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
 	Wave newWave{t, formationIdx};
 	waves.emplace_back(newWave);
+}
+
+//------------------------------------------------------------------------------
+void
+LevelEditorMode::onItemSelected()
+{
+	const size_t& createItemIdx = m_lastIdx;
+	if (m_selectedIdx != createItemIdx)
+	{
+		jumpToLevelWave(g_levelIdx, m_selectedIdx);
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -750,6 +819,7 @@ LevelEditorMode::onPgUp()
 	const size_t lastIdx	= (formations.size() > 0) ? formations.size() - 1 : 0;
 
 	curIdx = (curIdx > firstIdx) ? curIdx - 1 : lastIdx;
+	jumpToLevelWave(g_levelIdx, m_selectedIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -763,6 +833,7 @@ LevelEditorMode::onPgDn()
 	const size_t lastIdx	= (formations.size() > 0) ? formations.size() - 1 : 0;
 
 	curIdx = (curIdx < lastIdx) ? curIdx + 1 : firstIdx;
+	jumpToLevelWave(g_levelIdx, m_selectedIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -849,9 +920,20 @@ FormationListMode::lastItemIdx() const
 
 //------------------------------------------------------------------------------
 void
-FormationListMode::onItemSelected(size_t itemIdx)
+FormationListMode::onItemSelected()
 {
-	g_formationIdx = itemIdx;
+	const size_t& createItemIdx = m_lastIdx;
+	if (m_selectedIdx != createItemIdx)
+	{
+		spawnFormation(m_selectedIdx);
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+FormationListMode::onItemCommand()
+{
+	g_formationIdx = m_selectedIdx;
 	m_modes.enterMode(&m_modes.formationSectionEditorMode);
 };
 
@@ -870,7 +952,7 @@ FormationSectionEditorMode::itemName(size_t itemIdx) const
 	return fmt::format(
 		L"{}: Model:{}, numShips:{}, Path:{} ",
 		itemIdx,
-		static_cast<int>(section.model),
+		static_cast<int>(section.model) + 1,
 		section.numShips,
 		path.id);
 }
@@ -905,12 +987,21 @@ FormationSectionEditorMode::onDeleteItem(size_t itemIdx)
 
 //------------------------------------------------------------------------------
 void
+FormationSectionEditorMode::onItemSelected()
+{
+	spawnFormation(g_formationIdx);
+}
+
+//------------------------------------------------------------------------------
+void
 FormationSectionEditorMode::onPlus()
 {
 	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
 	static const int MAX_NUM_SHIPS = 10;
 	section.numShips
 		= (section.numShips < MAX_NUM_SHIPS) ? section.numShips + 1 : MAX_NUM_SHIPS;
+
+	spawnFormation(g_formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -922,6 +1013,8 @@ FormationSectionEditorMode::onSubtract()
 	{
 		--section.numShips;
 	}
+
+	spawnFormation(g_formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -936,6 +1029,8 @@ FormationSectionEditorMode::onPgUp()
 	const size_t lastIdx	= (paths.size() > 0) ? paths.size() - 1 : 0;
 
 	curIdx = (curIdx > firstIdx) ? curIdx - 1 : lastIdx;
+
+	spawnFormation(g_formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -950,6 +1045,8 @@ FormationSectionEditorMode::onPgDn()
 	const size_t lastIdx	= (paths.size() > 0) ? paths.size() - 1 : 0;
 
 	curIdx = (curIdx < lastIdx) ? curIdx + 1 : firstIdx;
+
+	spawnFormation(g_formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -963,6 +1060,8 @@ FormationSectionEditorMode::onHome()
 	int curIdx		= static_cast<int>(section.model);
 	curIdx				= (curIdx > minIdx) ? curIdx - 1 : maxIdx;
 	section.model = static_cast<ModelResource>(curIdx);
+
+	spawnFormation(g_formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -976,6 +1075,8 @@ FormationSectionEditorMode::onEnd()
 	int curIdx		= static_cast<int>(section.model);
 	curIdx				= (curIdx < maxIdx) ? curIdx + 1 : minIdx;
 	section.model = static_cast<ModelResource>(curIdx);
+
+	spawnFormation(g_formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -1063,9 +1164,20 @@ PathListMode::lastItemIdx() const
 
 //------------------------------------------------------------------------------
 void
-PathListMode::onItemSelected(size_t itemIdx)
+PathListMode::onItemSelected()
 {
-	g_pathIdx = itemIdx;
+	const size_t& createItemIdx = m_lastIdx;
+	if (m_selectedIdx != createItemIdx)
+	{
+		spawnPath(m_selectedIdx);
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+PathListMode::onItemCommand()
+{
+	g_pathIdx = m_selectedIdx;
 
 	// TODO(James): Implement a path editor
 	// m_modes.enterMode(&m_modes.formationSectionEditorMode);
@@ -1104,6 +1216,11 @@ struct EditorState::Impl
 	}
 
 	void setupModeMenu();
+
+	void update(const DX::StepTimer& timer)
+	{
+		m_modes.pCurrentMode->update(timer);
+	}
 
 	void handleInput(const DX::StepTimer& timer);
 	void handleModeMenuInput(const DX::StepTimer& timer);
@@ -1330,6 +1447,10 @@ EditorState::update(const DX::StepTimer& timer)
 {
 	TRACE
 	m_resources.starField->update(timer);
+
+	m_gameLogic.m_enemies.incrementCurrentTime(timer);
+	m_pImpl->update(timer);
+	m_gameLogic.m_enemies.performPhysicsUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -1338,6 +1459,11 @@ EditorState::render()
 {
 	TRACE
 	renderStarField();
+	m_gameLogic.renderEntities();
+	if (m_context.debugDraw)
+	{
+		m_gameLogic.renderEntitiesDebug();
+	}
 
 	ui::DebugDraw ui(m_context, m_resources);
 	ui.begin2D();
@@ -1383,6 +1509,7 @@ void
 EditorState::enter()
 {
 	TRACE
+	m_gameLogic.m_enemies.reset();
 	m_pImpl->init();
 }
 

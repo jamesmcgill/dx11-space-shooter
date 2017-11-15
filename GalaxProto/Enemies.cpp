@@ -20,7 +20,7 @@ createDebugPath(float xPos)
 	float xOscillate	 = -2.0f;
 
 	static int count = 0;
-	Path ret{fmt::format(L"debug path {} ", count++)};
+	Path ret{fmt::format(L"debug path {}", count++)};
 	ret.waypoints.reserve(ySteps);
 	float yPos = yStart;
 	for (int i = 0; i < ySteps; ++i)
@@ -227,10 +227,10 @@ createTestLevels(PathPool& pathPool, FormationPool& formationPool)
 	}};
 
 	static Level level2 = {{
-		Wave{23.0f, formOffset + 0},
-		Wave{25.0f, formOffset + 1},
-		Wave{30.0f, formOffset + 2},
-		Wave{34.0f, formOffset + 3},
+		Wave{3.0f, formOffset + 0},
+		Wave{5.0f, formOffset + 1},
+		Wave{10.0f, formOffset + 2},
+		Wave{14.0f, formOffset + 3},
 	}};
 
 	return {level1, level2};
@@ -248,9 +248,8 @@ constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 Enemies::Enemies(AppContext& context, AppResources& resources)
 		: m_context(context)
 		, m_resources(resources)
-		, m_currentLevel(0)
+		, m_currentLevelIdx(0)
 		, m_nextEventWaveIdx(0)
-		, m_activeWaveIdx(0)
 {
 	TRACE
 	m_formationPool.reserve(MAX_NUM_FORMATIONS);
@@ -272,9 +271,9 @@ void
 Enemies::reset()
 {
 	TRACE
-	m_currentLevel		 = 0;
+	resetCurrentTime();
+	m_currentLevelIdx	= 0;
 	m_nextEventWaveIdx = 0;
-	m_activeWaveIdx		 = 0;
 
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
@@ -282,12 +281,12 @@ Enemies::reset()
 		m_context.entities[i].isColliding = false;
 	}
 
-	m_nextEventTimeS = 0.0f;
+	m_isLevelActive = false;
 	if (
-		(m_currentLevel < s_levels.size())
-		&& (!s_levels[m_currentLevel].waves.empty()))
+		(m_currentLevelIdx < s_levels.size())
+		&& (!s_levels[m_currentLevelIdx].waves.empty()))
 	{
-		m_nextEventTimeS = s_levels[m_currentLevel].waves[0].spawnTimeS;
+		m_isLevelActive = true;
 	}
 }
 
@@ -296,59 +295,13 @@ void
 Enemies::update(const DX::StepTimer& timer)
 {
 	TRACE
-	float elapsedTimeS = float(timer.GetElapsedSeconds());
-	float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
+	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
+	incrementCurrentTime(timer);
 
-	// Spawn enemies
-	if (m_currentLevel >= s_levels.size())
-	{
-		return;
-	}
-	auto& level = s_levels[m_currentLevel];
-	if (m_nextEventTimeS != 0.0f && totalTimeS >= m_nextEventTimeS)
-	{
-		// Spawn wave
-		ASSERT(m_nextEventWaveIdx < level.waves.size());
-		const auto& formationIdx = level.waves[m_nextEventWaveIdx].formationIdx;
-		ASSERT(formationIdx < m_formationPool.size());
-		auto& formation = m_formationPool[formationIdx];
-		for (auto& sec : formation.sections)
-		{
-			auto& numShips = sec.numShips;
-			float delayS	 = 0.0f;
-			for (int ship = 0; ship < numShips; ++ship)
-			{
-				// Spawn enemy
-				auto& newEnemy			= m_context.entities[m_context.nextEnemyIdx];
-				newEnemy.pathIdx		= sec.pathIdx;
-				newEnemy.isAlive		= true;
-				newEnemy.birthTimeS = totalTimeS + delayS;
-				newEnemy.model			= &m_resources.modelData[sec.model];
-				m_context.nextEnemyIdx++;
-				if (m_context.nextEnemyIdx >= ENEMIES_END)
-				{
-					m_context.nextEnemyIdx = ENEMIES_IDX;
-				}
-				delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
-			}		 // ship
-		}			 // section
-
-		m_nextEventWaveIdx++;
-		if (m_nextEventWaveIdx < level.waves.size())
-		{
-			m_nextEventTimeS = level.waves[m_nextEventWaveIdx].spawnTimeS;
-			m_activeWaveIdx	= m_nextEventWaveIdx - 1;
-		}
-		else
-		{
-			m_activeWaveIdx		 = 0;
-			m_nextEventWaveIdx = 0;
-			m_nextEventTimeS	 = 0.0f;
-		}
-	}
+	updateLevel();
 
 	// Spawn enemy shots
-	if (fmod(totalTimeS, 2.0f) < elapsedTimeS)
+	if (fmod(m_currentLevelTimeS, 2.0f) < elapsedTimeS)
 	{
 		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 		{
@@ -367,16 +320,137 @@ Enemies::update(const DX::StepTimer& timer)
 		}
 	}
 
-	int countAlive = 0;
-	for (size_t i = 0; i < NUM_ENTITIES; ++i)
+	performPhysicsUpdate();
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::incrementCurrentTime(const DX::StepTimer& timer)
+{
+	m_currentLevelTimeS += static_cast<float>(timer.GetElapsedSeconds());
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::resetCurrentTime()
+{
+	m_currentLevelTimeS = 0.0f;
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::updateLevel()
+{
+	if (!m_isLevelActive)
+	{
+		// Activate next level
+		if (m_currentLevelIdx < s_levels.size())
+		{
+			if (!isAnyEnemyAlive())
+			{
+				m_isLevelActive = true;
+				resetCurrentTime();
+			}
+		}
+		return;
+	}
+
+	auto& level = s_levels[m_currentLevelIdx];
+	ASSERT(m_nextEventWaveIdx < level.waves.size());
+	auto& nextWave = level.waves[m_nextEventWaveIdx];
+
+	// Spawn next wave
+	if (m_currentLevelTimeS >= nextWave.spawnTimeS)
+	{
+		spawnFormation(nextWave.formationIdx, m_currentLevelTimeS);
+
+		m_nextEventWaveIdx++;
+		if (m_nextEventWaveIdx >= level.waves.size())
+		{
+			m_isLevelActive		 = false;
+			m_nextEventWaveIdx = 0;
+			m_currentLevelIdx++;
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+bool
+Enemies::isAnyEnemyAlive() const
+{
+	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		if (m_context.entities[i].isAlive)
 		{
-			++countAlive;
+			return true;
 		}
 	}
+	return false;
+}
 
-	performPhysicsUpdate(timer);
+//------------------------------------------------------------------------------
+void
+Enemies::jumpToLevel(const size_t levelIdx)
+{
+	if (levelIdx < s_levels.size())
+	{
+		m_currentLevelIdx = levelIdx;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::jumpToWave(const size_t waveIdx)
+{
+	ASSERT(m_currentLevelIdx < s_levels.size());
+	auto& level = s_levels[m_currentLevelIdx];
+
+	if (waveIdx < level.waves.size())
+	{
+		m_nextEventWaveIdx	= waveIdx;
+		m_isLevelActive			= true;
+		m_currentLevelTimeS = level.waves[waveIdx].spawnTimeS;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::spawnFormation(const size_t formationIdx, const float birthTimeS)
+{
+	ASSERT(formationIdx < m_formationPool.size());
+	auto& formation = m_formationPool[formationIdx];
+	for (auto& sec : formation.sections)
+	{
+		spawnFormationSection(sec.numShips, sec.pathIdx, sec.model, birthTimeS);
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::spawnFormationSection(
+	const int numShips,
+	const size_t pathIdx,
+	const ModelResource model,
+	const float birthTimeS)
+{
+	ASSERT(pathIdx < m_pathPool.size());
+
+	float delayS = 0.0f;
+	for (int ship = 0; ship < numShips; ++ship)
+	{
+		// Spawn enemy
+		auto& newEnemy			= m_context.entities[m_context.nextEnemyIdx];
+		newEnemy.pathIdx		= pathIdx;
+		newEnemy.isAlive		= true;
+		newEnemy.birthTimeS = birthTimeS + delayS;
+		newEnemy.model			= &m_resources.modelData[model];
+		m_context.nextEnemyIdx++;
+		if (m_context.nextEnemyIdx >= ENEMIES_END)
+		{
+			m_context.nextEnemyIdx = ENEMIES_IDX;
+		}
+		delayS += ENEMY_SPAWN_OFFSET_TIME_SEC;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -392,11 +466,9 @@ bezier(FLOAT t, FXMVECTOR startPos, FXMVECTOR endPos, FXMVECTOR control)
 
 //------------------------------------------------------------------------------
 void
-Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
+Enemies::performPhysicsUpdate()
 {
 	TRACE
-	// float elapsedTimeS = float(timer.GetElapsedSeconds());
-	float totalTimeS = static_cast<float>(timer.GetTotalSeconds());
 
 	// TODO(James): make the ships move at constant speed.
 	// At the moment it looks bad that the speed changes suddenly
@@ -412,7 +484,7 @@ Enemies::performPhysicsUpdate(const DX::StepTimer& timer)
 		}
 		ASSERT(e.pathIdx < m_pathPool.size());
 		const auto& path	 = m_pathPool[e.pathIdx];
-		const float aliveS = (totalTimeS - e.birthTimeS);
+		const float aliveS = (m_currentLevelTimeS - e.birthTimeS);
 		if (aliveS < 0.0f)
 		{
 			ASSERT(!path.waypoints.empty());
@@ -488,7 +560,7 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		const auto& e = m_context.entities[i];
-		if (e.pathIdx < m_pathPool.size())
+		if (e.isAlive && e.pathIdx < m_pathPool.size())
 		{
 			pathsToRender.insert(e.pathIdx);
 		}

@@ -227,7 +227,6 @@ GamePlayState::enter()
 	if (m_states.previousState() != &m_states.paused)
 	{
 		m_gameLogic.reset();
-		m_resources.m_timer.ResetTotalTimer();
 	}
 }
 

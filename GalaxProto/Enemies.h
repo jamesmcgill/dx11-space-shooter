@@ -56,7 +56,23 @@ public:
 	Enemies(AppContext& context, AppResources& resources);
 	void reset();
 	void update(const DX::StepTimer& timer);
-	void performPhysicsUpdate(const DX::StepTimer& timer);
+
+	void incrementCurrentTime(const DX::StepTimer& timer);
+	void resetCurrentTime();
+
+	void updateLevel();
+	void performPhysicsUpdate();
+
+	bool isAnyEnemyAlive() const;
+	void jumpToLevel(const size_t levelIdx);
+	void jumpToWave(const size_t waveIdx);
+
+	void spawnFormation(const size_t formationIdx, const float birthTimeS);
+	void spawnFormationSection(
+		const int numShips,
+		const size_t pathIdx,
+		const ModelResource model,
+		const float birthTimeS);
 
 	void emitShot(
 		const Entity& emitter,
@@ -81,10 +97,10 @@ private:
 	AppContext& m_context;
 	AppResources& m_resources;
 
-	size_t m_currentLevel			= 0;
-	float m_nextEventTimeS		= 0.0f;
+	float m_currentLevelTimeS = 0.0f;
+	size_t m_currentLevelIdx	= 0;
 	size_t m_nextEventWaveIdx = 0;
-	size_t m_activeWaveIdx		= 0;
+	bool m_isLevelActive			= false;
 
 	static constexpr size_t MAX_NUM_PATHS = 256;
 	PathPool m_pathPool;		// Shared pool of all available

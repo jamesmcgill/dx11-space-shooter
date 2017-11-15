@@ -24,6 +24,8 @@ public:
 	void reset();
 	GameStatus update(const DX::StepTimer& timer);
 	void render();
+	void renderEntities();
+	void renderEntitiesDebug();
 
 	void performPhysicsUpdate(const DX::StepTimer& timer);
 	void constrainPlayer(Entity& e);

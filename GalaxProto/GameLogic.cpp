@@ -63,7 +63,7 @@ GameLogic::update(const DX::StepTimer& timer)
 
 	TRACE
 	float elapsedTimeS = float(timer.GetElapsedSeconds());
-	// float totalTimeS	 = static_cast<float>(timer.GetTotalSeconds());
+
 	m_enemies.update(timer);
 	performPhysicsUpdate(timer);
 
@@ -108,23 +108,9 @@ void
 GameLogic::render()
 {
 	TRACE
-	auto dc = m_resources.m_deviceResources->GetD3DDeviceContext();
+	renderEntities();
 
-	size_t idx = 0;
-	for (auto& entity : m_context.entities)
-	{
-		if (PLAYERS_IDX == idx)
-		{
-			renderPlayerEntity(entity);
-		}
-		else if (entity.isAlive)
-		{
-			renderEntity(entity);
-		}
-		++idx;
-	}
-
-	auto& states			= *m_resources.m_states;
+	auto& states = *m_resources.m_states;
 	auto& spriteBatch = m_resources.m_spriteBatch;
 
 	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
@@ -139,30 +125,61 @@ GameLogic::render()
 	// Debug Drawing
 	if (m_context.debugDraw)
 	{
-		dc->OMSetBlendState(states.Opaque(), nullptr, 0xFFFFFFFF);
-		dc->OMSetDepthStencilState(states.DepthNone(), 0);
-		dc->RSSetState(states.CullNone());
-
-		m_resources.m_debugEffect->SetView(m_context.worldToView);
-		m_resources.m_debugEffect->SetProjection(m_context.viewToProjection);
-		m_resources.m_debugEffect->Apply(dc);
-		dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
-
-		m_resources.m_batch->Begin();
-		for (auto& entity : m_context.entities)
-		{
-			if (entity.isAlive)
-			{
-				renderEntityBound(entity);
-			}
-		}
-		m_enemies.debugRender(m_resources.m_batch.get());
-		m_resources.m_batch->End();
+		renderEntitiesDebug();
 
 		ui.begin2D();
 		drawDebugVariables();
 		ui.end2D();
 	}
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::renderEntities()
+{
+	TRACE
+	size_t idx = 0;
+	for (auto& entity : m_context.entities)
+	{
+		if (PLAYERS_IDX == idx)
+		{
+			renderPlayerEntity(entity);
+		}
+		else if (entity.isAlive)
+		{
+			renderEntity(entity);
+		}
+		++idx;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::renderEntitiesDebug()
+{
+	TRACE
+	auto dc			 = m_resources.m_deviceResources->GetD3DDeviceContext();
+	auto& states = *m_resources.m_states;
+
+	dc->OMSetBlendState(states.Opaque(), nullptr, 0xFFFFFFFF);
+	dc->OMSetDepthStencilState(states.DepthNone(), 0);
+	dc->RSSetState(states.CullNone());
+
+	m_resources.m_debugEffect->SetView(m_context.worldToView);
+	m_resources.m_debugEffect->SetProjection(m_context.viewToProjection);
+	m_resources.m_debugEffect->Apply(dc);
+	dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
+
+	m_resources.m_batch->Begin();
+	for (auto& entity : m_context.entities)
+	{
+		if (entity.isAlive)
+		{
+			renderEntityBound(entity);
+		}
+	}
+	m_enemies.debugRender(m_resources.m_batch.get());
+	m_resources.m_batch->End();
 }
 
 //------------------------------------------------------------------------------
