@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GalaxProto", "GalaxProto\GalaxProto.vcxproj", "{7332CBBF-2788-4D16-BEDC-A8B0C20A624E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dx11-space-shooter", "dx11-space-shooter\dx11-space-shooter.vcxproj", "{7332CBBF-2788-4D16-BEDC-A8B0C20A624E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6} = {9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}
 		{E0B52AE7-E160-4D32-BF3F-910B785E5A8E} = {E0B52AE7-E160-4D32-BF3F-910B785E5A8E}

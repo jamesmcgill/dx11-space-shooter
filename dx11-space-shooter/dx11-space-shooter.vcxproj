@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <RootNamespace>GalaxProto</RootNamespace>
+    <RootNamespace>dx11-space-shooter</RootNamespace>
     <ProjectGuid>{7332cbbf-2788-4d16-bedc-a8b0c20a624e}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>

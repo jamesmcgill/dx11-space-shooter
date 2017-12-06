@@ -54,7 +54,7 @@ wWinMain(
 		wcex.hCursor			 = LoadCursor(nullptr, IDC_ARROW);
 		wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 		wcex.lpszMenuName	= nullptr;
-		wcex.lpszClassName = L"GalaxProtoWindowClass";
+		wcex.lpszClassName = L"ShooterWindowClass";
 		wcex.hIconSm			 = LoadIcon(wcex.hInstance, L"IDI_ICON");
 		if (!RegisterClassEx(&wcex))
 			return 1;
@@ -73,8 +73,8 @@ wWinMain(
 
 		HWND hwnd = CreateWindowEx(
 			0,
-			L"GalaxProtoWindowClass",
-			L"GalaxProto",
+			L"ShooterWindowClass",
+			L"dx11-space-shooter",
 			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
@@ -84,8 +84,8 @@ wWinMain(
 			nullptr,
 			hInstance,
 			nullptr);
-		// TODO: Change to CreateWindowEx(WS_EX_TOPMOST, L"GalaxProtoWindowClass",
-		// L"GalaxProto", WS_POPUP, to default to fullscreen.
+		// TODO: Change to CreateWindowEx(WS_EX_TOPMOST, L"ShooterWindowClass",
+		// L"dx11-space-shooter", WS_POPUP, to default to fullscreen.
 
 		if (!hwnd)
 			return 1;
