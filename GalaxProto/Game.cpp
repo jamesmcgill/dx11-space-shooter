@@ -38,7 +38,7 @@ Game::Game()
 	};
 
 	// Setup Resource Names
-	auto setModelPath = [&](ModelResource res, wchar_t* path) {
+	auto setModelPath = [&](ModelResource res, const wchar_t* path) {
 		m_resources.modelLocations[res] = MODEL_PATH + path;
 	};
 	setModelPath(ModelResource::Player, L"player.sdkmesh");
@@ -53,7 +53,7 @@ Game::Game()
 	setModelPath(ModelResource::Enemy8, L"ship8.sdkmesh");
 	setModelPath(ModelResource::Enemy9, L"ship9.sdkmesh");
 
-	auto setAudioPath = [&](AudioResource res, wchar_t* path) {
+	auto setAudioPath = [&](AudioResource res, const wchar_t* path) {
 		m_resources.soundEffectLocations[res] = AUDIO_PATH + path;
 	};
 	setAudioPath(AudioResource::GameStart, L"begin.wav");

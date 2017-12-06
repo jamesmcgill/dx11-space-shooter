@@ -13,7 +13,7 @@ using namespace DirectX::SimpleMath;
 //------------------------------------------------------------------------------
 constexpr float STATE_TIMEOUT_SECONDS = 4.0f;
 const XMVECTOR FONT_COLOR							= {1.0f, 1.0f, 0.0f};
-constexpr wchar_t* GAMEOVER_TEXT			= L"Game Over";
+constexpr wchar_t GAMEOVER_TEXT[]			= L"Game Over";
 
 //------------------------------------------------------------------------------
 void

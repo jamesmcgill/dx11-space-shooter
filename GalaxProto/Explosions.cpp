@@ -93,7 +93,7 @@ Explosions::render(DirectX::SpriteBatch& batch)
 		}
 		float energyRatio = p.energy / (ENERGY_MAX - SATURATION);
 		float saturation	= (energyRatio > 1.0f) ? energyRatio - 1.0f : 0.0f;
-		Vector4 color			= Colors::Orange;
+		Vector4 color(Colors::Orange);
 		color.x += saturation;
 		color.y += saturation;
 		color.z += saturation;

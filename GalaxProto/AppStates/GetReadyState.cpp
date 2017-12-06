@@ -13,7 +13,7 @@ using namespace DirectX::SimpleMath;
 //------------------------------------------------------------------------------
 constexpr float STATE_TIMEOUT_SECONDS = 3.0f;
 const XMVECTOR FONT_COLOR							= {1.0f, 1.0f, 0.0f};
-constexpr wchar_t* READY_TEXT					= L"Get Ready";
+constexpr wchar_t READY_TEXT[]				= L"Get Ready";
 
 //------------------------------------------------------------------------------
 void
