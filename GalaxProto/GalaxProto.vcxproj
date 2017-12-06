@@ -22,7 +22,7 @@
     <RootNamespace>GalaxProto</RootNamespace>
     <ProjectGuid>{7332cbbf-2788-4d16-bedc-a8b0c20a624e}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -100,7 +100,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK-nov2017\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -121,7 +121,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK-nov2017\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -145,7 +145,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK-nov2017\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -168,7 +168,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK-nov2017\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -251,15 +251,18 @@
     <Manifest Include="settings.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DirectXTK\Audio\DirectXTKAudio_Desktop_2015_Win8.vcxproj">
-      <Project>{4f150a30-cecb-49d1-8283-6a3f57438cf5}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\DirectXTK\DirectXTK_Desktop_2015.vcxproj">
-      <Project>{e0b52ae7-e160-4d32-bf3f-910b785e5a8e}</Project>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\DirectXTK-nov2017\Audio\DirectXTKAudio_Desktop_2017_Win8.vcxproj">
+      <Project>{4f150a30-cecb-49d1-8283-6a3f57438cf5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\DirectXTK-nov2017\DirectXTK_Desktop_2017.vcxproj">
+      <Project>{e0b52ae7-e160-4d32-bf3f-910b785e5a8e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\midi-controller\midi-controller\midi-controller.vcxproj">
+      <Project>{9ae996cd-ea6e-40be-9fef-8583c1e073a6}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

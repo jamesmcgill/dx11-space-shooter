@@ -1,18 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.10
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GalaxProto", "GalaxProto\GalaxProto.vcxproj", "{7332CBBF-2788-4D16-BEDC-A8B0C20A624E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6} = {9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}
+		{E0B52AE7-E160-4D32-BF3F-910B785E5A8E} = {E0B52AE7-E160-4D32-BF3F-910B785E5A8E}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTK_Desktop_2015", "DirectXTK\DirectXTK_Desktop_2015.vcxproj", "{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTKAudio_Desktop_2015_Win8", "DirectXTK\Audio\DirectXTKAudio_Desktop_2015_Win8.vcxproj", "{4F150A30-CECB-49D1-8283-6A3F57438CF5}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "midi-controller", "midi-controller\midi-controller\midi-controller.vcxproj", "{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTK_Desktop_2017", "DirectXTK-nov2017\DirectXTK_Desktop_2017.vcxproj", "{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTKAudio_Desktop_2017_Win8", "DirectXTK-nov2017\Audio\DirectXTKAudio_Desktop_2017_Win8.vcxproj", "{4F150A30-CECB-49D1-8283-6A3F57438CF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +31,14 @@ Global
 		{7332CBBF-2788-4D16-BEDC-A8B0C20A624E}.Release|x64.Build.0 = Release|x64
 		{7332CBBF-2788-4D16-BEDC-A8B0C20A624E}.Release|x86.ActiveCfg = Release|Win32
 		{7332CBBF-2788-4D16-BEDC-A8B0C20A624E}.Release|x86.Build.0 = Release|Win32
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x64.ActiveCfg = Debug|x64
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x64.Build.0 = Debug|x64
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x86.ActiveCfg = Debug|Win32
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x86.Build.0 = Debug|Win32
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x64.ActiveCfg = Release|x64
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x64.Build.0 = Release|x64
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x86.ActiveCfg = Release|Win32
+		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x86.Build.0 = Release|Win32
 		{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}.Debug|x64.ActiveCfg = Debug|x64
 		{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}.Debug|x64.Build.0 = Debug|x64
 		{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}.Debug|x86.ActiveCfg = Debug|Win32
@@ -46,14 +55,6 @@ Global
 		{4F150A30-CECB-49D1-8283-6A3F57438CF5}.Release|x64.Build.0 = Release|x64
 		{4F150A30-CECB-49D1-8283-6A3F57438CF5}.Release|x86.ActiveCfg = Release|Win32
 		{4F150A30-CECB-49D1-8283-6A3F57438CF5}.Release|x86.Build.0 = Release|Win32
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x64.ActiveCfg = Debug|x64
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x64.Build.0 = Debug|x64
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x86.ActiveCfg = Debug|Win32
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Debug|x86.Build.0 = Debug|Win32
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x64.ActiveCfg = Release|x64
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x64.Build.0 = Release|x64
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x86.ActiveCfg = Release|Win32
-		{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
