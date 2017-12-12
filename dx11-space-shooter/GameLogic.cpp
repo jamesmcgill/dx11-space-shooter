@@ -13,7 +13,7 @@ using namespace DirectX::SimpleMath;
 //------------------------------------------------------------------------------
 constexpr float PLAYER_DEATH_TIME_S			 = 1.0f;
 constexpr float PLAYER_REVIVE_TIME_S		 = 2.0f;
-static const Vector3 PLAYER_MAX_POSITION = {45.0f, 27.0f, 0.0f};
+static const Vector3 PLAYER_MAX_POSITION = {36.0f, 18.0f, 0.0f};
 static const Vector3 PLAYER_START_POS(0.0f, -PLAYER_MAX_POSITION.y, 0.0f);
 static const Vector3 SHOT_MAX_POSITION = {60.0f, 40.0f, 0.0f};
 
