@@ -11,9 +11,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dx11-space-shooter", "dx11-
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "midi-controller", "midi-controller\midi-controller\midi-controller.vcxproj", "{9AE996CD-EA6E-40BE-9FEF-8583C1E073A6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTK_Desktop_2017", "DirectXTK-nov2017\DirectXTK_Desktop_2017.vcxproj", "{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTK_Desktop_2017", "DirectXTK-dec2017\DirectXTK_Desktop_2017.vcxproj", "{E0B52AE7-E160-4D32-BF3F-910B785E5A8E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTKAudio_Desktop_2017_Win8", "DirectXTK-nov2017\Audio\DirectXTKAudio_Desktop_2017_Win8.vcxproj", "{4F150A30-CECB-49D1-8283-6A3F57438CF5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTKAudio_Desktop_2017_Win8", "DirectXTK-dec2017\Audio\DirectXTKAudio_Desktop_2017_Win8.vcxproj", "{4F150A30-CECB-49D1-8283-6A3F57438CF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
