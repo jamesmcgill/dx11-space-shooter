@@ -27,9 +27,6 @@ public:
 	void exit() override;
 
 private:
-	void renderStarField();
-
-private:
 	std::unique_ptr<Impl> m_pImpl;
 };
 

@@ -1,13 +1,22 @@
 #include "pch.h"
 #include "UIDebugDraw.h"
-#include "AppContext.h"
-#include "AppResources.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 namespace ui
 {
+const DirectX::SimpleMath::Vector2 BUTTON_BORDER_SIZE
+	= DirectX::SimpleMath::Vector2(10.0f, 10.0f);
+
+const DirectX::XMVECTOR BUTTON_COLOR_NORMAL		= DirectX::Colors::OliveDrab;
+const DirectX::XMVECTOR BUTTON_COLOR_SELECTED = DirectX::Colors::Green;
+const DirectX::XMVECTOR BUTTON_COLOR_HOVER		= DirectX::Colors::Gray;
+
+const DirectX::XMVECTOR BUTTON_BORDER_COLOR_NORMAL	 = DirectX::Colors::Olive;
+const DirectX::XMVECTOR BUTTON_BORDER_COLOR_SELECTED = DirectX::Colors::Olive;
+const DirectX::XMVECTOR BUTTON_BORDER_COLOR_HOVER		 = DirectX::Colors::Olive;
+
 //------------------------------------------------------------------------------
 void
 drawBox(
@@ -37,54 +46,94 @@ drawBox(
 
 	primitiveBatch.DrawQuad(verts[0], verts[1], verts[2], verts[3]);
 }
+
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-DebugDraw::DebugDraw(AppContext& context, AppResources& resources)
-		: m_context(context)
-		, m_resources(resources)
+void
+Button::draw(
+	DX::DebugBatchType& primitiveBatch, DirectX::SpriteBatch& spriteBatch)
 {
+	drawBox(
+		primitiveBatch,
+		position.x,
+		position.y,
+		size.x,
+		size.y,
+		currentBorderColor(),
+		layer);
+
+	drawBox(
+		primitiveBatch,
+		position.x + (BUTTON_BORDER_SIZE.x * 0.5f),
+		position.y + (BUTTON_BORDER_SIZE.y * 0.5f),
+		size.x - BUTTON_BORDER_SIZE.x,
+		size.y - BUTTON_BORDER_SIZE.y,
+		currentColor(),
+		layer);
+
+	uiText.draw(spriteBatch);
 }
 
 //------------------------------------------------------------------------------
 void
-DebugDraw::begin2D()
+Button::centerText()
 {
-	auto dc			 = m_resources.m_deviceResources->GetD3DDeviceContext();
-	auto& states = *m_resources.m_states;
-
-	auto textBlend				 = states.AlphaBlend();
-	auto blendState				 = states.Opaque();
-	auto depthStencilState = states.DepthDefault();
-	auto rasterizerState	 = states.CullNone();
-	auto samplerState			 = states.LinearClamp();
-
-	dc->OMSetBlendState(blendState, nullptr, 0xFFFFFFFF);
-	dc->OMSetDepthStencilState(depthStencilState, 0);
-	dc->RSSetState(rasterizerState);
-	dc->PSSetSamplers(0, 1, &samplerState);
-	dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
-
-	m_resources.m_debugEffect->SetView(Matrix::Identity);
-	m_resources.m_debugEffect->SetProjection(m_context.pixelsToProjection);
-	m_resources.m_debugEffect->Apply(dc);
-
-	m_resources.m_spriteBatch->Begin(
-		DirectX::SpriteSortMode_Deferred,
-		textBlend,
-		samplerState,
-		depthStencilState,
-		rasterizerState);
-
-	m_resources.m_batch->Begin();
+	uiText.position.x = position.x + (size.x * 0.5f);
+	uiText.position.y = position.y + (size.y * 0.5f);
+	DirectX::XMVECTOR dimensions
+		= uiText.font->MeasureString(uiText.text.c_str());
+	const float width	= DirectX::XMVectorGetX(dimensions);
+	const float height = DirectX::XMVectorGetY(dimensions);
+	uiText.origin = DirectX::SimpleMath::Vector2(width * 0.5f, height * 0.5f);
 }
 
 //------------------------------------------------------------------------------
-void
-DebugDraw::end2D()
+bool
+Button::isPointInside(float x, float y) const
 {
-	m_resources.m_batch->End();
-	m_resources.m_spriteBatch->End();
+	return (x >= position.x) && (x <= position.x + size.x) && (y >= position.y)
+				 && (y <= position.y + size.y);
+}
+
+//------------------------------------------------------------------------------
+DirectX::SimpleMath::Vector3
+Button::currentColor() const
+{
+	switch (appearance)
+	{
+		case Appearance::Normal:
+			return BUTTON_COLOR_NORMAL;
+			break;
+		case Appearance::Selected:
+			return BUTTON_COLOR_SELECTED;
+			break;
+		case Appearance::HoverOver:
+			return BUTTON_COLOR_HOVER;
+			break;
+		default:
+			return BUTTON_COLOR_NORMAL;
+	}
+}
+
+//------------------------------------------------------------------------------
+DirectX::SimpleMath::Vector3
+Button::currentBorderColor() const
+{
+	switch (appearance)
+	{
+		case Appearance::Normal:
+			return BUTTON_BORDER_COLOR_NORMAL;
+			break;
+		case Appearance::Selected:
+			return BUTTON_BORDER_COLOR_SELECTED;
+			break;
+		case Appearance::HoverOver:
+			return BUTTON_BORDER_COLOR_HOVER;
+			break;
+		default:
+			return BUTTON_BORDER_COLOR_NORMAL;
+	}
 }
 
 //------------------------------------------------------------------------------

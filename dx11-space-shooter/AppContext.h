@@ -26,6 +26,8 @@ enum class ProfileViz
 //------------------------------------------------------------------------------
 struct AppContext
 {
+	const float defaultCameraDistance = 80.0f;
+
 	float screenWidth			 = 0.0f;
 	float screenHeight		 = 0.0f;
 	float screenHalfWidth	= 0.0f;
@@ -37,7 +39,7 @@ struct AppContext
 	DirectX::SimpleMath::Matrix projectionToPixels;
 	float cameraRotationX = 0.0f;
 	float cameraRotationY = 0.0f;
-	float cameraDistance	= 80.0f;
+	float cameraDistance	= defaultCameraDistance;
 
 	size_t nextPlayerShotIdx = PLAYER_SHOTS_IDX;
 	size_t nextEnemyShotIdx	= ENEMY_SHOTS_IDX;

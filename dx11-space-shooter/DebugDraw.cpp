@@ -13,6 +13,8 @@
 
 #include "pch.h"
 #include "DebugDraw.h"
+#include "AppContext.h"
+#include "AppResources.h"
 
 using namespace DirectX;
 
@@ -49,7 +51,116 @@ DrawCube(DX::DebugBatchType* batch, CXMMATRIX matWorld, FXMVECTOR color)
 		verts,
 		8);
 }
+
+//------------------------------------------------------------------------------
+}		 // namespace anon
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+namespace DX
+{
+//------------------------------------------------------------------------------
+DrawContext::DrawContext(AppContext& context, AppResources& resources)
+		: m_context(context)
+		, m_resources(resources)
+{
 }
+
+//------------------------------------------------------------------------------
+DrawContext::~DrawContext()
+{
+	if (m_isOpen)
+	{
+		end();
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+DrawContext::begin(Projection proj)
+{
+	auto& states	 = *m_resources.m_states;
+	auto textBlend = states.AlphaBlend();
+	auto blend		 = states.Opaque();
+	auto depth		 = states.DepthDefault();		 // DepthNone
+	auto raster		 = states.CullNone();
+	auto sampler	 = states.LinearClamp();
+
+	setProjection(proj);
+	setStates(blend, depth, raster, sampler);
+
+	m_resources.m_spriteBatch->Begin(
+		DirectX::SpriteSortMode_Deferred, textBlend, sampler, depth, raster);
+
+	m_resources.m_batch->Begin();
+
+	m_isOpen = true;
+}
+
+//------------------------------------------------------------------------------
+void
+DrawContext::setProjection(Projection proj)
+{
+	switch (proj)
+	{
+		case Projection::Screen:
+			setScreenProjection();
+			break;
+		case Projection::World:
+			setWorldProjection();
+			break;
+	};
+}
+
+//------------------------------------------------------------------------------
+void
+DrawContext::setScreenProjection()
+{
+	m_resources.m_debugEffect->SetView(DirectX::SimpleMath::Matrix::Identity);
+	m_resources.m_debugEffect->SetProjection(m_context.pixelsToProjection);
+}
+
+//------------------------------------------------------------------------------
+void
+DrawContext::setWorldProjection()
+{
+	m_resources.m_debugEffect->SetView(m_context.worldToView);
+	m_resources.m_debugEffect->SetProjection(m_context.viewToProjection);
+}
+
+//------------------------------------------------------------------------------
+void
+DrawContext::end()
+{
+	m_isOpen = false;
+
+	m_resources.m_batch->End();
+	m_resources.m_spriteBatch->End();
+}
+
+//------------------------------------------------------------------------------
+void
+DrawContext::setStates(
+	ID3D11BlendState* blend,
+	ID3D11DepthStencilState* depth,
+	ID3D11RasterizerState* raster,
+	ID3D11SamplerState* sampler)
+{
+	auto dc = m_resources.m_deviceResources->GetD3DDeviceContext();
+	dc->OMSetBlendState(blend, nullptr, 0xFFFFFFFF);
+	dc->OMSetDepthStencilState(depth, 0);
+	dc->RSSetState(raster);
+	dc->PSSetSamplers(0, 1, &sampler);
+	dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
+
+	m_resources.m_debugEffect->Apply(dc);
+}
+
+//------------------------------------------------------------------------------
+}		 // namespace DX
+
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 void XM_CALLCONV

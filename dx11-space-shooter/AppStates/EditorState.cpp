@@ -15,6 +15,8 @@
 // - PATH EDITOR [special visual editor for waypoints]
 //	- Select, Create, Delete, Move [Points]
 //
+//	+ Zoom out (auto/keyboard?) so that we can draw paths outside the game area
+//
 // - Load/Save All  (Define human editable file format)
 //------------------------------------------------------------------------------
 namespace
@@ -148,7 +150,8 @@ struct IMode
 		UNREFERENCED_PARAMETER(timer);
 	}
 	virtual void handleInput(const DX::StepTimer& timer);
-	void render();
+	virtual void render() {}
+	virtual void renderUI();
 
 	void updateIndices()
 	{
@@ -292,7 +295,7 @@ IMode::handleInput(const DX::StepTimer& timer)
 
 //------------------------------------------------------------------------------
 void
-IMode::render()
+IMode::renderUI()
 {
 	TRACE
 	m_controlInfo.draw(*m_resources.m_spriteBatch);
@@ -638,6 +641,37 @@ struct PathListMode : public IRenameableMode
 };
 
 //------------------------------------------------------------------------------
+struct PathEditorMode : public IMode
+{
+	PathEditorMode(
+		Modes& modes,
+		AppContext& context,
+		AppResources& resources,
+		GameLogic& logic)
+			: IMode(modes, context, resources, logic)
+	{
+	}
+
+	std::wstring controlInfoText() const override
+	{
+		return L"Navigate(Up/Down), Select(Enter), Delete(Del), "
+					 "Time(-/+), Formation(PgUp/PgDn), Back(Esc)";
+	}
+	std::wstring menuTitle() const override { return L"Path Editor"; }
+	std::wstring itemName(size_t itemIdx) const override;
+
+	void onBack() override;
+	void onCreate() override;
+	void onDeleteItem(size_t itemIdx) override;
+	void onItemSelected() override;
+
+	size_t lastItemIdx() const override;
+
+	void onEnterMode(bool isNavigatingForward = true) override;
+	void render() override;
+};
+
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 struct Modes
@@ -649,6 +683,7 @@ struct Modes
 	FormationSectionEditorMode formationSectionEditorMode;
 
 	PathListMode pathListMode;
+	PathEditorMode pathEditorMode;
 
 	IMode* pCurrentMode = &levelListMode;
 
@@ -658,6 +693,7 @@ struct Modes
 			, formationListMode(*this, context, resources, logic)
 			, formationSectionEditorMode(*this, context, resources, logic)
 			, pathListMode(*this, context, resources, logic)
+			, pathEditorMode(*this, context, resources, logic)
 	{
 	}
 
@@ -668,6 +704,7 @@ struct Modes
 		formationListMode.init();
 		formationSectionEditorMode.init();
 		pathListMode.init();
+		pathEditorMode.init();
 	}
 
 	void enterMode(IMode* pNewMode, bool isNavigatingForward = true)
@@ -1178,10 +1215,87 @@ void
 PathListMode::onItemCommand()
 {
 	g_pathIdx = m_selectedIdx;
-
-	// TODO(James): Implement a path editor
-	// m_modes.enterMode(&m_modes.formationSectionEditorMode);
+	m_modes.enterMode(&m_modes.pathEditorMode);
 };
+
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+std::wstring
+PathEditorMode::itemName(size_t itemIdx) const
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(g_pathIdx < paths.size());
+	auto& path = paths[g_pathIdx];
+
+	return fmt::format(L"Path:{}-{} ", path.id, itemIdx);
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::onBack()
+{
+	m_modes.enterMode(&m_modes.pathListMode, false);
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::onCreate()
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(g_pathIdx < paths.size());
+	auto& path = paths[g_pathIdx];
+
+	path.waypoints.emplace_back(Waypoint());
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::onDeleteItem(size_t itemIdx)
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(g_pathIdx < paths.size());
+	auto& path = paths[g_pathIdx];
+
+	path.waypoints.erase(path.waypoints.begin() + itemIdx);
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::onItemSelected()
+{
+	// TODO(James): Change colour of selected point
+}
+
+//------------------------------------------------------------------------------
+size_t
+PathEditorMode::lastItemIdx() const
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(g_pathIdx < paths.size());
+	auto& path = paths[g_pathIdx];
+
+	return path.waypoints.size() - 1;
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::onEnterMode(bool isNavigatingForward)
+{
+	m_gameLogic.m_enemies.reset();
+	IMode::onEnterMode(isNavigatingForward);
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::render()
+{
+	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	ASSERT(g_pathIdx < paths.size());
+	auto& path = paths[g_pathIdx];
+
+	path.debugRender(m_resources.m_batch.get());
+}
 
 //------------------------------------------------------------------------------
 
@@ -1217,16 +1331,16 @@ struct EditorState::Impl
 
 	void setupModeMenu();
 
-	void update(const DX::StepTimer& timer)
-	{
-		m_modes.pCurrentMode->update(timer);
-	}
+	void update(const DX::StepTimer& timer);
 
 	void handleInput(const DX::StepTimer& timer);
 	void handleModeMenuInput(const DX::StepTimer& timer);
 
 	void render();
-	void renderModeMenu();
+	void renderUI();
+	void renderModeMenuUI();
+
+	void renderStarField();
 };
 
 //------------------------------------------------------------------------------
@@ -1271,6 +1385,19 @@ EditorState::Impl::setupModeMenu()
 			btn.appearance = ui::Button::Appearance::Selected;
 		}
 	}
+}
+
+//------------------------------------------------------------------------------
+void
+EditorState::Impl::update(const DX::StepTimer& timer)
+{
+	TRACE
+	m_resources.starField->update(timer);
+	m_gameLogic.m_enemies.incrementCurrentTime(timer);
+
+	m_modes.pCurrentMode->update(timer);
+
+	m_gameLogic.m_enemies.performPhysicsUpdate();
 }
 
 //------------------------------------------------------------------------------
@@ -1357,19 +1484,56 @@ void
 EditorState::Impl::render()
 {
 	TRACE
-	renderModeMenu();
+	renderStarField();
+	m_gameLogic.renderEntities();
+
+	DX::DrawContext drawContext(m_context, m_resources);
+	if (m_context.debugDraw)
+	{
+		drawContext.begin();
+		m_gameLogic.renderEntitiesDebug();
+		drawContext.end();
+	}
+
+	drawContext.begin();
 	m_modes.pCurrentMode->render();
+	drawContext.end();
+
+	drawContext.begin(DX::DrawContext::Projection::Screen);
+	renderUI();
+	drawContext.end();
 }
 
 //------------------------------------------------------------------------------
 void
-EditorState::Impl::renderModeMenu()
+EditorState::Impl::renderUI()
+{
+	TRACE
+	renderModeMenuUI();
+	m_modes.pCurrentMode->renderUI();
+}
+
+//------------------------------------------------------------------------------
+void
+EditorState::Impl::renderModeMenuUI()
 {
 	TRACE
 	for (auto& btn : m_modeButtons)
 	{
 		btn.draw(*m_resources.m_batch, *m_resources.m_spriteBatch);
 	}
+}
+
+//------------------------------------------------------------------------------
+void
+EditorState::Impl::renderStarField()
+{
+	TRACE
+	auto& spriteBatch = m_resources.m_spriteBatch;
+
+	spriteBatch->Begin();
+	m_resources.starField->render(*spriteBatch);
+	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
@@ -1445,56 +1609,26 @@ EditorState::handleInput(const DX::StepTimer& timer)
 void
 EditorState::update(const DX::StepTimer& timer)
 {
-	TRACE
-	m_resources.starField->update(timer);
-
-	m_gameLogic.m_enemies.incrementCurrentTime(timer);
 	m_pImpl->update(timer);
-	m_gameLogic.m_enemies.performPhysicsUpdate();
 }
 
 //------------------------------------------------------------------------------
 void
 EditorState::render()
 {
-	TRACE
-	renderStarField();
-	m_gameLogic.renderEntities();
-	if (m_context.debugDraw)
-	{
-		m_gameLogic.renderEntitiesDebug();
-	}
-
-	ui::DebugDraw ui(m_context, m_resources);
-	ui.begin2D();
 	m_pImpl->render();
-	ui.end2D();
-}
-
-//------------------------------------------------------------------------------
-void
-EditorState::renderStarField()
-{
-	TRACE
-	auto& spriteBatch = m_resources.m_spriteBatch;
-
-	spriteBatch->Begin();
-	m_resources.starField->render(*spriteBatch);
-	spriteBatch->End();
 }
 
 //------------------------------------------------------------------------------
 void
 EditorState::load()
 {
-	TRACE
 }
 
 //------------------------------------------------------------------------------
 void
 EditorState::unload()
 {
-	TRACE
 }
 
 //------------------------------------------------------------------------------

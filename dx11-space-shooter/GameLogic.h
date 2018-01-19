@@ -42,6 +42,7 @@ public:
 	void renderPlayerEntity(Entity& entity);
 	void renderEntity(Entity& entity, float orientation = 0.0f);
 	void renderEntityBound(Entity& entity);
+	void renderPlayerBoundary();
 
 	void updateUIScore();
 	void updateUILives();

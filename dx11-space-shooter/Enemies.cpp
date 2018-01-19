@@ -10,6 +10,31 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
+void
+Path::debugRender(DX::DebugBatchType* batch) const {
+	static const float radius = 0.1f;
+	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
+	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
+
+	ASSERT(!waypoints.empty());
+	auto prevPoint = waypoints[0].wayPoint;
+	for (size_t i = 1; i < waypoints.size(); ++i)
+	{
+		const auto& point = waypoints[i].wayPoint;
+		const auto& control = waypoints[i].controlPoint;
+
+		DX::DrawCurve(batch, prevPoint, point, control);
+		DX::DrawRing(batch, prevPoint, xaxis, yaxis);
+		DX::DrawRing(batch, point, xaxis, yaxis);
+
+		DX::DrawLine(batch, point, control, Colors::Yellow);
+		DX::DrawRing(batch, control, xaxis, yaxis, Colors::Yellow);
+
+		prevPoint = point;
+	}
+}
+
+//------------------------------------------------------------------------------
 static const Path
 createDebugPath(float xPos)
 {
@@ -566,32 +591,10 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 		}
 	}
 
-	static const float radius		= 0.1f;
-	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
-	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
-
 	for (const auto& pathIdx : pathsToRender)
 	{
 		ASSERT(pathIdx < m_pathPool.size());
-		const auto& path			= m_pathPool[pathIdx];
-		const auto& waypoints = path.waypoints;
-
-		ASSERT(!waypoints.empty());
-		auto prevPoint = waypoints[0].wayPoint;
-		for (size_t i = 1; i < waypoints.size(); ++i)
-		{
-			const auto& point		= waypoints[i].wayPoint;
-			const auto& control = waypoints[i].controlPoint;
-
-			DX::DrawCurve(batch, prevPoint, point, control);
-			DX::DrawRing(batch, prevPoint, xaxis, yaxis);
-			DX::DrawRing(batch, point, xaxis, yaxis);
-
-			DX::DrawLine(batch, point, control, Colors::Yellow);
-			DX::DrawRing(batch, control, xaxis, yaxis, Colors::Yellow);
-
-			prevPoint = point;
-		}
+		m_pathPool[pathIdx].debugRender(batch);
 	}
 }
 

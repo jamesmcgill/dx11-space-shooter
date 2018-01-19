@@ -110,26 +110,27 @@ GameLogic::render()
 	TRACE
 	renderEntities();
 
-	auto& states = *m_resources.m_states;
+	auto& states			= *m_resources.m_states;
 	auto& spriteBatch = m_resources.m_spriteBatch;
 
 	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
 	m_resources.explosions->render(*spriteBatch);
 	spriteBatch->End();
 
-	ui::DebugDraw ui(m_context, m_resources);
-	ui.begin2D();
+	DX::DrawContext drawContext(m_context, m_resources);
+	drawContext.begin(DX::DrawContext::Projection::Screen);
 	drawHUD();
-	ui.end2D();
+	drawContext.end();
 
 	// Debug Drawing
 	if (m_context.debugDraw)
 	{
+		drawContext.begin();
 		renderEntitiesDebug();
 
-		ui.begin2D();
+		drawContext.setScreenProjection();
 		drawDebugVariables();
-		ui.end2D();
+		drawContext.end();
 	}
 }
 
@@ -158,19 +159,6 @@ void
 GameLogic::renderEntitiesDebug()
 {
 	TRACE
-	auto dc			 = m_resources.m_deviceResources->GetD3DDeviceContext();
-	auto& states = *m_resources.m_states;
-
-	dc->OMSetBlendState(states.Opaque(), nullptr, 0xFFFFFFFF);
-	dc->OMSetDepthStencilState(states.DepthNone(), 0);
-	dc->RSSetState(states.CullNone());
-
-	m_resources.m_debugEffect->SetView(m_context.worldToView);
-	m_resources.m_debugEffect->SetProjection(m_context.viewToProjection);
-	m_resources.m_debugEffect->Apply(dc);
-	dc->IASetInputLayout(m_resources.m_debugInputLayout.Get());
-
-	m_resources.m_batch->Begin();
 	for (auto& entity : m_context.entities)
 	{
 		if (entity.isAlive)
@@ -179,7 +167,7 @@ GameLogic::renderEntitiesDebug()
 		}
 	}
 	m_enemies.debugRender(m_resources.m_batch.get());
-	m_resources.m_batch->End();
+	renderPlayerBoundary();
 }
 
 //------------------------------------------------------------------------------
@@ -501,6 +489,38 @@ GameLogic::renderEntityBound(Entity& entity)
 
 	// m_debugBound->Draw(
 	//	m_debugBoundEffect.get(), m_debugBoundInputLayout.Get(), true, true);
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::renderPlayerBoundary()
+{
+	TRACE
+
+	auto& player			 = m_context.entities[PLAYERS_IDX];
+	const float xLimit = PLAYER_MAX_POSITION.x + player.model->bound.Radius;
+	const float yLimit = PLAYER_MAX_POSITION.y + player.model->bound.Radius;
+	const float zPlane = PLAYER_MAX_POSITION.z;
+
+	DX::DrawLine(
+		m_resources.m_batch.get(),
+		Vector3(-xLimit, yLimit, zPlane),
+		Vector3(xLimit, yLimit, zPlane));
+
+	DX::DrawLine(
+		m_resources.m_batch.get(),
+		Vector3(-xLimit, -yLimit, zPlane),
+		Vector3(xLimit, -yLimit, zPlane));
+
+	DX::DrawLine(
+		m_resources.m_batch.get(),
+		Vector3(-xLimit, -yLimit, zPlane),
+		Vector3(-xLimit, yLimit, zPlane));
+
+	DX::DrawLine(
+		m_resources.m_batch.get(),
+		Vector3(xLimit, -yLimit, zPlane),
+		Vector3(xLimit, yLimit, zPlane));
 }
 
 //------------------------------------------------------------------------------

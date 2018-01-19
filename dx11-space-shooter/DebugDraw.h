@@ -20,8 +20,46 @@
 #include "PrimitiveBatch.h"
 #include "VertexTypes.h"
 
+struct AppContext;
+struct AppResources;
+
 namespace DX
 {
+//------------------------------------------------------------------------------
+// Initialise drawing states and open/flush render batches
+//------------------------------------------------------------------------------
+class DrawContext
+{
+public:
+	enum class Projection
+	{
+		Screen,
+		World
+	};
+
+	DrawContext(AppContext& context, AppResources& resources);
+	~DrawContext();
+
+	void begin(Projection proj = Projection::World);
+	void end();
+
+	void setProjection(Projection proj);
+	void setScreenProjection();
+	void setWorldProjection();
+
+private:
+	AppContext& m_context;
+	AppResources& m_resources;
+	bool m_isOpen = false;
+
+	void setStates(
+		ID3D11BlendState* blend,
+		ID3D11DepthStencilState* depth,
+		ID3D11RasterizerState* raster,
+		ID3D11SamplerState* sampler);
+};
+
+//------------------------------------------------------------------------------
 using DebugBatchType = DirectX::PrimitiveBatch<DirectX::VertexPositionColor>;
 
 void XM_CALLCONV Draw(
@@ -86,4 +124,5 @@ void XM_CALLCONV DrawLine(
 	DirectX::FXMVECTOR startPos,
 	DirectX::FXMVECTOR endPos,
 	DirectX::FXMVECTOR color = DirectX::Colors::White);
-}
+
+}		 // namespace DX

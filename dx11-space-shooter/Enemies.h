@@ -21,6 +21,8 @@ struct Path
 {
 	std::wstring id;
 	std::vector<Waypoint> waypoints;
+
+	void debugRender(DX::DebugBatchType* batch) const;
 };
 
 struct FormationSection

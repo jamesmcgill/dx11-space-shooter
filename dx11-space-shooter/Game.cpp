@@ -122,8 +122,8 @@ Game::tick()
 		render();
 	}
 
-	ui::DebugDraw ui(m_context, m_resources);
-	ui.begin2D();
+	DX::DrawContext drawContext(m_context, m_resources);
+	drawContext.begin(DX::DrawContext::Projection::Screen);
 	switch (m_context.profileViz)
 	{
 		case ProfileViz::List:
@@ -136,7 +136,7 @@ Game::tick()
 
 	m_context.uiControlInfo.draw(*m_resources.m_spriteBatch);
 	drawBasicProfileInfo();		 // Do this at the end to include profiler cost
-	ui.end2D();
+	drawContext.end();
 
 	m_resources.m_deviceResources->Present();
 
@@ -358,7 +358,6 @@ Game::drawFlameGraph()
 	const logger::Ticks baseTick = head->startTime;
 	const float ticksToYPos			 = yRange / head->duration;
 
-	ui::DebugDraw ui(m_context, m_resources);
 	ui::Text uiText;
 	uiText.font		= monoFont;
 	uiText.origin = Vector2(0.0f, yAscent * 0.5f);
