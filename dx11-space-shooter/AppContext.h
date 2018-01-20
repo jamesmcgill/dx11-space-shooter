@@ -6,6 +6,10 @@
 //------------------------------------------------------------------------------
 constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
 
+static const DirectX::SimpleMath::Vector4 CAMERA_LOOKAT
+	= {0.0f, 0.0f, 0.0f, 0.0f};
+static const DirectX::SimpleMath::Vector4 CAMERA_UP = {0.0f, 1.0f, 0.0f, 0.0f};
+
 //------------------------------------------------------------------------------
 enum class PlayerState
 {
@@ -72,19 +76,16 @@ struct AppContext
 	ui::Text uiCameraDist;
 	ui::Text uiControlInfo;
 
-	void updateViewMatrix()
+	//------------------------------------------------------------------------------
+	DirectX::XMVECTOR cameraPos()
 	{
 		using namespace DirectX;
 
-		const auto& atP = DirectX::SimpleMath::Vector3{0.0f, 0.0f, 0.0f};
-		const DirectX::XMVECTORF32 eye
-			= {atP.x, atP.y, atP.z + cameraDistance, 0.0f};
-		const DirectX::XMVECTORF32 at = {atP.x, atP.y, atP.z, 0.0f};
-		const DirectX::XMVECTORF32 up = {0.0f, 1.0f, 0.0f, 0.0f};
-		// view																 = XMMatrixLookAtRH(eye, at, up);
+		const XMVECTORF32 eye = {
+			CAMERA_LOOKAT.x, CAMERA_LOOKAT.y, CAMERA_LOOKAT.z + cameraDistance, 0.0f};
 
 		// Camera controls
-		XMVECTOR eyePos = XMVectorSubtract(eye, at);
+		XMVECTOR eyePos = XMVectorSubtract(eye, CAMERA_LOOKAT);
 
 		const float radiansX = static_cast<float>(fmod(cameraRotationX, XM_2PI));
 		eyePos							 = XMVector3Rotate(
@@ -94,9 +95,13 @@ struct AppContext
 		eyePos							 = XMVector3Rotate(
 			eyePos, XMQuaternionRotationMatrix(XMMatrixRotationY(radiansY)));
 
-		eyePos = XMVectorAdd(eyePos, at);
+		return XMVectorAdd(eyePos, CAMERA_LOOKAT);
+	}
 
-		worldToView = XMMatrixLookAtRH(eyePos, at, up);
+	//------------------------------------------------------------------------------
+	void updateViewMatrix()
+	{
+		worldToView = XMMatrixLookAtRH(cameraPos(), CAMERA_LOOKAT, CAMERA_UP);
 	}
 };
 

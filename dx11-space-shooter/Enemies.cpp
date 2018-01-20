@@ -11,24 +11,48 @@ using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
 void
-Path::debugRender(DX::DebugBatchType* batch) const {
-	static const float radius = 0.1f;
+Path::debugRender(
+	DX::DebugBatchType* batch,
+	size_t selectedPointIdx,
+	size_t selectedControlIdx) const
+{
+	static const float radius		= 0.6f;
 	static const XMVECTOR xaxis = g_XMIdentityR0 * radius;
 	static const XMVECTOR yaxis = g_XMIdentityR1 * radius;
 
+	static const XMVECTOR SELECTED_COLOR = Colors::OrangeRed;
+	static const XMVECTOR POINT_COLOR		 = Colors::White;
+	static const XMVECTOR CONTROL_COLOR	= Colors::Yellow;
+
 	ASSERT(!waypoints.empty());
 	auto prevPoint = waypoints[0].wayPoint;
+	DX::DrawRing(
+		batch,
+		prevPoint,
+		xaxis,
+		yaxis,
+		(selectedPointIdx == 0) ? SELECTED_COLOR : POINT_COLOR);
+
 	for (size_t i = 1; i < waypoints.size(); ++i)
 	{
-		const auto& point = waypoints[i].wayPoint;
+		const auto& point		= waypoints[i].wayPoint;
 		const auto& control = waypoints[i].controlPoint;
 
 		DX::DrawCurve(batch, prevPoint, point, control);
-		DX::DrawRing(batch, prevPoint, xaxis, yaxis);
-		DX::DrawRing(batch, point, xaxis, yaxis);
+		DX::DrawRing(
+			batch,
+			point,
+			xaxis,
+			yaxis,
+			(selectedPointIdx == i) ? SELECTED_COLOR : POINT_COLOR);
 
 		DX::DrawLine(batch, point, control, Colors::Yellow);
-		DX::DrawRing(batch, control, xaxis, yaxis, Colors::Yellow);
+		DX::DrawRing(
+			batch,
+			control,
+			xaxis,
+			yaxis,
+			(selectedControlIdx == i) ? SELECTED_COLOR : CONTROL_COLOR);
 
 		prevPoint = point;
 	}
