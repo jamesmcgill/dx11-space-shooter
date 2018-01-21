@@ -587,11 +587,15 @@ Game::createDeviceDependentResources()
 
 	m_resources.font8pt = std::make_unique<DirectX::SpriteFont>(
 		device, L"assets/verdana8.spritefont");
+	m_resources.font16pt = std::make_unique<DirectX::SpriteFont>(
+		device, L"assets/verdana16.spritefont");
 	m_resources.font32pt = std::make_unique<DirectX::SpriteFont>(
 		device, L"assets/verdana32.spritefont");
 
 	m_resources.fontMono8pt
 		= std::make_unique<DirectX::SpriteFont>(device, L"assets/mono8.spritefont");
+	m_resources.fontMono16pt = std::make_unique<DirectX::SpriteFont>(
+		device, L"assets/mono16.spritefont");
 	m_resources.fontMono32pt = std::make_unique<DirectX::SpriteFont>(
 		device, L"assets/mono32.spritefont");
 
@@ -721,8 +725,10 @@ Game::OnDeviceLost()
 	m_resources.m_debugEffect.reset();
 
 	m_resources.fontMono32pt.reset();
+	m_resources.fontMono16pt.reset();
 	m_resources.fontMono8pt.reset();
 	m_resources.font32pt.reset();
+	m_resources.font16pt.reset();
 	m_resources.font8pt.reset();
 	m_resources.starField.reset();
 	m_resources.explosions.reset();

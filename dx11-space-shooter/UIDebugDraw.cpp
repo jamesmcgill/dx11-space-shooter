@@ -7,7 +7,7 @@ using namespace DirectX::SimpleMath;
 namespace ui
 {
 const DirectX::SimpleMath::Vector2 BUTTON_BORDER_SIZE
-	= DirectX::SimpleMath::Vector2(10.0f, 10.0f);
+	= DirectX::SimpleMath::Vector2(5.0f, 5.0f);
 
 const DirectX::XMVECTOR BUTTON_COLOR_NORMAL		= DirectX::Colors::OliveDrab;
 const DirectX::XMVECTOR BUTTON_COLOR_SELECTED = DirectX::Colors::Green;

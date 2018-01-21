@@ -12,9 +12,6 @@
 //------------------------------------------------------------------------------
 // TODO:
 //------------------------------------------------------------------------------
-// - PATH EDITOR [special visual editor for waypoints]
-//	- Select, Create, Delete, Move [Points]
-//
 // - Load/Save All  (Define human editable file format)
 //------------------------------------------------------------------------------
 namespace
@@ -23,13 +20,19 @@ constexpr float MIN_SPAWN_TIME = 0.01f;		 // zero is disabled
 constexpr float CAMERA_SPEED_X = 1.0f;
 constexpr float CAMERA_SPEED_Y = 1.0f;
 
-const float MODE_BUTTON_WIDTH			 = 300.0f;
-const float MODE_BUTTON_HEIGHT		 = 80.0f;
-const float MODE_BUTTON_POSITION_Y = 40.0f;
+static constexpr size_t NUM_MODE_BUTTONS = 3;
+const float MODE_BUTTON_WIDTH						 = 150.0f;
+const float MODE_BUTTON_HEIGHT					 = 40.0f;
+const float MODE_BUTTON_POSITION_Y			 = 20.0f;
+
+const float MODE_BUTTON_START_X = 20.0f + (MODE_BUTTON_WIDTH * 0.5f);
+const float MODE_BUTTON_STEP_X	= MODE_BUTTON_WIDTH + 20.f;
 
 const float MAIN_AREA_START_X = 20.0f;
 const float MAIN_AREA_START_Y
-	= MODE_BUTTON_POSITION_Y + (1.5f * MODE_BUTTON_HEIGHT);
+	= (1.5f * MODE_BUTTON_POSITION_Y) + MODE_BUTTON_HEIGHT;
+
+const float LIST_START_Y = MAIN_AREA_START_Y + 40.0f;
 
 const DirectX::XMVECTORF32 SELECTED_ITEM_COLOR = DirectX::Colors::White;
 const DirectX::XMVECTORF32 NORMAL_ITEM_COLOR = DirectX::Colors::MediumVioletRed;
@@ -117,7 +120,7 @@ struct IMode
 		updateIndices();
 		onItemSelected();
 	}
-	virtual void onExitMode() {};
+	virtual void onExitMode(){};
 
 	virtual std::wstring controlInfoText() const				= 0;
 	virtual std::wstring menuTitle() const							= 0;
@@ -193,11 +196,10 @@ IMode::init()
 
 	XMVECTOR dimensions
 		= m_controlInfo.font->MeasureString(m_controlInfo.text.c_str());
-	const float height = DirectX::XMVectorGetY(dimensions);
-	m_controlInfo.position
-		= Vector2(MAIN_AREA_START_X, MAIN_AREA_START_Y - (2 * height));
-	m_controlInfo.origin = Vector2(0.0f, 0.0f);
-	m_controlInfo.color	= DirectX::Colors::MediumVioletRed;
+	const float height		 = DirectX::XMVectorGetY(dimensions);
+	m_controlInfo.position = Vector2(MAIN_AREA_START_X, MAIN_AREA_START_Y);
+	m_controlInfo.origin	 = Vector2(0.0f, 0.0f);
+	m_controlInfo.color		 = DirectX::Colors::MediumVioletRed;
 }
 
 //------------------------------------------------------------------------------
@@ -306,7 +308,7 @@ IMode::renderUI()
 		= ceil(DirectX::XMVectorGetY(monoFont->MeasureString(L"X")));
 
 	using DirectX::SimpleMath::Vector2;
-	Vector2 position = {MAIN_AREA_START_X, MAIN_AREA_START_Y};
+	Vector2 position = {MAIN_AREA_START_X, LIST_START_Y};
 	Vector2 origin	 = Vector2(0.f, 0.f);
 	Vector2 scale		 = Vector2(1.f, 1.f);
 
@@ -1417,9 +1419,7 @@ struct EditorState::Impl
 	GameLogic& m_gameLogic;
 
 	Modes m_modes;
-
-	static constexpr size_t NUM_BUTTONS = 3;
-	std::array<ModeButton, NUM_BUTTONS> m_modeButtons;
+	std::array<ModeButton, NUM_MODE_BUTTONS> m_modeButtons;
 
 	Impl(AppContext& context, AppResources& resources, GameLogic& logic)
 			: m_context(context)
@@ -1453,20 +1453,17 @@ void
 EditorState::Impl::setupModeMenu()
 {
 	TRACE
-	const float BUTTON_STEP_X			= m_context.screenWidth / NUM_BUTTONS;
-	const float BUTTON_POSITION_X = BUTTON_STEP_X / 2.0f;
-
-	float xPos					= BUTTON_POSITION_X;
+	float xPos					= MODE_BUTTON_START_X;
 	auto positionButton = [&](auto& button) {
 		using DirectX::SimpleMath::Vector2;
 		button.position.x = xPos - (MODE_BUTTON_WIDTH * 0.5f);
 		button.position.y = MODE_BUTTON_POSITION_Y;
 		button.size				= Vector2(MODE_BUTTON_WIDTH, MODE_BUTTON_HEIGHT);
 
-		button.uiText.font	= m_resources.font32pt.get();
+		button.uiText.font	= m_resources.font16pt.get();
 		button.uiText.color = DirectX::Colors::Yellow;
 		button.centerText();
-		xPos += BUTTON_STEP_X;
+		xPos += MODE_BUTTON_STEP_X;
 	};
 
 	m_modeButtons[0].pGotoMode	 = &m_modes.levelListMode;

@@ -18,6 +18,8 @@ cd ..
 %SRC_DIR%\meshconvert.exe -n -c -sdkmesh %SRC_DIR%\ship9.obj -y
 %SRC_DIR%\meshconvert.exe -n -c -sdkmesh %SRC_DIR%\shot.obj -y
 %SRC_DIR%\MakeSpriteFont.exe "Verdana" verdana32.spritefont /FontSize:32
+%SRC_DIR%\MakeSpriteFont.exe "Verdana" verdana16.spritefont /FontSize:16
 %SRC_DIR%\MakeSpriteFont.exe "Verdana" verdana8.spritefont /FontSize:8
 %SRC_DIR%\MakeSpriteFont.exe "Courier New" mono32.spritefont /FontSize:32
+%SRC_DIR%\MakeSpriteFont.exe "Courier New" mono16.spritefont /FontSize:16
 %SRC_DIR%\MakeSpriteFont.exe "Courier New" mono8.spritefont /FontSize:8
