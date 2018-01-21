@@ -15,8 +15,6 @@
 // - PATH EDITOR [special visual editor for waypoints]
 //	- Select, Create, Delete, Move [Points]
 //
-//	+ Zoom out (auto/keyboard?) so that we can draw paths outside the game area
-//
 // - Load/Save All  (Define human editable file format)
 //------------------------------------------------------------------------------
 namespace
@@ -35,6 +33,8 @@ const float MAIN_AREA_START_Y
 
 const DirectX::XMVECTORF32 SELECTED_ITEM_COLOR = DirectX::Colors::White;
 const DirectX::XMVECTORF32 NORMAL_ITEM_COLOR = DirectX::Colors::MediumVioletRed;
+
+static float CAMERA_DIST_MULT = 1.25f;
 
 //------------------------------------------------------------------------------
 // Current menu selections
@@ -117,6 +117,7 @@ struct IMode
 		updateIndices();
 		onItemSelected();
 	}
+	virtual void onExitMode() {};
 
 	virtual std::wstring controlInfoText() const				= 0;
 	virtual std::wstring menuTitle() const							= 0;
@@ -668,6 +669,8 @@ struct PathEditorMode : public IMode
 	size_t lastItemIdx() const override;
 
 	void onEnterMode(bool isNavigatingForward = true) override;
+	void onExitMode() override;
+
 	void render() override;
 	void handleInput(const DX::StepTimer& timer) override;
 
@@ -713,7 +716,9 @@ struct Modes
 	void enterMode(IMode* pNewMode, bool isNavigatingForward = true)
 	{
 		TRACE
+		ASSERT(pCurrentMode);
 		ASSERT(pNewMode);
+		pCurrentMode->onExitMode();
 		pCurrentMode = pNewMode;
 		pCurrentMode->onEnterMode(isNavigatingForward);
 	}
@@ -1286,7 +1291,18 @@ void
 PathEditorMode::onEnterMode(bool isNavigatingForward)
 {
 	m_gameLogic.m_enemies.reset();
+	m_context.cameraDistance = m_context.defaultCameraDistance * CAMERA_DIST_MULT;
+	m_context.updateViewMatrix();
 	IMode::onEnterMode(isNavigatingForward);
+}
+
+//------------------------------------------------------------------------------
+void
+PathEditorMode::onExitMode()
+{
+	m_context.cameraDistance = m_context.defaultCameraDistance;
+	m_context.updateViewMatrix();
+	IMode::onExitMode();
 }
 
 //------------------------------------------------------------------------------
@@ -1301,6 +1317,7 @@ PathEditorMode::render()
 	size_t controlIdx = (isControlSelected) ? m_selectedIdx : -1;
 
 	path.debugRender(m_resources.m_batch.get(), pointIdx, controlIdx);
+	m_gameLogic.renderPlayerBoundary();
 }
 
 //------------------------------------------------------------------------------
