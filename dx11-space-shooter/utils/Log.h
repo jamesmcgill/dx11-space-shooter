@@ -102,7 +102,7 @@ logMsgImp(
 	const char* function,
 	Args... args)
 {
-	static const size_t BUFFER_SIZE = 512;
+	static const size_t BUFFER_SIZE = 12 * 1024;
 	char buffer[BUFFER_SIZE];
 
 	auto count = sprintf_s(

@@ -9,6 +9,75 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
+static const std::string LEVEL_DATA_FILENAME = "LevelData.json";
+static const std::string PATHS_NODE_ID			 = "paths";
+static const std::string FORMATIONS_NODE_ID	= "formations";
+static const std::string LEVELS_NODE_ID			 = "levels";
+static const std::string ID_NODE_KEY				 = "id";
+static const std::string WAYPOINTS_KEY			 = "waypoints";
+static const std::string SECTIONS_KEY				 = "sections";
+
+static const std::string WAYPOINT_KEY = "waypoint";
+static const std::string CONTROL_KEY	= "control";
+
+static const std::string PATH_IDX_KEY	= "pathIdx";
+static const std::string NUM_SHIPS_KEY = "numShips";
+static const std::string MODEL_KEY		 = "model";
+
+static const std::string SPAWN_TIME_KEY		 = "spawnTimeS";
+static const std::string FORMATION_IDX_KEY = "formationIdx";
+
+static const std::string WAVES_KEY = "waves";
+
+//------------------------------------------------------------------------------
+Waypoint
+Waypoint::from_json(const json11::Json& json)
+{
+	Waypoint ret{};
+
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse Waypoint object - not a JSON object type");
+		return ret;
+	}
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		const auto& key		= child.first;
+		const auto& value = child.second;
+
+		if (!value.is_array() || value.array_items().size() != 3)
+		{
+			LOG_ERROR(
+				"Can't parse Waypoint coordinate - JSON array of size 3 required");
+			continue;
+		}
+		auto& point = (key == CONTROL_KEY) ? ret.controlPoint : ret.wayPoint;
+		float pts[3];
+		int i = 0;
+		for (const auto& coord : value.array_items())
+		{
+			if (coord.is_number())
+			{
+				ASSERT(i < 3);
+				pts[i++] = static_cast<float>(coord.number_value());
+			}
+		}
+		point = Vector3(pts);
+	}
+	return ret;
+}
+
+//------------------------------------------------------------------------------
+json11::Json
+Waypoint::to_json() const
+{
+	return json11::Json::object{
+		{WAYPOINT_KEY, json11::Json::array{wayPoint.x, wayPoint.y, wayPoint.z}},
+		{CONTROL_KEY,
+		 json11::Json::array{controlPoint.x, controlPoint.y, controlPoint.z}}};
+}
+
 //------------------------------------------------------------------------------
 void
 Path::debugRender(
@@ -56,6 +125,201 @@ Path::debugRender(
 
 		prevPoint = point;
 	}
+}
+
+//------------------------------------------------------------------------------
+Path
+Path::from_json(const json11::Json& json)
+{
+	Path ret{};
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse Path object - not a JSON object type");
+		return ret;
+	}
+
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		const auto& key		= child.first;
+		const auto& value = child.second;
+
+		if (value.is_string() && key == ID_NODE_KEY)
+		{
+			ret.id = strUtils::utf8ToWstring(value.string_value());
+		}
+		else if (value.is_array() && key == WAYPOINTS_KEY)
+		{
+			for (const auto& waypoint : value.array_items())
+			{
+				ret.waypoints.emplace_back(Waypoint::from_json(waypoint));
+			}
+		}
+	}
+	return ret;
+}
+
+//------------------------------------------------------------------------------
+json11::Json
+Path::to_json() const
+{
+	return json11::Json::object{{ID_NODE_KEY, strUtils::wstringToUtf8(id)},
+															{WAYPOINTS_KEY, waypoints}};
+}
+
+//------------------------------------------------------------------------------
+FormationSection
+FormationSection::from_json(const json11::Json& json)
+{
+	FormationSection ret{};
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse FormationSection object - not a JSON object type");
+		return ret;
+	}
+
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		const auto& key		= child.first;
+		const auto& value = child.second;
+
+		if (value.is_number() && key == PATH_IDX_KEY)
+		{
+			ret.pathIdx = static_cast<size_t>(value.int_value());
+		}
+		else if (value.is_number() && key == NUM_SHIPS_KEY)
+		{
+			ret.numShips = value.int_value();
+		}
+		else if (value.is_number() && key == MODEL_KEY)
+		{
+			ret.model = static_cast<ModelResource>(value.int_value());
+		}
+	}
+	return ret;
+}
+
+//------------------------------------------------------------------------------
+json11::Json
+FormationSection::to_json() const
+{
+	return json11::Json::object{{PATH_IDX_KEY, static_cast<int>(pathIdx)},
+															{NUM_SHIPS_KEY, numShips},
+															{MODEL_KEY, static_cast<int>(model)}};
+}
+
+//------------------------------------------------------------------------------
+Formation
+Formation::from_json(const json11::Json& json)
+{
+	Formation ret{};
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse Formation object - not a JSON object type");
+		return ret;
+	}
+
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		const auto& key		= child.first;
+		const auto& value = child.second;
+
+		if (value.is_string() && key == ID_NODE_KEY)
+		{
+			ret.id = strUtils::utf8ToWstring(value.string_value());
+		}
+		else if (value.is_array() && key == SECTIONS_KEY)
+		{
+			for (const auto& section : value.array_items())
+			{
+				ret.sections.emplace_back(FormationSection::from_json(section));
+			}
+		}
+	}
+	return ret;
+}
+
+//------------------------------------------------------------------------------
+json11::Json
+Formation::to_json() const
+{
+	return json11::Json::object{{ID_NODE_KEY, strUtils::wstringToUtf8(id)},
+															{SECTIONS_KEY, sections}};
+}
+
+//------------------------------------------------------------------------------
+Wave
+Wave::from_json(const json11::Json& json)
+{
+	Wave ret{};
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse Wave object - not a JSON object type");
+		return ret;
+	}
+
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		const auto& key		= child.first;
+		const auto& value = child.second;
+
+		if (value.is_number() && key == FORMATION_IDX_KEY)
+		{
+			ret.formationIdx = value.int_value();
+		}
+		else if (value.is_number() && key == SPAWN_TIME_KEY)
+		{
+			ret.spawnTimeS = static_cast<float>(value.number_value());
+		}
+	}
+	return ret;
+}
+
+//------------------------------------------------------------------------------
+json11::Json
+Wave::to_json() const
+{
+	return json11::Json::object{
+		{SPAWN_TIME_KEY, spawnTimeS},
+		{FORMATION_IDX_KEY, static_cast<int>(formationIdx)}};
+}
+
+//------------------------------------------------------------------------------
+Level
+Level::from_json(const json11::Json& json)
+{
+	Level ret{};
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse Level object - not a JSON object type");
+		return ret;
+	}
+
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		const auto& key		= child.first;
+		const auto& value = child.second;
+
+		if (value.is_array() && key == WAVES_KEY)
+		{
+			for (const auto& wave : value.array_items())
+			{
+				ret.waves.emplace_back(Wave::from_json(wave));
+			}
+		}
+	}
+	return ret;
+}
+
+//------------------------------------------------------------------------------
+json11::Json
+Level::to_json() const
+{
+	return json11::Json::object{{WAVES_KEY, waves}};
 }
 
 //------------------------------------------------------------------------------
@@ -303,16 +567,27 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 	TRACE
 	m_formationPool.reserve(MAX_NUM_FORMATIONS);
 	m_pathPool.reserve(MAX_NUM_PATHS);
+	resetLevelData();
+	//s_debugLevels = {{createDebugLevel(m_pathPool, m_formationPool)}};
+	//s_levels			= {{createTestLevels(m_pathPool, m_formationPool)}};
+	load();
+
+	reset();
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::resetLevelData()
+{
+	TRACE
+	m_pathPool.clear();
+	m_formationPool.clear();
+	s_levels.clear();
 
 	// Prevent data ever becoming truely empty with 'null' versions at the front
 	addNullData(m_pathPool, m_formationPool);
 	nullPathIdx			 = m_pathPool.size() - 1;
 	nullFormationIdx = m_formationPool.size() - 1;
-
-	s_debugLevels = {{createDebugLevel(m_pathPool, m_formationPool)}};
-	s_levels			= {{createTestLevels(m_pathPool, m_formationPool)}};
-
-	reset();
 }
 
 //------------------------------------------------------------------------------
@@ -598,6 +873,148 @@ Enemies::emitPlayerShot()
 		PLAYER_SHOTS_END);
 
 	m_resources.soundEffects[AudioResource::PlayerShot]->Play();
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::load()
+{
+	TRACE
+	resetLevelData();
+
+	std::ifstream fileIn(LEVEL_DATA_FILENAME);
+	if (!fileIn.is_open())
+	{
+		LOG_ERROR("Level file could not be found\n");
+		return;
+	}
+
+	std::stringstream ss;
+	ss << fileIn.rdbuf();
+	fileIn.close();
+
+	std::string err;
+	const auto& str = ss.str();
+
+	parseRootJsonArray(json11::Json::parse(str, err));
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::parseRootJsonArray(const json11::Json& json)
+{
+	TRACE
+	if (!json.is_array())
+	{
+		LOG_ERROR("Can't parse Root Array - not a JSON array type");
+	}
+
+	const auto& children = json.array_items();
+	for (const auto& child : children)
+	{
+		parseRootJsonObject(child);
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::parseRootJsonObject(const json11::Json& json)
+{
+	TRACE
+	if (!json.is_object())
+	{
+		LOG_ERROR("Can't parse Root Object - not a JSON object type");
+	}
+
+	const auto& children = json.object_items();
+	for (const auto& child : children)
+	{
+		if (child.first == PATHS_NODE_ID)
+		{
+			parsePathsJsonObject(child.second);
+		}
+		else if (child.first == FORMATIONS_NODE_ID)
+		{
+			parseFormationsJsonObject(child.second);
+		}
+		else if (child.first == LEVELS_NODE_ID)
+		{
+			parseLevelsJsonObject(child.second);
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::parsePathsJsonObject(const json11::Json& json)
+{
+	TRACE
+	if (!json.is_array())
+	{
+		LOG_ERROR("Can't parse Paths - not a JSON array type");
+		return;
+	}
+
+	for (const auto& path : json.array_items())
+	{
+		m_pathPool.emplace_back(Path::from_json(path));
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::parseFormationsJsonObject(const json11::Json& json)
+{
+	TRACE
+	if (!json.is_array())
+	{
+		LOG_ERROR("Can't parse Formations - not a JSON array type");
+		return;
+	}
+
+	for (const auto& formation : json.array_items())
+	{
+		m_formationPool.emplace_back(Formation::from_json(formation));
+	}
+}
+//------------------------------------------------------------------------------
+void
+Enemies::parseLevelsJsonObject(const json11::Json& json)
+{
+	TRACE
+	if (!json.is_array())
+	{
+		LOG_ERROR("Can't parse Levels - not a JSON array type");
+		return;
+	}
+
+	for (const auto& level : json.array_items())
+	{
+		s_levels.emplace_back(Level::from_json(level));
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::save()
+{
+	TRACE
+	std::ofstream fileOut(LEVEL_DATA_FILENAME);
+	if (fileOut.is_open())
+	{
+		// NB: begin()+1 skips the null items artificially injected at index[0]
+		// We don't need to save those
+		auto paths = json11::Json(m_pathPool.begin() + 1, m_pathPool.end());
+		auto formations
+			= json11::Json(m_formationPool.begin() + 1, m_formationPool.end());
+
+		fileOut << json11::Json(
+								 json11::Json::array{
+									 json11::Json::object{{PATHS_NODE_ID, paths}},
+									 json11::Json::object{{FORMATIONS_NODE_ID, formations}},
+									 json11::Json::object{{LEVELS_NODE_ID, s_levels}}})
+								 .dump();
+	}
 }
 
 //------------------------------------------------------------------------------

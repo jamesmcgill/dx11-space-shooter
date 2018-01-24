@@ -17,6 +17,9 @@
     <Filter Include="utils">
       <UniqueIdentifier>{41c3b207-9b46-47bc-9aa4-8bd06810dda8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="json11">
+      <UniqueIdentifier>{7aded630-04b9-4e17-9ee8-2d8da3b4dcf4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -74,6 +77,9 @@
     <ClInclude Include="AppStates\EditorState.h">
       <Filter>AppStates</Filter>
     </ClInclude>
+    <ClInclude Include="json11\json11.hpp">
+      <Filter>json11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -123,6 +129,9 @@
     </ClCompile>
     <ClCompile Include="AppStates\EditorState.cpp">
       <Filter>AppStates</Filter>
+    </ClCompile>
+    <ClCompile Include="json11\json11.cpp">
+      <Filter>json11</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

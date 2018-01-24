@@ -120,7 +120,9 @@ struct IMode
 		updateIndices();
 		onItemSelected();
 	}
-	virtual void onExitMode(){};
+	virtual void onExitMode() {
+		m_gameLogic.m_enemies.save();
+	};
 
 	virtual std::wstring controlInfoText() const				= 0;
 	virtual std::wstring menuTitle() const							= 0;
@@ -1428,6 +1430,7 @@ struct EditorState::Impl
 			, m_modes(context, resources, logic)
 	{
 	}
+
 	void init()
 	{
 		m_modes.initModes();
@@ -1754,6 +1757,7 @@ void
 EditorState::exit()
 {
 	TRACE
+	m_gameLogic.m_enemies.save();
 }
 
 //------------------------------------------------------------------------------

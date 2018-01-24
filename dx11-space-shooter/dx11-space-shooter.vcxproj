@@ -206,6 +206,7 @@
     <ClInclude Include="Enemies.h" />
     <ClInclude Include="AppResources.h" />
     <ClInclude Include="AppContext.h" />
+    <ClInclude Include="json11\json11.hpp" />
     <ClInclude Include="MenuManager.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ScoreBoard.h" />
@@ -232,6 +233,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameLogic.cpp" />
     <ClCompile Include="Enemies.cpp" />
+    <ClCompile Include="json11\json11.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MenuManager.cpp" />
     <ClCompile Include="pch.cpp">

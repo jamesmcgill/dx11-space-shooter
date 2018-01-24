@@ -57,12 +57,14 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <sstream>
 #include <vector>
 #include <array>
 #include <map>
 #include <unordered_map>
 #include <queue>
-
+#include <fstream>
+#include <iostream>
 #include "fmt/format.h"
 #include <crtdbg.h>
 
@@ -94,8 +96,39 @@ private:
 inline void
 ThrowIfFailed(HRESULT hr)
 {
-	if (FAILED(hr)) {
+	if (FAILED(hr))
+	{
 		throw com_exception(hr);
 	}
 }
+
+}		 // namespace DX
+
+namespace strUtils
+{
+static std::string
+wstringToUtf8(const std::wstring& str)
+{
+	std::string outStr(str.length(), 0);
+	WideCharToMultiByte(
+		CP_UTF8,
+		0,
+		str.data(),
+		str.length(),
+		outStr.data(),
+		outStr.length(),
+		NULL,
+		NULL);
+	return outStr;
 }
+
+static std::wstring
+utf8ToWstring(const std::string& str)
+{
+	std::wstring outStr(str.length(), 0);
+	MultiByteToWideChar(
+		CP_UTF8, 0, str.data(), str.length(), outStr.data(), outStr.length());
+	return outStr;
+}
+
+}		 // namespace strUtils
