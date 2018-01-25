@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "StepTimer.h"
 #include "DeviceResources.h"
+#include "ResourceIDs.h"	// ModelResource, AudioResource
 #include "Entity.h"		 // ModelData
 #include "Starfield.h"
 #include "Explosions.h"
@@ -9,36 +10,6 @@
 #include "ScoreBoard.h"
 #include "midi-controller/MidiController.h"
 
-//------------------------------------------------------------------------------
-enum class ModelResource
-{
-	Enemy1,
-	Enemy2,
-	Enemy3,
-	Enemy4,
-	Enemy5,
-	Enemy6,
-	Enemy7,
-	Enemy8,
-	Enemy9,
-
-	Player,
-	Shot,
-
-	COUNT
-};
-
-enum class AudioResource
-{
-	GameStart,
-	GameOver,
-	PlayerShot,
-	EnemyShot,
-	PlayerExplode,
-	EnemyExplode,
-
-	COUNT
-};
 
 //------------------------------------------------------------------------------
 struct AppResources

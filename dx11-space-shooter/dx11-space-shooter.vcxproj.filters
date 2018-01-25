@@ -80,6 +80,8 @@
     <ClInclude Include="json11\json11.hpp">
       <Filter>json11</Filter>
     </ClInclude>
+    <ClInclude Include="LevelData.h" />
+    <ClInclude Include="ResourceIDs.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -133,6 +135,7 @@
     <ClCompile Include="json11\json11.cpp">
       <Filter>json11</Filter>
     </ClCompile>
+    <ClCompile Include="LevelData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
