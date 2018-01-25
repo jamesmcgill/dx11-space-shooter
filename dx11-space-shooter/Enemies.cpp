@@ -9,7 +9,7 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-static const std::string LEVEL_DATA_FILENAME = "LevelData.json";
+static const std::string LEVEL_DATA_FILENAME = "assets/leveldata.json";
 static const std::string PATHS_NODE_ID			 = "paths";
 static const std::string FORMATIONS_NODE_ID	= "formations";
 static const std::string LEVELS_NODE_ID			 = "levels";
