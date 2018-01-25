@@ -50,12 +50,22 @@ public:
 	void save();
 	void debugRender(DX::DebugBatchType* batch);
 
-	LevelPool& debug_getCurrentLevels() { return m_levels; }
-	FormationPool& debug_getFormations() { return m_formationPool; }
-	PathPool& debug_getPaths() { return m_pathPool; }
+public:
+	static constexpr size_t MAX_NUM_PATHS = 256;
+	PathPool m_pathPool;		// Shared pool of all available
 
-	size_t nullPathIdx			= 0;
-	size_t nullFormationIdx = 0;
+	static constexpr size_t MAX_NUM_FORMATIONS = 256;
+	FormationPool m_formationPool;		// Shared pool of all available
+
+	LevelPool m_levels;
+
+	// dummy(null) data always exists in first position (index[0])
+	// This means there will always be a valid path and formation to reference
+	// and we don't have to worry about empty lists. However, it does mean
+	// hiding this in the editor and save file.
+	static constexpr size_t DUMMY_PATH_IDX			= 0;
+	static constexpr size_t DUMMY_FORMATION_IDX = 0;
+	void addDummyData();
 
 private:
 	AppContext& m_context;
@@ -65,14 +75,6 @@ private:
 	size_t m_currentLevelIdx	= 0;
 	size_t m_nextEventWaveIdx = 0;
 	bool m_isLevelActive			= false;
-
-	static constexpr size_t MAX_NUM_PATHS = 256;
-	PathPool m_pathPool;		// Shared pool of all available
-
-	static constexpr size_t MAX_NUM_FORMATIONS = 256;
-	FormationPool m_formationPool;		// Shared pool of all available
-
-	LevelPool m_levels;
 };
 
 //------------------------------------------------------------------------------

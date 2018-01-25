@@ -12,6 +12,10 @@
 //------------------------------------------------------------------------------
 namespace
 {
+// Prevent displaying the dummy data at index[0]
+constexpr size_t PATH_FIRST_IDX			 = Enemies::DUMMY_PATH_IDX + 1;
+constexpr size_t FORMATION_FIRST_IDX = Enemies::DUMMY_FORMATION_IDX + 1;
+
 constexpr float MIN_SPAWN_TIME = 0.01f;		 // zero is disabled
 constexpr float CAMERA_SPEED_X = 1.0f;
 constexpr float CAMERA_SPEED_Y = 1.0f;
@@ -40,40 +44,6 @@ static float CAMERA_DIST_MULT = 1.25f;
 size_t g_levelIdx			= 0;
 size_t g_formationIdx = 0;
 size_t g_pathIdx			= 0;
-
-std::vector<Wave>&
-currentLevelWavesRef(GameLogic& logic)
-{
-	auto& levels = logic.m_enemies.debug_getCurrentLevels();
-	ASSERT(g_levelIdx < levels.size());
-	return levels[g_levelIdx].waves;
-}
-
-Wave&
-currentLevelWaveRef(size_t waveIdx, GameLogic& logic)
-{
-	auto& waves = currentLevelWavesRef(logic);
-	ASSERT(waveIdx < waves.size());
-	return waves[waveIdx];
-}
-
-Formation&
-currentFormationRef(GameLogic& logic)
-{
-	auto& formations = logic.m_enemies.debug_getFormations();
-	ASSERT(g_formationIdx < formations.size());
-	return formations[g_formationIdx];
-}
-
-FormationSection&
-currentFormationSectionRef(size_t sectionIdx, GameLogic& logic)
-{
-	auto& formation = currentFormationRef(logic);
-
-	ASSERT(sectionIdx < formation.sections.size());
-	return formation.sections[sectionIdx];
-}
-
 };		// anon namespace
 
 //------------------------------------------------------------------------------
@@ -116,9 +86,7 @@ struct IMode
 		updateIndices();
 		onItemSelected();
 	}
-	virtual void onExitMode() {
-		m_gameLogic.m_enemies.save();
-	};
+	virtual void onExitMode() { m_gameLogic.m_enemies.save(); };
 
 	virtual std::wstring controlInfoText() const				= 0;
 	virtual std::wstring menuTitle() const							= 0;
@@ -161,6 +129,7 @@ struct IMode
 		m_lastIdx	= lastItemIdx() + 1;		 // +1 for CREATE button
 	}
 
+	//------------------------------------------------------------------------------
 	void jumpToLevelWave(const size_t levelIdx, const size_t waveIdx)
 	{
 		m_gameLogic.reset();
@@ -179,6 +148,52 @@ struct IMode
 		m_gameLogic.m_enemies.reset();
 		m_gameLogic.m_enemies.spawnFormationSection(
 			5, pathIdx, ModelResource::Enemy9, 0.0f);
+	}
+
+	//------------------------------------------------------------------------------
+	LevelPool& levelsRef() const { return m_gameLogic.m_enemies.m_levels; }
+
+	FormationPool& formationsRef() const
+	{
+		return m_gameLogic.m_enemies.m_formationPool;
+	}
+
+	PathPool& pathsRef() const { return m_gameLogic.m_enemies.m_pathPool; }
+
+	Level& levelRef(const size_t idx) const
+	{
+		auto& levels = levelsRef();
+		ASSERT(idx < levels.size());
+		return levels[idx];
+	}
+
+	Wave& levelWaveRef(size_t levelIdx, size_t waveIdx) const
+	{
+		auto& waves = levelRef(levelIdx).waves;
+		ASSERT(waveIdx < waves.size());
+		return waves[waveIdx];
+	}
+
+	Formation& formationRef(size_t idx) const
+	{
+		auto& formations = formationsRef();
+		ASSERT(idx < formations.size());
+		return formations[idx];
+	}
+
+	FormationSection&
+	formationSectionRef(size_t formationIdx, size_t sectionIdx) const
+	{
+		auto& formation = formationRef(formationIdx);
+		ASSERT(sectionIdx < formation.sections.size());
+		return formation.sections[sectionIdx];
+	}
+
+	Path& pathRef(size_t idx) const
+	{
+		auto& paths = pathsRef();
+		ASSERT(idx < paths.size());
+		return paths[idx];
 	}
 };
 
@@ -735,14 +750,14 @@ LevelListMode::itemName(size_t itemIdx) const
 void
 LevelListMode::onCreate()
 {
-	m_gameLogic.m_enemies.debug_getCurrentLevels().emplace_back();
+	levelsRef().emplace_back();
 }
 
 //------------------------------------------------------------------------------
 void
 LevelListMode::onDeleteItem(size_t itemIdx)
 {
-	auto& levels = m_gameLogic.m_enemies.debug_getCurrentLevels();
+	auto& levels = levelsRef();
 	ASSERT(itemIdx < levels.size());
 	levels.erase(levels.begin() + itemIdx);
 }
@@ -751,7 +766,7 @@ LevelListMode::onDeleteItem(size_t itemIdx)
 size_t
 LevelListMode::lastItemIdx() const
 {
-	return m_gameLogic.m_enemies.debug_getCurrentLevels().size() - 1;
+	return levelsRef().size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -784,12 +799,10 @@ LevelEditorMode::menuTitle() const
 std::wstring
 LevelEditorMode::itemName(size_t itemIdx) const
 {
-	const auto& wave = currentLevelWaveRef(itemIdx, m_gameLogic);
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
-	ASSERT(wave.formationIdx < formations.size());
+	const auto& wave = levelWaveRef(g_levelIdx, itemIdx);
+	auto& id				 = formationRef(wave.formationIdx).id;
 
-	return fmt::format(
-		L"{:4}   {}", wave.spawnTimeS, formations[wave.formationIdx].id);
+	return fmt::format(L"{:4}   {}", wave.spawnTimeS, id);
 }
 
 //------------------------------------------------------------------------------
@@ -803,11 +816,10 @@ LevelEditorMode::onBack()
 void
 LevelEditorMode::onCreate()
 {
-	auto& waves = currentLevelWavesRef(m_gameLogic);
+	auto& waves = levelRef(g_levelIdx).waves;
 	float t			= (waves.empty()) ? MIN_SPAWN_TIME : waves.back().spawnTimeS;
 
-	size_t formationIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
-	Wave newWave{t, formationIdx};
+	Wave newWave{t, FORMATION_FIRST_IDX};
 	waves.emplace_back(newWave);
 }
 
@@ -826,7 +838,7 @@ LevelEditorMode::onItemSelected()
 void
 LevelEditorMode::onDeleteItem(size_t itemIdx)
 {
-	auto& waves = currentLevelWavesRef(m_gameLogic);
+	auto& waves = levelRef(g_levelIdx).waves;
 
 	ASSERT(itemIdx < waves.size());
 	waves.erase(waves.begin() + itemIdx);
@@ -836,7 +848,7 @@ LevelEditorMode::onDeleteItem(size_t itemIdx)
 void
 LevelEditorMode::onPlus()
 {
-	auto& t = currentLevelWaveRef(m_selectedIdx, m_gameLogic).spawnTimeS;
+	auto& t = levelWaveRef(g_levelIdx, m_selectedIdx).spawnTimeS;
 	t += 1.0f;
 	t = round(t);
 }
@@ -845,7 +857,7 @@ LevelEditorMode::onPlus()
 void
 LevelEditorMode::onSubtract()
 {
-	auto& t = currentLevelWaveRef(m_selectedIdx, m_gameLogic).spawnTimeS;
+	auto& t = levelWaveRef(g_levelIdx, m_selectedIdx).spawnTimeS;
 	t -= 1.0f;
 	if (t < MIN_SPAWN_TIME)
 	{
@@ -857,13 +869,11 @@ LevelEditorMode::onSubtract()
 void
 LevelEditorMode::onPgUp()
 {
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
-	auto& curIdx = currentLevelWaveRef(m_selectedIdx, m_gameLogic).formationIdx;
+	auto& formations		 = formationsRef();
+	auto& curIdx				 = levelWaveRef(g_levelIdx, m_selectedIdx).formationIdx;
+	const size_t lastIdx = (formations.size() > 0) ? formations.size() - 1 : 0;
 
-	const size_t firstIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
-	const size_t lastIdx	= (formations.size() > 0) ? formations.size() - 1 : 0;
-
-	curIdx = (curIdx > firstIdx) ? curIdx - 1 : lastIdx;
+	curIdx = (curIdx > FORMATION_FIRST_IDX) ? curIdx - 1 : lastIdx;
 	jumpToLevelWave(g_levelIdx, m_selectedIdx);
 }
 
@@ -871,13 +881,11 @@ LevelEditorMode::onPgUp()
 void
 LevelEditorMode::onPgDn()
 {
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
-	auto& curIdx = currentLevelWaveRef(m_selectedIdx, m_gameLogic).formationIdx;
+	auto& formations		 = formationsRef();
+	auto& curIdx				 = levelWaveRef(g_levelIdx, m_selectedIdx).formationIdx;
+	const size_t lastIdx = (formations.size() > 0) ? formations.size() - 1 : 0;
 
-	const size_t firstIdx = m_gameLogic.m_enemies.nullFormationIdx + 1;
-	const size_t lastIdx	= (formations.size() > 0) ? formations.size() - 1 : 0;
-
-	curIdx = (curIdx < lastIdx) ? curIdx + 1 : firstIdx;
+	curIdx = (curIdx < lastIdx) ? curIdx + 1 : FORMATION_FIRST_IDX;
 	jumpToLevelWave(g_levelIdx, m_selectedIdx);
 }
 
@@ -885,7 +893,7 @@ LevelEditorMode::onPgDn()
 size_t
 LevelEditorMode::lastItemIdx() const
 {
-	auto& waves = currentLevelWavesRef(m_gameLogic);
+	auto& waves = levelRef(g_levelIdx).waves;
 	return waves.size() - 1;
 }
 
@@ -895,10 +903,7 @@ LevelEditorMode::lastItemIdx() const
 std::wstring
 FormationListMode::itemName(size_t itemIdx) const
 {
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
-	ASSERT(itemIdx < formations.size());
-
-	return formations[itemIdx].id;
+	return formationRef(itemIdx).id;
 }
 
 //------------------------------------------------------------------------------
@@ -912,31 +917,27 @@ FormationListMode::itemNameToDisplay(size_t itemIdx) const
 void
 FormationListMode::setItemName(size_t itemIdx, std::wstring newName)
 {
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
-	ASSERT(itemIdx < formations.size());
-
-	formations[itemIdx].id = newName;
+	formationRef(itemIdx).id = newName;
 }
 
 //------------------------------------------------------------------------------
 void
 FormationListMode::onCreate()
 {
-	Formation formation{L"New"};
-	m_gameLogic.m_enemies.debug_getFormations().emplace_back(formation);
+	formationsRef().emplace_back(Formation{L"New"});
 }
 
 //------------------------------------------------------------------------------
 void
 FormationListMode::onDeleteItem(size_t itemIdx)
 {
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
+	auto& formations = formationsRef();
 	ASSERT(itemIdx < formations.size());
 
 	formations.erase(formations.begin() + itemIdx);
 
 	// Refresh level indices
-	auto& levels = m_gameLogic.m_enemies.debug_getCurrentLevels();
+	auto& levels = levelsRef();
 	for (auto& l : levels)
 	{
 		for (auto& w : l.waves)
@@ -953,14 +954,14 @@ FormationListMode::onDeleteItem(size_t itemIdx)
 size_t
 FormationListMode::firstMenuIdx() const
 {
-	return m_gameLogic.m_enemies.nullFormationIdx + 1;
+	return FORMATION_FIRST_IDX;
 }
 
 //------------------------------------------------------------------------------
 size_t
 FormationListMode::lastItemIdx() const
 {
-	return m_gameLogic.m_enemies.debug_getFormations().size() - 1;
+	return formationsRef().size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -988,11 +989,8 @@ FormationListMode::onItemCommand()
 std::wstring
 FormationSectionEditorMode::itemName(size_t itemIdx) const
 {
-	auto& section = currentFormationSectionRef(itemIdx, m_gameLogic);
-
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(section.pathIdx < paths.size());
-	auto& path = paths[section.pathIdx];
+	auto& section = formationSectionRef(g_formationIdx, itemIdx);
+	auto& path		= pathRef(section.pathIdx);
 
 	return fmt::format(
 		L"{}: Model:{}, numShips:{}, Path:{} ",
@@ -1013,10 +1011,10 @@ FormationSectionEditorMode::onBack()
 void
 FormationSectionEditorMode::onCreate()
 {
-	auto& formation = currentFormationRef(m_gameLogic);
+	auto& formation = formationRef(g_formationIdx);
 
 	FormationSection section;
-	section.pathIdx	= m_gameLogic.m_enemies.nullPathIdx + 1;
+	section.pathIdx	= PATH_FIRST_IDX;
 	section.numShips = 3;
 	section.model		 = ModelResource::Enemy1;
 	formation.sections.emplace_back(section);
@@ -1026,7 +1024,7 @@ FormationSectionEditorMode::onCreate()
 void
 FormationSectionEditorMode::onDeleteItem(size_t itemIdx)
 {
-	auto& formation = currentFormationRef(m_gameLogic);
+	auto& formation = formationRef(g_formationIdx);
 	formation.sections.erase(formation.sections.begin() + itemIdx);
 }
 
@@ -1041,7 +1039,7 @@ FormationSectionEditorMode::onItemSelected()
 void
 FormationSectionEditorMode::onPlus()
 {
-	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	auto& section = formationSectionRef(g_formationIdx, m_selectedIdx);
 	static const int MAX_NUM_SHIPS = 10;
 	section.numShips
 		= (section.numShips < MAX_NUM_SHIPS) ? section.numShips + 1 : MAX_NUM_SHIPS;
@@ -1053,7 +1051,7 @@ FormationSectionEditorMode::onPlus()
 void
 FormationSectionEditorMode::onSubtract()
 {
-	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	auto& section = formationSectionRef(g_formationIdx, m_selectedIdx);
 	if (section.numShips > 1)
 	{
 		--section.numShips;
@@ -1066,14 +1064,13 @@ FormationSectionEditorMode::onSubtract()
 void
 FormationSectionEditorMode::onPgUp()
 {
-	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
-	auto& paths		= m_gameLogic.m_enemies.debug_getPaths();
+	auto& section = formationSectionRef(g_formationIdx, m_selectedIdx);
+	auto& paths		= pathsRef();
 
-	auto& curIdx					= section.pathIdx;
-	const size_t firstIdx = m_gameLogic.m_enemies.nullPathIdx + 1;
-	const size_t lastIdx	= (paths.size() > 0) ? paths.size() - 1 : 0;
+	auto& curIdx				 = section.pathIdx;
+	const size_t lastIdx = (paths.size() > 0) ? paths.size() - 1 : 0;
 
-	curIdx = (curIdx > firstIdx) ? curIdx - 1 : lastIdx;
+	curIdx = (curIdx > PATH_FIRST_IDX) ? curIdx - 1 : lastIdx;
 
 	spawnFormation(g_formationIdx);
 }
@@ -1082,14 +1079,13 @@ FormationSectionEditorMode::onPgUp()
 void
 FormationSectionEditorMode::onPgDn()
 {
-	auto& section = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
-	auto& paths		= m_gameLogic.m_enemies.debug_getPaths();
+	auto& section = formationSectionRef(g_formationIdx, m_selectedIdx);
+	auto& paths		= pathsRef();
 
-	auto& curIdx					= section.pathIdx;
-	const size_t firstIdx = m_gameLogic.m_enemies.nullPathIdx + 1;
-	const size_t lastIdx	= (paths.size() > 0) ? paths.size() - 1 : 0;
+	auto& curIdx				 = section.pathIdx;
+	const size_t lastIdx = (paths.size() > 0) ? paths.size() - 1 : 0;
 
-	curIdx = (curIdx < lastIdx) ? curIdx + 1 : firstIdx;
+	curIdx = (curIdx < lastIdx) ? curIdx + 1 : PATH_FIRST_IDX;
 
 	spawnFormation(g_formationIdx);
 }
@@ -1098,7 +1094,7 @@ FormationSectionEditorMode::onPgDn()
 void
 FormationSectionEditorMode::onHome()
 {
-	auto& section		 = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	auto& section		 = formationSectionRef(g_formationIdx, m_selectedIdx);
 	const int minIdx = static_cast<int>(ModelResource::Enemy1);
 	const int maxIdx = static_cast<int>(ModelResource::Player);
 
@@ -1113,7 +1109,7 @@ FormationSectionEditorMode::onHome()
 void
 FormationSectionEditorMode::onEnd()
 {
-	auto& section		 = currentFormationSectionRef(m_selectedIdx, m_gameLogic);
+	auto& section		 = formationSectionRef(g_formationIdx, m_selectedIdx);
 	const int minIdx = static_cast<int>(ModelResource::Enemy1);
 	const int maxIdx = static_cast<int>(ModelResource::Player);
 
@@ -1128,8 +1124,7 @@ FormationSectionEditorMode::onEnd()
 size_t
 FormationSectionEditorMode::lastItemIdx() const
 {
-	auto& formation = currentFormationRef(m_gameLogic);
-	return formation.sections.size() - 1;
+	return formationRef(g_formationIdx).sections.size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -1138,10 +1133,7 @@ FormationSectionEditorMode::lastItemIdx() const
 std::wstring
 PathListMode::itemName(size_t itemIdx) const
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(itemIdx < paths.size());
-
-	return paths[itemIdx].id;
+	return pathRef(itemIdx).id;
 }
 
 //------------------------------------------------------------------------------
@@ -1155,33 +1147,27 @@ PathListMode::itemNameToDisplay(size_t itemIdx) const
 void
 PathListMode::setItemName(size_t itemIdx, std::wstring newName)
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(itemIdx < paths.size());
-
-	paths[itemIdx].id = newName;
+	pathRef(itemIdx).id = newName;
 }
 
 //------------------------------------------------------------------------------
 void
 PathListMode::onCreate()
 {
-	using DirectX::SimpleMath::Vector3;
-	Path path{L"New", {Waypoint()}};
-	m_gameLogic.m_enemies.debug_getPaths().emplace_back(path);
+	pathsRef().emplace_back(Path{L"New", {Waypoint()}});
 }
 
 //------------------------------------------------------------------------------
 void
 PathListMode::onDeleteItem(size_t itemIdx)
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
+	auto& paths = pathsRef();
 	ASSERT(itemIdx < paths.size());
 
 	paths.erase(paths.begin() + itemIdx);
 
 	// Refresh formation indices
-	auto& formations = m_gameLogic.m_enemies.debug_getFormations();
-	for (auto& f : formations)
+	for (auto& f : formationsRef())
 	{
 		for (auto& s : f.sections)
 		{
@@ -1197,14 +1183,14 @@ PathListMode::onDeleteItem(size_t itemIdx)
 size_t
 PathListMode::firstMenuIdx() const
 {
-	return m_gameLogic.m_enemies.nullPathIdx + 1;
+	return PATH_FIRST_IDX;
 }
 
 //------------------------------------------------------------------------------
 size_t
 PathListMode::lastItemIdx() const
 {
-	return m_gameLogic.m_enemies.debug_getPaths().size() - 1;
+	return pathsRef().size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -1232,11 +1218,7 @@ PathListMode::onItemCommand()
 std::wstring
 PathEditorMode::itemName(size_t itemIdx) const
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(g_pathIdx < paths.size());
-	auto& path = paths[g_pathIdx];
-
-	return fmt::format(L"Path:{}-{} ", path.id, itemIdx);
+	return fmt::format(L"Path:{}-{} ", pathRef(g_pathIdx).id, itemIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -1250,21 +1232,14 @@ PathEditorMode::onBack()
 void
 PathEditorMode::onCreate()
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(g_pathIdx < paths.size());
-	auto& path = paths[g_pathIdx];
-
-	path.waypoints.emplace_back(Waypoint());
+	pathRef(g_pathIdx).waypoints.emplace_back(Waypoint());
 }
 
 //------------------------------------------------------------------------------
 void
 PathEditorMode::onDeleteItem(size_t itemIdx)
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(g_pathIdx < paths.size());
-	auto& path = paths[g_pathIdx];
-
+	auto& path = pathRef(g_pathIdx);
 	path.waypoints.erase(path.waypoints.begin() + itemIdx);
 }
 
@@ -1279,11 +1254,7 @@ PathEditorMode::onItemSelected()
 size_t
 PathEditorMode::lastItemIdx() const
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(g_pathIdx < paths.size());
-	auto& path = paths[g_pathIdx];
-
-	return path.waypoints.size() - 1;
+	return pathRef(g_pathIdx).waypoints.size() - 1;
 }
 
 //------------------------------------------------------------------------------
@@ -1309,14 +1280,11 @@ PathEditorMode::onExitMode()
 void
 PathEditorMode::render()
 {
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(g_pathIdx < paths.size());
-	auto& path = paths[g_pathIdx];
-
 	size_t pointIdx		= (isControlSelected) ? -1 : m_selectedIdx;
 	size_t controlIdx = (isControlSelected) ? m_selectedIdx : -1;
 
-	path.debugRender(m_resources.m_batch.get(), pointIdx, controlIdx);
+	pathRef(g_pathIdx).debugRender(
+		m_resources.m_batch.get(), pointIdx, controlIdx);
 	m_gameLogic.renderPlayerBoundary();
 }
 
@@ -1329,9 +1297,7 @@ PathEditorMode::handleInput(const DX::StepTimer& timer)
 
 	IMode::handleInput(timer);
 
-	auto& paths = m_gameLogic.m_enemies.debug_getPaths();
-	ASSERT(g_pathIdx < paths.size());
-	auto& path = paths[g_pathIdx];
+	auto& path = pathRef(g_pathIdx);
 
 	using DirectX::SimpleMath::Vector3;
 	DirectX::SimpleMath::Matrix worldToScreen = m_context.worldToView

@@ -13,26 +13,6 @@ constexpr float SHOT_SPEED									= 40.0f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 //------------------------------------------------------------------------------
-static void
-addNullData(PathPool& pathPool, FormationPool& formationPool)
-{
-	static const Path nullPath = {
-		L"nullPath",
-		{
-			{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-		},
-	};
-	pathPool.emplace_back(nullPath);
-	size_t nullPathIdx = pathPool.size() - 1;
-
-	const int shipCount = 1;
-	auto& formation			= formationPool.emplace_back(Formation());
-	formation.id				= L"nullFormation";
-	formation.sections.emplace_back(
-		FormationSection{nullPathIdx, shipCount, ModelResource::Enemy1});
-}
-
-//------------------------------------------------------------------------------
 Enemies::Enemies(AppContext& context, AppResources& resources)
 		: m_context(context)
 		, m_resources(resources)
@@ -57,10 +37,30 @@ Enemies::resetLevelData()
 	m_formationPool.clear();
 	m_levels.clear();
 
-	// Prevent data ever becoming truely empty with 'null' versions at the front
-	addNullData(m_pathPool, m_formationPool);
-	nullPathIdx			 = m_pathPool.size() - 1;
-	nullFormationIdx = m_formationPool.size() - 1;
+	addDummyData();
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::addDummyData()
+{
+	ASSERT(m_pathPool.size() == 0);
+	ASSERT(m_formationPool.size() == 0);
+	ASSERT(m_pathPool.size() == DUMMY_PATH_IDX);
+
+	static const Path nullPath = {
+		L"nullPath",
+		{
+			{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
+		},
+	};
+	m_pathPool.emplace_back(nullPath);
+
+	const int shipCount = 1;
+	auto& formation			= m_formationPool.emplace_back(Formation());
+	formation.id				= L"nullFormation";
+	formation.sections.emplace_back(
+		FormationSection{DUMMY_PATH_IDX, shipCount, ModelResource::Enemy1});
 }
 
 //------------------------------------------------------------------------------
