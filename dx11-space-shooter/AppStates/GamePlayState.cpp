@@ -54,11 +54,6 @@ GamePlayState::handleInput(const DX::StepTimer& timer)
 	{
 		m_states.changeState(&m_states.editing);
 	}
-	if (kb.IsKeyPressed(Keyboard::F4))
-	{
-		m_gameLogic.m_enemies.debug_toggleLevel();
-		m_gameLogic.reset();
-	}
 
 	const auto& midiMask	= m_resources.midiTracker.dirtyMask;
 	const auto& midiState = m_resources.midiTracker.currentState;

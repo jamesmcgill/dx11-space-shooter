@@ -30,6 +30,10 @@ static const std::string FORMATION_IDX_KEY = "formationIdx";
 static const std::string WAVES_KEY = "waves";
 
 //------------------------------------------------------------------------------
+constexpr float SHOT_SPEED = 40.0f;
+constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
+
+//------------------------------------------------------------------------------
 Waypoint
 Waypoint::from_json(const json11::Json& json)
 {
@@ -323,58 +327,6 @@ Level::to_json() const
 }
 
 //------------------------------------------------------------------------------
-static const Path
-createDebugPath(float xPos)
-{
-	const float yStart = 20.0f;
-	const float yEnd	 = -15.0f;
-	const int ySteps	 = 10;
-	const float yStep	= (yEnd - yStart) / ySteps;
-	float xOscillate	 = -2.0f;
-
-	static int count = 0;
-	Path ret{fmt::format(L"debug path {}", count++)};
-	ret.waypoints.reserve(ySteps);
-	float yPos = yStart;
-	for (int i = 0; i < ySteps; ++i)
-	{
-		ret.waypoints.emplace_back(Waypoint{
-			{xPos, yPos, 0.0f}, {xPos + xOscillate, yPos - (yStep / 2), 0.0f}});
-		yPos += yStep;
-		xOscillate = -xOscillate;
-	}
-
-	return ret;
-}
-
-static const Level
-createDebugLevel(PathPool& pathPool, FormationPool& formationPool)
-{
-	const int baseEnemyIdx = static_cast<int>(ModelResource::Enemy1);
-	const int numEnemyTypes
-		= (static_cast<int>(ModelResource::Enemy9) - baseEnemyIdx) + 1;
-
-	const float xStart = -25.0f;
-	const float xRange = xStart * -2;
-	const float xStep = (numEnemyTypes > 1) ? xRange / (numEnemyTypes - 1) : 0.0f;
-
-	const int shipCount = 1;
-	auto& formation			= formationPool.emplace_back(Formation());
-	formation.id				= L"DebugFormation";
-	for (int i = 0; i < numEnemyTypes; ++i)
-	{
-		ModelResource res = static_cast<ModelResource>(baseEnemyIdx + i);
-		const float xPos	= xStart + (xStep * i);
-		pathPool.emplace_back(createDebugPath(xPos));
-		size_t pathIdx = pathPool.size() - 1;
-
-		formation.sections.emplace_back(FormationSection{pathIdx, shipCount, res});
-	}
-
-	return Level{{Wave{3.0f, formationPool.size() - 1}}};
-}
-
-//------------------------------------------------------------------------------
 static void
 addNullData(PathPool& pathPool, FormationPool& formationPool)
 {
@@ -395,169 +347,6 @@ addNullData(PathPool& pathPool, FormationPool& formationPool)
 }
 
 //------------------------------------------------------------------------------
-static const Path path1 = {
-	L"path1",
-	{
-		{Vector3(-30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-		{Vector3(20.0f, 10.0f, 0.0f), Vector3(20.0f, 10.0f, 0.0f)},
-		{Vector3(20.0f, 18.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
-
-		{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-20.0f, 18.0f, 0.0f)},
-		{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
-		{Vector3(30.0f, -10.0f, 0.0f), Vector3(30.0f, -10.0f, 0.0f)},
-	},
-};
-
-static const Path path1Reverse = {
-	L"path1Reverse",
-	{
-		{Vector3(30.0f, -10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-		{Vector3(-20.0f, 10.0f, 0.0f), Vector3(-20.0f, 10.0f, 0.0f)},
-		{Vector3(-20.0f, 18.0f, 0.0f), Vector3(-35.0f, 16.0f, 0.0f)},
-
-		{Vector3(20.0f, 18.0f, 0.0f), Vector3(20.0f, 18.0f, 0.0f)},
-		{Vector3(20.0f, 10.0f, 0.0f), Vector3(35.0f, 16.0f, 0.0f)},
-		{Vector3(-30.0f, -10.0f, 0.0f), Vector3(-30.0f, -10.0f, 0.0f)},
-	},
-};
-
-// Anti-clockwise circle
-static const Path
-getPath2a()
-{
-	Vector3 START	= Vector3(5.0f, 20.0f, 0.0f);
-	Vector3 END		 = Vector3(-30.0f, 0.0f, 0.0f);
-	float radius	 = 5.0f;
-	Vector3 CENTER = Vector3(START.x + radius, END.y - radius, 0.0f);
-
-	return {
-		L"path2a",
-		{
-			{START, Vector3()},
-			{CENTER + Vector3(-radius, 0.f, 0.f),
-			 CENTER + Vector3(-radius, 0.f, 0.f)},
-			{CENTER + Vector3(0.f, -radius, 0.0f),
-			 CENTER + Vector3(-radius, -radius, 0.f)},
-			{CENTER + Vector3(radius, 0.f, 0.f),
-			 CENTER + Vector3(radius, -radius, 0.f)},
-			{CENTER + Vector3(0.f, radius, 0.f),
-			 CENTER + Vector3(radius, radius, 0.f)},
-			{END, END},
-		},
-	};
-}
-
-// Clock-wise version of Path2A, shifted up
-static const Path
-getPath2b()
-{
-	Vector3 START	= Vector3(-5.0f, 20.0f, 0.0f);
-	Vector3 END		 = Vector3(30.0f, 5.0f, 0.0f);
-	float radius	 = 5.0f;
-	Vector3 CENTER = Vector3(START.x - radius, END.y - radius, 0.0f);
-
-	return {
-		L"path2b",
-		{
-			{START, Vector3()},
-			{CENTER + Vector3(radius, 0.f, 0.f), CENTER + Vector3(radius, 0.f, 0.f)},
-			{CENTER + Vector3(0.f, -radius, 0.0f),
-			 CENTER + Vector3(radius, -radius, 0.f)},
-			{CENTER + Vector3(-radius, 0.f, 0.f),
-			 CENTER + Vector3(-radius, -radius, 0.f)},
-			{CENTER + Vector3(0.f, radius, 0.f),
-			 CENTER + Vector3(-radius, radius, 0.f)},
-			{END, END},
-		},
-	};
-}
-
-static const Path path91 = {
-	L"path91",
-	{
-		{Vector3(10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-		{Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 10.0f, 0.0f)},
-		{Vector3(-10.0f, -10.0f, 0.0f), Vector3(0.0f, -5.0f, 0.0f)},
-	},
-};
-
-static const Path path92 = {
-	L"path92",
-	{
-		{Vector3(-10.0f, 10.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)},
-		{Vector3(10.0f, 8.0f, 0.0f), Vector3(10.0f, 10.0f, 0.0f)},
-		{Vector3(-10.0f, 6.0f, 0.0f), Vector3(-10.0f, 8.0f, 0.0f)},
-		{Vector3(10.0f, 4.0f, 0.0f), Vector3(10.0f, 8.0f, 0.0f)},
-		{Vector3(-10.0f, 2.0f, 0.0f), Vector3(-10.0f, 4.0f, 0.0f)},
-	},
-};
-
-//------------------------------------------------------------------------------
-static const std::vector<Level>
-createTestLevels(PathPool& pathPool, FormationPool& formationPool)
-{
-	// Paths
-	size_t pathOffset = pathPool.size();
-	PathPool paths		= {
-		 path1,
-		 path1Reverse,
-		 getPath2a(),
-		 getPath2b(),
-		 path91,
-		 path92,
-	};
-	pathPool.insert(pathPool.end(), paths.begin(), paths.end());
-
-	const size_t path1Idx				 = pathOffset + 0;
-	const size_t path1ReverseIdx = pathOffset + 1;
-	const size_t path2aIdx			 = pathOffset + 2;
-	const size_t path2bIdx			 = pathOffset + 3;
-	const size_t path91Idx			 = pathOffset + 4;
-	const size_t path92Idx			 = pathOffset + 5;
-
-	// Formations
-	FormationSection section1 = {path2aIdx, 3, ModelResource::Enemy9};
-	FormationSection section2 = {path2bIdx, 3, ModelResource::Enemy2};
-	FormationSection section3 = {path1Idx, 5, ModelResource::Enemy3};
-	FormationSection section4 = {path92Idx, 5, ModelResource::Player};
-
-	size_t formOffset								= formationPool.size();
-	static FormationPool formations = {
-		{L"simple", {section1}},
-		{L"multi", {section1, section2}},
-		{L"many", {section3}},
-		{L"players", {section4}},
-	};
-
-	formationPool.insert(
-		formationPool.end(), formations.begin(), formations.end());
-	static Level level1 = {{
-		Wave{3.0f, formOffset + 0},
-		Wave{5.0f, formOffset + 1},
-		Wave{10.0f, formOffset + 2},
-		Wave{14.0f, formOffset + 3},
-		Wave{18.0f, formOffset + 0},
-	}};
-
-	static Level level2 = {{
-		Wave{3.0f, formOffset + 0},
-		Wave{5.0f, formOffset + 1},
-		Wave{10.0f, formOffset + 2},
-		Wave{14.0f, formOffset + 3},
-	}};
-
-	return {level1, level2};
-}
-//------------------------------------------------------------------------------
-
-static std::vector<Level> s_debugLevels;
-static std::vector<Level> s_levels;
-
-//------------------------------------------------------------------------------
-constexpr float SHOT_SPEED									= 40.0f;
-constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
-
-//------------------------------------------------------------------------------
 Enemies::Enemies(AppContext& context, AppResources& resources)
 		: m_context(context)
 		, m_resources(resources)
@@ -568,8 +357,6 @@ Enemies::Enemies(AppContext& context, AppResources& resources)
 	m_formationPool.reserve(MAX_NUM_FORMATIONS);
 	m_pathPool.reserve(MAX_NUM_PATHS);
 	resetLevelData();
-	//s_debugLevels = {{createDebugLevel(m_pathPool, m_formationPool)}};
-	//s_levels			= {{createTestLevels(m_pathPool, m_formationPool)}};
 	load();
 
 	reset();
@@ -582,7 +369,7 @@ Enemies::resetLevelData()
 	TRACE
 	m_pathPool.clear();
 	m_formationPool.clear();
-	s_levels.clear();
+	m_levels.clear();
 
 	// Prevent data ever becoming truely empty with 'null' versions at the front
 	addNullData(m_pathPool, m_formationPool);
@@ -607,8 +394,8 @@ Enemies::reset()
 
 	m_isLevelActive = false;
 	if (
-		(m_currentLevelIdx < s_levels.size())
-		&& (!s_levels[m_currentLevelIdx].waves.empty()))
+		(m_currentLevelIdx < m_levels.size())
+		&& (!m_levels[m_currentLevelIdx].waves.empty()))
 	{
 		m_isLevelActive = true;
 	}
@@ -668,7 +455,7 @@ Enemies::updateLevel()
 	if (!m_isLevelActive)
 	{
 		// Activate next level
-		if (m_currentLevelIdx < s_levels.size())
+		if (m_currentLevelIdx < m_levels.size())
 		{
 			if (!isAnyEnemyAlive())
 			{
@@ -679,7 +466,7 @@ Enemies::updateLevel()
 		return;
 	}
 
-	auto& level = s_levels[m_currentLevelIdx];
+	auto& level = m_levels[m_currentLevelIdx];
 	ASSERT(m_nextEventWaveIdx < level.waves.size());
 	auto& nextWave = level.waves[m_nextEventWaveIdx];
 
@@ -716,7 +503,7 @@ Enemies::isAnyEnemyAlive() const
 void
 Enemies::jumpToLevel(const size_t levelIdx)
 {
-	if (levelIdx < s_levels.size())
+	if (levelIdx < m_levels.size())
 	{
 		m_currentLevelIdx = levelIdx;
 	}
@@ -726,8 +513,8 @@ Enemies::jumpToLevel(const size_t levelIdx)
 void
 Enemies::jumpToWave(const size_t waveIdx)
 {
-	ASSERT(m_currentLevelIdx < s_levels.size());
-	auto& level = s_levels[m_currentLevelIdx];
+	ASSERT(m_currentLevelIdx < m_levels.size());
+	auto& level = m_levels[m_currentLevelIdx];
 
 	if (waveIdx < level.waves.size())
 	{
@@ -990,7 +777,7 @@ Enemies::parseLevelsJsonObject(const json11::Json& json)
 
 	for (const auto& level : json.array_items())
 	{
-		s_levels.emplace_back(Level::from_json(level));
+		m_levels.emplace_back(Level::from_json(level));
 	}
 }
 
@@ -1012,7 +799,7 @@ Enemies::save()
 								 json11::Json::array{
 									 json11::Json::object{{PATHS_NODE_ID, paths}},
 									 json11::Json::object{{FORMATIONS_NODE_ID, formations}},
-									 json11::Json::object{{LEVELS_NODE_ID, s_levels}}})
+									 json11::Json::object{{LEVELS_NODE_ID, m_levels}}})
 								 .dump();
 	}
 }
@@ -1037,20 +824,6 @@ Enemies::debugRender(DX::DebugBatchType* batch)
 		ASSERT(pathIdx < m_pathPool.size());
 		m_pathPool[pathIdx].debugRender(batch);
 	}
-}
-
-//------------------------------------------------------------------------------
-void
-Enemies::debug_toggleLevel()
-{
-	s_levels.swap(s_debugLevels);
-}
-
-//------------------------------------------------------------------------------
-std::vector<Level>&
-Enemies::debug_getCurrentLevels()
-{
-	return s_levels;
 }
 
 //------------------------------------------------------------------------------

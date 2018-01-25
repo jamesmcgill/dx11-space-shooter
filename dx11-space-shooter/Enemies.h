@@ -119,11 +119,11 @@ public:
 	void parseLevelsJsonObject(const json11::Json& json);
 
 	void debugRender(DX::DebugBatchType* batch);
-	void debug_toggleLevel();
 
-	std::vector<Level>& debug_getCurrentLevels();
+	std::vector<Level>& debug_getCurrentLevels() { return m_levels; }
 	FormationPool& debug_getFormations() { return m_formationPool; }
 	PathPool& debug_getPaths() { return m_pathPool; }
+
 	size_t nullPathIdx			= 0;
 	size_t nullFormationIdx = 0;
 
@@ -141,6 +141,8 @@ private:
 
 	static constexpr size_t MAX_NUM_FORMATIONS = 256;
 	FormationPool m_formationPool;		// Shared pool of all available
+
+	std::vector<Level> m_levels;
 };
 
 //------------------------------------------------------------------------------
