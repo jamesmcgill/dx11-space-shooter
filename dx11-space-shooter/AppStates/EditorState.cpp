@@ -16,6 +16,8 @@ namespace
 constexpr size_t PATH_FIRST_IDX			 = Enemies::DUMMY_PATH_IDX + 1;
 constexpr size_t FORMATION_FIRST_IDX = Enemies::DUMMY_FORMATION_IDX + 1;
 
+static const int MAX_NUM_SHIPS = 10;
+
 constexpr float MIN_SPAWN_TIME = 0.01f;		 // zero is disabled
 constexpr float CAMERA_SPEED_X = 1.0f;
 constexpr float CAMERA_SPEED_Y = 1.0f;
@@ -129,7 +131,7 @@ struct IMode
 		m_lastIdx	= lastItemIdx() + 1;		 // +1 for CREATE button
 	}
 
-	//------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
 	void jumpToLevelWave(const size_t levelIdx, const size_t waveIdx)
 	{
 		m_gameLogic.reset();
@@ -150,7 +152,7 @@ struct IMode
 			5, pathIdx, ModelResource::Enemy9, 0.0f);
 	}
 
-	//------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
 	LevelPool& levelsRef() const { return m_gameLogic.m_enemies.m_levels; }
 
 	FormationPool& formationsRef() const
@@ -300,6 +302,11 @@ IMode::handleInput(const DX::StepTimer& timer)
 			onEnd();
 		}
 
+		if (kb.IsKeyPressed(Keyboard::C))
+		{
+			onCreate();
+			updateIndices();
+		}
 		if (kb.IsKeyPressed(Keyboard::Delete))
 		{
 			onDeleteItem(m_selectedIdx);
@@ -506,7 +513,7 @@ struct LevelListMode : public IMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del)";
+		return L"Navigate(Up/Down), Select(Enter), Create(C), Delete(Del)";
 	}
 	std::wstring menuTitle() const override { return L"Level List"; }
 	std::wstring itemName(size_t itemIdx) const override;
@@ -538,7 +545,7 @@ struct LevelEditorMode : public IMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del), "
+		return L"Navigate(Up/Down), Select(Enter), Create(C), Delete(Del), "
 					 "Time(-/+), Formation(PgUp/PgDn), Back(Esc)";
 	}
 	std::wstring menuTitle() const override;
@@ -576,7 +583,8 @@ struct FormationListMode : public IRenameableMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del), Edit Name(E)";
+		return L"Navigate(Up/Down), Select(Enter), Create(C), Delete(Del),"
+					 "Edit Name(E)";
 	}
 	std::wstring menuTitle() const override { return L"Formation List"; }
 	std::wstring itemName(size_t itemIdx) const override;
@@ -606,7 +614,7 @@ struct FormationSectionEditorMode : public IMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del), "
+		return L"Navigate(Up/Down), Select(Enter), Create(C), Delete(Del), "
 					 "Model(Home/End), Num Ships(-/+), Path(PgUp/PgDn), Back(Esc)";
 	}
 	std::wstring menuTitle() const override { return L"Formation Section"; }
@@ -640,7 +648,8 @@ struct PathListMode : public IRenameableMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del), Edit Name(E)";
+		return L"Navigate(Up/Down), Select(Enter), "
+					 "Create(C), Delete(Del), Edit Name(E)";
 	}
 	std::wstring menuTitle() const override { return L"Path List"; }
 	std::wstring itemName(size_t itemIdx) const override;
@@ -670,8 +679,8 @@ struct PathEditorMode : public IMode
 
 	std::wstring controlInfoText() const override
 	{
-		return L"Navigate(Up/Down), Select(Enter), Delete(Del), "
-					 "Time(-/+), Formation(PgUp/PgDn), Back(Esc)";
+		return L"Select Point(Mouse Hover), Create(C), Delete(Del), "
+					 "Move Points(Mouse Drag), Back(Esc)";
 	}
 	std::wstring menuTitle() const override { return L"Path Editor"; }
 	std::wstring itemName(size_t itemIdx) const override;
@@ -679,7 +688,7 @@ struct PathEditorMode : public IMode
 	void onBack() override;
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;
-	void onItemSelected() override;
+	void onItemSelected() override {}
 
 	size_t lastItemIdx() const override;
 
@@ -1040,7 +1049,6 @@ void
 FormationSectionEditorMode::onPlus()
 {
 	auto& section = formationSectionRef(g_formationIdx, m_selectedIdx);
-	static const int MAX_NUM_SHIPS = 10;
 	section.numShips
 		= (section.numShips < MAX_NUM_SHIPS) ? section.numShips + 1 : MAX_NUM_SHIPS;
 
@@ -1241,13 +1249,6 @@ PathEditorMode::onDeleteItem(size_t itemIdx)
 {
 	auto& path = pathRef(g_pathIdx);
 	path.waypoints.erase(path.waypoints.begin() + itemIdx);
-}
-
-//------------------------------------------------------------------------------
-void
-PathEditorMode::onItemSelected()
-{
-	// TODO(James): Change colour of selected point
 }
 
 //------------------------------------------------------------------------------
