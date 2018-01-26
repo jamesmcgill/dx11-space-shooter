@@ -4,15 +4,14 @@
 #include "UIDebugDraw.h"
 
 //------------------------------------------------------------------------------
-class GameLogic;
-
 namespace DX
 {
 class StepTimer;
 };
+struct Modes;
 struct AppContext;
 struct AppResources;
-struct Modes;
+class GameLogic;
 
 //------------------------------------------------------------------------------
 struct IMode

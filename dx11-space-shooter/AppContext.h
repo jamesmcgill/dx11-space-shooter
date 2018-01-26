@@ -68,6 +68,10 @@ struct AppContext
 	float playerMaxVelocity = 40.0f;
 	float playerMinVelocity = 0.3f;
 
+	size_t editorLevelIdx			= 0;
+	size_t editorFormationIdx = 0;
+	size_t editorPathIdx			= 0;
+
 	ui::Text uiDebugVarsTitle;
 	ui::Text uiPlayerSpeed;
 	ui::Text uiPlayerFriction;

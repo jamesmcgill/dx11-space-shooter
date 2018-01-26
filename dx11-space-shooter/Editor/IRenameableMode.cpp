@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "IRenameableMode.h"
+#include "Editor/IRenameableMode.h"
 #include "AppResources.h"
 
 #include "utils/Log.h"

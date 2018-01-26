@@ -1,5 +1,7 @@
 #include "pch.h"
-#include "IMode.h"
+#include "Editor/IMode.h"
+#include "Editor/ModeMenu.h"
+
 #include "GameLogic.h"
 #include "AppResources.h"
 
@@ -8,12 +10,9 @@
 //------------------------------------------------------------------------------
 namespace
 {
-const float MODE_BUTTON_HEIGHT		 = 40.0f;
-const float MODE_BUTTON_POSITION_Y = 20.0f;
-
 const float MAIN_AREA_START_X = 20.0f;
 const float MAIN_AREA_START_Y
-	= (1.5f * MODE_BUTTON_POSITION_Y) + MODE_BUTTON_HEIGHT;
+	= (1.5f * ModeMenu::MODE_BUTTON_POSITION_Y) + ModeMenu::MODE_BUTTON_HEIGHT;
 
 const float LIST_START_Y = MAIN_AREA_START_Y + 40.0f;
 
