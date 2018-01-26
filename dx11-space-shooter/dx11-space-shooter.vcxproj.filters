@@ -88,6 +88,9 @@
     <ClInclude Include="Editor\IMode.h">
       <Filter>Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Editor\IRenameableMode.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -143,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="LevelData.cpp" />
     <ClCompile Include="Editor\IMode.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\IRenameableMode.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
   </ItemGroup>
