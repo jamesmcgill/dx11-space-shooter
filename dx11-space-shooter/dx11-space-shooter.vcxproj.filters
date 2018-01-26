@@ -20,6 +20,9 @@
     <Filter Include="json11">
       <UniqueIdentifier>{7aded630-04b9-4e17-9ee8-2d8da3b4dcf4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Editor">
+      <UniqueIdentifier>{bf06e384-1d74-4dc0-aa25-fe83f2652f0c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -82,6 +85,9 @@
     </ClInclude>
     <ClInclude Include="LevelData.h" />
     <ClInclude Include="ResourceIDs.h" />
+    <ClInclude Include="Editor\IMode.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -136,6 +142,9 @@
       <Filter>json11</Filter>
     </ClCompile>
     <ClCompile Include="LevelData.cpp" />
+    <ClCompile Include="Editor\IMode.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

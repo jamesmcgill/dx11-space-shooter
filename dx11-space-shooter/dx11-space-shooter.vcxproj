@@ -198,6 +198,7 @@
     <ClInclude Include="AppStates\ShowScoresState.h" />
     <ClInclude Include="DebugDraw.h" />
     <ClInclude Include="DeviceResources.h" />
+    <ClInclude Include="Editor\IMode.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Explosions.h" />
     <ClInclude Include="fmt\format.h" />
@@ -229,6 +230,7 @@
     <ClCompile Include="AppStates\ShowScoresState.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
+    <ClCompile Include="Editor\IMode.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Explosions.cpp" />
     <ClCompile Include="fmt\format.cc" />
