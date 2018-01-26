@@ -105,20 +105,30 @@ logMsgImp(
 	static const size_t BUFFER_SIZE = 12 * 1024;
 	char buffer[BUFFER_SIZE];
 
-	auto count = sprintf_s(
-		buffer,
-		BUFFER_SIZE,
-		"%7s: [%30s:%4d] %20s(): ",
-		level,
-		file,
-		line,
-		function);
+	// Add prefix (line number, file etc)
+	int count = sprintf_s(
+		buffer, BUFFER_SIZE, "%s: [%s:%d] %s(): ", level, file, line, function);
+	ASSERT(count >= 0);
 
-	if (count < 0) {
-		count = 0;
+	// Add the message
+	int startIdx = (count >= 0) ? count : 0;
+	if (startIdx >= BUFFER_SIZE)
+	{
+		ASSERT(false);
+		return;
 	}
-	ASSERT(count < BUFFER_SIZE);
-	sprintf_s(buffer + count, BUFFER_SIZE - count, fmt, args...);
+	count = sprintf_s(buffer + startIdx, BUFFER_SIZE - startIdx, fmt, args...);
+	ASSERT(count >= 0);
+
+	// Add newline
+	startIdx = (count >= 0) ? startIdx + count : startIdx;
+	if (startIdx >= BUFFER_SIZE)
+	{
+		ASSERT(false);
+		return;
+	}
+	count = sprintf_s(buffer + startIdx, BUFFER_SIZE - startIdx, "\n");
+	ASSERT(count >= 0);
 
 	OutputDebugStringA(buffer);
 }
@@ -221,15 +231,14 @@ struct Stats
 	using TimedRecordArray = std::array<TimedRecord, MAX_RECORD_COUNT>;
 	struct FrameRecords
 	{
-		size_t numRecords = 0;
+		size_t numRecords					 = 0;
 		TimedRecord* callGraphHead = nullptr;
 		TimedRecordArray records;
 	};
 	using IntervalRecords = std::array<FrameRecords, FRAME_COUNT>;
 
-	using CollatedFrameRecords = std::unordered_map<size_t, CollatedRecord>;
-	using CollatedIntervalRecords
-		= std::array<CollatedFrameRecords, FRAME_COUNT>;
+	using CollatedFrameRecords		= std::unordered_map<size_t, CollatedRecord>;
+	using CollatedIntervalRecords = std::array<CollatedFrameRecords, FRAME_COUNT>;
 
 	using AccumulatedRecords = std::unordered_map<size_t, AccumulatedRecord>;
 
@@ -309,7 +318,7 @@ createTimedRecordHash(const std::string_view& filePath, const int lineNumber);
  && (defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
 #define TRACE TIMED_TRACE                                                      \
 do{                                                                            \
-LOG_MESSAGE_IMPL("TRACE", "\n");                                               \
+LOG_MESSAGE_IMPL("TRACE", "");                                                 \
 }while(false);
 
 #elif (defined(ENABLE_TIMED_TRACE))                                            \
@@ -319,7 +328,7 @@ LOG_MESSAGE_IMPL("TRACE", "\n");                                               \
 #elif (!defined(ENABLE_TIMED_TRACE))                                           \
  && (defined(TRACE_GLOBAL_OVERRIDE) || defined(ENABLE_TRACE_LOG))
 #define TRACE do{                                                              \
-LOG_MESSAGE_IMPL("TRACE", "\n");                                               \
+LOG_MESSAGE_IMPL("TRACE", "");                                                 \
 }while(false);
 
 #else

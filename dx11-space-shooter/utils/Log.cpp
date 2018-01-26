@@ -136,7 +136,7 @@ Stats::clearFrame(FrameRecords& frame)
 {
 	TimedRecordArray temp;
 	frame.records.swap(temp);
-	frame.numRecords = 0;
+	frame.numRecords		= 0;
 	frame.callGraphHead = nullptr;
 }
 
@@ -214,14 +214,14 @@ TimedRaiiBlock::TimedRaiiBlock(
 	getCurrentOpenBlockByRef() = this;
 
 	auto& currentFrame = Stats::getFrameRecords(Stats::getCurrentFrameIdx());
-	auto recordIndex			= currentFrame.numRecords;
+	auto recordIndex	 = currentFrame.numRecords;
 
-	TimedRecord& record				= currentFrame.records[recordIndex];
-	_record										= &record;
-	_record->startTime = Timing::getCurrentTimeInTicks();
-	_record->lineNumber				= line;
-	_record->file							= file;
-	_record->function					= function;
+	TimedRecord& record = currentFrame.records[recordIndex];
+	_record							= &record;
+	_record->startTime	= Timing::getCurrentTimeInTicks();
+	_record->lineNumber = line;
+	_record->file				= file;
+	_record->function		= function;
 
 	if (_parent)
 	{

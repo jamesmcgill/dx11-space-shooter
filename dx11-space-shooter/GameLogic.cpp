@@ -78,7 +78,7 @@ GameLogic::update(const DX::StepTimer& timer)
 			{
 				if (--m_context.playerLives > -1)
 				{
-					LOG_VERBOSE("playerState: Dying->Reviving\n");
+					LOG_VERBOSE("playerState: Dying->Reviving");
 					m_context.playerState				 = PlayerState::Reviving;
 					m_context.playerReviveTimerS = PLAYER_REVIVE_TIME_S;
 					m_hudDirty									 = true;
@@ -93,7 +93,7 @@ GameLogic::update(const DX::StepTimer& timer)
 		case PlayerState::Reviving:
 			if ((m_context.playerReviveTimerS -= elapsedTimeS) <= 0.0f)
 			{
-				LOG_VERBOSE("playerState: Reviving->Normal\n");
+				LOG_VERBOSE("playerState: Reviving->Normal");
 				m_context.playerState = PlayerState::Normal;
 			}
 			performCollisionTests();
@@ -318,7 +318,7 @@ GameLogic::performCollisionTests()
 		enemy.isColliding	= true;
 
 		enemy.isAlive = false;
-		LOG_VERBOSE("playerState: Normal->Dying\n");
+		LOG_VERBOSE("playerState: Normal->Dying");
 		context.playerState				= PlayerState::Dying;
 		context.playerDeathTimerS = PLAYER_DEATH_TIME_S;
 	};
