@@ -2,14 +2,24 @@
 #include "pch.h"
 #include "StepTimer.h"
 #include "DeviceResources.h"
-#include "ResourceIDs.h"	// ModelResource, AudioResource
-#include "Entity.h"		 // ModelData
+#include "ResourceIDs.h"		// ModelResource, AudioResource
+#include "Entity.h"					// ModelData
 #include "Starfield.h"
 #include "Explosions.h"
 #include "MenuManager.h"
 #include "ScoreBoard.h"
 #include "midi-controller/MidiController.h"
 
+//------------------------------------------------------------------------------
+struct Texture
+{
+	DirectX::XMVECTOR origin;
+	int width	= 0;
+	int height = 0;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
+
+	HRESULT CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName);
+};
 
 //------------------------------------------------------------------------------
 struct AppResources
@@ -29,6 +39,8 @@ struct AppResources
 	std::unique_ptr<DirectX::CommonStates> m_states;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_starTexture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_explosionTexture;
+	Texture shotTexture;
+
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> font8pt;
 	std::unique_ptr<DirectX::SpriteFont> font16pt;

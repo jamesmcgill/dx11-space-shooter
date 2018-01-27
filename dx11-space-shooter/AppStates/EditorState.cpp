@@ -87,7 +87,7 @@ EditorState::Impl::render()
 {
 	TRACE
 	renderStarField();
-	m_gameLogic.renderEntities();
+	m_gameLogic.renderEntityModels();
 
 	DX::DrawContext drawContext(m_context, m_resources);
 	if (m_context.debugDraw)

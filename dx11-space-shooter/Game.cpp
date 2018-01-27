@@ -105,7 +105,7 @@ Game::initialize(HWND window, int width, int height)
 	m_timer.SetTargetElapsedSeconds(1.0 / 60);
 	*/
 
-	m_appStates.changeState(&m_appStates.menu);
+	m_appStates.changeState(&m_appStates.playing);
 }
 
 #pragma region Frame Update
@@ -581,6 +581,8 @@ Game::createDeviceDependentResources()
 	m_resources.explosions = std::make_unique<Explosions>(
 		m_context, m_resources.m_explosionTexture.Get());
 
+	m_resources.shotTexture.CreateFromFile(device, L"assets/explosion.dds");
+	
 	m_resources.menuManager = std::make_unique<MenuManager>(m_context);
 	m_resources.scoreBoard	= std::make_unique<ScoreBoard>(m_context);
 	m_resources.scoreBoard->loadFromFile();
@@ -737,6 +739,7 @@ Game::OnDeviceLost()
 
 	m_resources.m_batch.reset();
 	m_resources.m_spriteBatch.reset();
+	m_resources.shotTexture.texture.Reset();
 	m_resources.m_explosionTexture.Reset();
 	m_resources.m_starTexture.Reset();
 	m_resources.m_states.reset();

@@ -21,6 +21,7 @@ public:
 
 	void incrementCurrentTime(const DX::StepTimer& timer);
 	void resetCurrentTime();
+	float currentLevelTimeS() const { return m_currentLevelTimeS; }
 
 	void updateLevel();
 	void performPhysicsUpdate();

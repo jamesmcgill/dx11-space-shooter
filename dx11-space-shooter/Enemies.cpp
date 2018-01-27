@@ -156,7 +156,7 @@ Enemies::updateLevel()
 	// End of level
 	if (m_nextEventWaveIdx >= level.waves.size())
 	{
-		m_isLevelActive = false;
+		m_isLevelActive		 = false;
 		m_nextEventWaveIdx = 0;
 		m_currentLevelIdx++;
 		return;
@@ -323,7 +323,8 @@ Enemies::emitShot(
 	newShot.position
 		= emitter.position + emitter.model->bound.Center
 			+ Vector3(0.0f, (yPosScale * emitter.model->bound.Radius), 0.0f);
-	newShot.velocity = Vector3(0.0f, speed, 0.0f);
+	newShot.velocity	 = Vector3(0.0f, speed, 0.0f);
+	newShot.birthTimeS = m_currentLevelTimeS;
 
 	shotEntityIdx++;
 	if (shotEntityIdx >= maxEntityIdxPlusOne)

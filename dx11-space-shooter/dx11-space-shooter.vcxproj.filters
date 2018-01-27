@@ -196,6 +196,7 @@
     <ClCompile Include="Editor\ModeMenu.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
+    <ClCompile Include="AppResources.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

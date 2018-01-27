@@ -228,6 +228,7 @@
     <ClInclude Include="utils\Log.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AppResources.cpp" />
     <ClCompile Include="AppStates\AppStates.cpp" />
     <ClCompile Include="AppStates\EditorState.cpp" />
     <ClCompile Include="AppStates\GameOverState.cpp" />

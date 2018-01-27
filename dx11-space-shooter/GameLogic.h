@@ -24,7 +24,8 @@ public:
 	void reset();
 	GameStatus update(const DX::StepTimer& timer);
 	void render();
-	void renderEntities();
+	void renderEntityModels();
+	void renderShotParticles();
 	void renderEntitiesDebug();
 
 	void performPhysicsUpdate(const DX::StepTimer& timer);
@@ -40,7 +41,7 @@ public:
 		Func& onCollision);
 
 	void renderPlayerEntity(Entity& entity);
-	void renderEntity(Entity& entity, float orientation = 0.0f);
+	void renderEntityModel(Entity& entity, float orientation = 0.0f);
 	void renderEntityBound(Entity& entity);
 	void renderPlayerBoundary();
 

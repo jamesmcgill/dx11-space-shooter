@@ -34,13 +34,13 @@ void
 GameLogic::reset()
 {
 	TRACE
-	m_enemies.reset();
 
-	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_END; ++i)
+	for (size_t i = PLAYER_SHOTS_IDX; i < ENEMIES_IDX; ++i)
 	{
 		m_context.entities[i].isAlive			= false;
 		m_context.entities[i].isColliding = false;
 	}
+	m_enemies.reset();
 
 	auto& player			 = m_context.entities[PLAYERS_IDX];
 	player.isAlive		 = true;
@@ -108,12 +108,13 @@ void
 GameLogic::render()
 {
 	TRACE
-	renderEntities();
+	renderEntityModels();
 
 	auto& states			= *m_resources.m_states;
 	auto& spriteBatch = m_resources.m_spriteBatch;
 
 	spriteBatch->Begin(SpriteSortMode_Deferred, states.Additive());
+	renderShotParticles();
 	m_resources.explosions->render(*spriteBatch);
 	spriteBatch->End();
 
@@ -136,7 +137,7 @@ GameLogic::render()
 
 //------------------------------------------------------------------------------
 void
-GameLogic::renderEntities()
+GameLogic::renderEntityModels()
 {
 	TRACE
 	size_t idx = 0;
@@ -148,9 +149,57 @@ GameLogic::renderEntities()
 		}
 		else if (entity.isAlive)
 		{
-			renderEntity(entity);
+			renderEntityModel(entity);
 		}
 		++idx;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+GameLogic::renderShotParticles()
+{
+	TRACE
+	auto& spriteBatch = *m_resources.m_spriteBatch;
+	auto& texture			= m_resources.shotTexture;
+
+	// Hack to allow using SpriteBatch with world space objects.
+	// SpriteBatch requires everything in x-right y-down screen PIXEL coordinates
+	// and does it's own orthographic projection internally.
+	// See SpriteBatch::Impl::GetViewportTransform()
+	Matrix worldToScreen = m_context.worldToView * m_context.viewToProjection
+												 * m_context.projectionToPixels;
+
+	static const XMVECTOR scale = {1.0f, 1.0f, 1.0f, 1.0f};
+
+	for (size_t idx = PLAYER_SHOTS_IDX; idx < ENEMY_SHOTS_END; ++idx)
+	{
+		auto& shot = m_context.entities[idx];
+		if (!shot.isAlive)
+		{
+			continue;
+		}
+
+		const float aliveS = (m_enemies.currentLevelTimeS() - shot.birthTimeS);
+		static const float SATURATION_DECAY = 1.5f;
+		float saturation
+			= 1.0f - std::clamp((aliveS * SATURATION_DECAY), 0.0f, 1.0f);
+		Vector4 color(Colors::OrangeRed);
+		color.x += saturation;
+		color.y += saturation;
+		color.z += saturation;
+
+		auto pos = Vector3::Transform(shot.position, worldToScreen);
+		spriteBatch.Draw(
+			texture.texture.Get(),
+			XMLoadFloat3(&pos),
+			nullptr,
+			color,
+			0.f,
+			texture.origin,
+			scale,
+			SpriteEffects_None,
+			0.f);
 	}
 }
 
@@ -259,6 +308,12 @@ void
 GameLogic::constrainShot(Entity& e)
 {
 	TRACE
+
+	if (!e.isAlive)
+	{
+		return;
+	}
+
 	if (
 		(e.position.y < -SHOT_MAX_POSITION.y)
 		|| (e.position.y > SHOT_MAX_POSITION.y)
@@ -394,7 +449,7 @@ GameLogic::renderPlayerEntity(Entity& entity)
 	switch (m_context.playerState)
 	{
 		case PlayerState::Normal:
-			renderEntity(entity, XM_PI);
+			renderEntityModel(entity, XM_PI);
 			break;
 
 		case PlayerState::Dying:
@@ -408,7 +463,7 @@ GameLogic::renderPlayerEntity(Entity& entity)
 					% 2
 				!= 0)
 			{
-				renderEntity(entity, XM_PI);
+				renderEntityModel(entity, XM_PI);
 			}
 			break;
 	}
@@ -416,7 +471,7 @@ GameLogic::renderPlayerEntity(Entity& entity)
 
 //------------------------------------------------------------------------------
 void
-GameLogic::renderEntity(Entity& entity, float orientation)
+GameLogic::renderEntityModel(Entity& entity, float orientation)
 {
 	TRACE
 	// TODO(James): Use <notnullable> to enforce assertion
