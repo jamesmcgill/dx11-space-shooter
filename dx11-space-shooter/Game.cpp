@@ -565,24 +565,15 @@ Game::createDeviceDependentResources()
 
 	m_resources.m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(context);
 
-	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(
-		device,
-		L"assets/star.dds",
-		nullptr,
-		m_resources.m_starTexture.ReleaseAndGetAddressOf()));
-	m_resources.starField
-		= std::make_unique<StarField>(m_context, m_resources.m_starTexture.Get());
-
-	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(
-		device,
-		L"assets/explosion.dds",
-		nullptr,
-		m_resources.m_explosionTexture.ReleaseAndGetAddressOf()));
-	m_resources.explosions = std::make_unique<Explosions>(
-		m_context, m_resources.m_explosionTexture.Get());
-
+	m_resources.starTexture.CreateFromFile(device, L"assets/star.dds");
+	m_resources.explosionTexture.CreateFromFile(device, L"assets/explosion.dds");
 	m_resources.shotTexture.CreateFromFile(device, L"assets/explosion.dds");
-	
+
+	m_resources.starField
+		= std::make_unique<StarField>(m_context, m_resources.starTexture);
+	m_resources.explosions
+		= std::make_unique<Explosions>(m_context, m_resources.explosionTexture);
+
 	m_resources.menuManager = std::make_unique<MenuManager>(m_context);
 	m_resources.scoreBoard	= std::make_unique<ScoreBoard>(m_context);
 	m_resources.scoreBoard->loadFromFile();
@@ -740,8 +731,8 @@ Game::OnDeviceLost()
 	m_resources.m_batch.reset();
 	m_resources.m_spriteBatch.reset();
 	m_resources.shotTexture.texture.Reset();
-	m_resources.m_explosionTexture.Reset();
-	m_resources.m_starTexture.Reset();
+	m_resources.explosionTexture.texture.Reset();
+	m_resources.starTexture.texture.Reset();
 	m_resources.m_states.reset();
 }
 

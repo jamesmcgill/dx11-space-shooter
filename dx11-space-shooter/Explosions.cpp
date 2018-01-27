@@ -2,6 +2,7 @@
 #include "Explosions.h"
 #include "StepTimer.h"
 #include "AppContext.h"
+#include "AppResources.h"
 
 #include "utils/Log.h"
 
@@ -25,35 +26,11 @@ static UniRandFloat originRand(-ORIGIN_SPREAD, ORIGIN_SPREAD);
 static UniRandFloat energyRand(ENERGY_MIN, ENERGY_MAX);
 
 //------------------------------------------------------------------------------
-Explosions::Explosions(AppContext& context, ID3D11ShaderResourceView* texture)
-		: m_engine(m_device())
-		, m_context(context)
+Explosions::Explosions(AppContext& context, Texture& texture)
+		: m_context(context)
+		, m_texture(texture)
+		, m_engine(m_device())
 {
-	TRACE
-	m_texture = texture;
-
-	if (texture)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
-		texture->GetResource(resource.GetAddressOf());
-
-		D3D11_RESOURCE_DIMENSION dim;
-		resource->GetType(&dim);
-
-		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
-		{
-			throw std::exception("Explosions expects a Texture2D");
-		}
-
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> tex2D;
-		resource.As(&tex2D);
-
-		D3D11_TEXTURE2D_DESC desc;
-		tex2D->GetDesc(&desc);
-
-		m_textureWidth	= desc.Width;
-		m_textureHeight = desc.Height;
-	}
 }
 
 //------------------------------------------------------------------------------
@@ -84,7 +61,7 @@ void
 Explosions::render(DirectX::SpriteBatch& batch)
 {
 	TRACE
-	XMVECTOR origin = {m_textureWidth / 2.0f, m_textureHeight / 2.0f, 0.0f};
+	XMVECTOR origin = {m_texture.width / 2.0f, m_texture.height / 2.0f, 0.0f};
 	for (auto& p : m_particles)
 	{
 		if (p.energy == 0.0f)
@@ -103,7 +80,7 @@ Explosions::render(DirectX::SpriteBatch& batch)
 		XMVECTOR scale		= {scaleFactor, scaleFactor, scaleFactor, 1.0f};
 
 		batch.Draw(
-			m_texture.Get(),
+			m_texture.texture.Get(),
 			XMLoadFloat3(&p.position),
 			nullptr,
 			color,

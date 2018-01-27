@@ -1,19 +1,18 @@
 #pragma once
 #include "pch.h"
-#include <array>
-#include <random>
 
 namespace DX
 {
 class StepTimer;
 }
 struct AppContext;
+struct Texture;
 
 //------------------------------------------------------------------------------
 class Explosions
 {
 public:
-	Explosions(AppContext& context, ID3D11ShaderResourceView* texture);
+	Explosions(AppContext& context, Texture& texture);
 	void update(DX::StepTimer const& timer);
 	void render(DirectX::SpriteBatch& batch);
 	void emit(
@@ -22,6 +21,9 @@ public:
 		size_t numParticles = 200);
 
 private:
+	AppContext& m_context;
+	Texture& m_texture;
+
 	struct ExplosionParticle
 	{
 		DirectX::XMFLOAT3 position;
@@ -35,12 +37,6 @@ private:
 	// Random Generators
 	std::random_device m_device;
 	std::default_random_engine m_engine;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
-	int m_textureWidth	= 0;
-	int m_textureHeight = 0;
-
-	AppContext& m_context;
 };
 
 //------------------------------------------------------------------------------

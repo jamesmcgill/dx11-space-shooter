@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Starfield.h"
 #include "AppContext.h"
+#include "AppResources.h"
 #include "StepTimer.h"
 
 #include "utils/Log.h"
@@ -14,35 +15,11 @@ const float MILLISECS_PER_SEC = 1000.0f;
 
 using namespace DirectX;
 //------------------------------------------------------------------------------
-StarField::StarField(AppContext& context, ID3D11ShaderResourceView* texture)
+StarField::StarField(AppContext& context, Texture& texture)
 		: m_context(context)
+		, m_texture(texture)
 		, m_engine(m_device())
 {
-	TRACE
-	m_texture = texture;
-
-	if (texture)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
-		texture->GetResource(resource.GetAddressOf());
-
-		D3D11_RESOURCE_DIMENSION dim;
-		resource->GetType(&dim);
-
-		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
-		{
-			throw std::exception("StarField expects a Texture2D");
-		}
-
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> tex2D;
-		resource.As(&tex2D);
-
-		D3D11_TEXTURE2D_DESC desc;
-		tex2D->GetDesc(&desc);
-
-		m_textureWidth	= desc.Width;
-		m_textureHeight = desc.Height;
-	}
 }
 
 //------------------------------------------------------------------------------
@@ -51,7 +28,7 @@ StarField::initialisePositions()
 {
 	TRACE
 	std::uniform_real_distribution<float> yRand(
-		static_cast<float>(-m_textureHeight), m_context.screenHeight);
+		static_cast<float>(-m_texture.height), m_context.screenHeight);
 
 	std::uniform_real_distribution<float> zRand(ZBOUNDMIN, ZBOUNDMAX);
 	std::uniform_real_distribution<float> sizeRand(SCALE_MIN, SCALE_MAX);
@@ -94,7 +71,7 @@ StarField::update(DX::StepTimer const& timer)
 			// Regenerate old particles
 			if (p.position.y > m_context.screenHeight)
 			{
-				p.position.y = static_cast<float>(-m_textureHeight)
+				p.position.y = static_cast<float>(-m_texture.height)
 											 + (p.position.y - m_context.screenHeight);
 				p.position.x = m_xRand(m_engine);
 			}
@@ -114,7 +91,7 @@ StarField::render(DirectX::SpriteBatch& batch)
 		for (auto& p : l)
 		{
 			batch.Draw(
-				m_texture.Get(),
+				m_texture.texture.Get(),
 				XMLoadFloat3(&p.position),
 				nullptr,
 				Colors::White,
@@ -135,7 +112,7 @@ StarField::setWindowSize(float screenWidth, float screenHeight)
 
 	TRACE
 	m_xRand = std::uniform_real_distribution<float>(
-		static_cast<float>(-m_textureWidth), screenWidth);
+		static_cast<float>(-m_texture.width), screenWidth);
 	initialisePositions();
 }
 

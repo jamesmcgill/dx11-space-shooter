@@ -1,9 +1,9 @@
 #pragma once
 #include "pch.h"
-#include <array>
-#include <random>
 
+struct Texture;
 struct AppContext;
+
 namespace DX
 {
 class StepTimer;
@@ -13,7 +13,7 @@ class StepTimer;
 class StarField
 {
 public:
-	StarField(AppContext& context, ID3D11ShaderResourceView* texture);
+	StarField(AppContext& context, Texture& texture);
 	void update(DX::StepTimer const& timer);
 	void render(DirectX::SpriteBatch& batch);
 	void setWindowSize(float screenWidth, float screenHeight);
@@ -24,13 +24,11 @@ public:
 		SPEED_Medium = 2500,
 		SPEED_Fast	 = 1200
 	};
-	void setSpeed(SPEED_TimePerScreenWrapMs speed)
-	{
-		m_timePerWrapMs = speed;
-	}
+	void setSpeed(SPEED_TimePerScreenWrapMs speed) { m_timePerWrapMs = speed; }
 
 private:
 	AppContext& m_context;
+	Texture& m_texture;
 
 	struct StarParticle
 	{
@@ -48,10 +46,6 @@ private:
 	std::uniform_real_distribution<float> m_xRand;
 
 	SPEED_TimePerScreenWrapMs m_timePerWrapMs = SPEED_Medium;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture;
-	int m_textureWidth	= 0;
-	int m_textureHeight = 0;
 
 private:
 	void initialisePositions();

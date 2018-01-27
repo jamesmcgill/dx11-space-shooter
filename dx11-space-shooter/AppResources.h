@@ -37,8 +37,8 @@ struct AppResources
 	midi::MidiControllerTracker midiTracker;
 
 	std::unique_ptr<DirectX::CommonStates> m_states;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_starTexture;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_explosionTexture;
+	Texture starTexture;
+	Texture explosionTexture;
 	Texture shotTexture;
 
 	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
