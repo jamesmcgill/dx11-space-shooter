@@ -14,9 +14,8 @@ constexpr float STATE_TIMEOUT_SECONDS = 5.0f;
 
 //------------------------------------------------------------------------------
 static const std::vector<MenuManager::MenuButton> s_mainMenuButtons = {
-	{L"Play Single Player", Command::PlaySingle},
-	{L"Play Two Players", Command::PlayTwoPlayers},
-	{L"View Hi-Scores", Command::ViewScores},
+	{L"Play", Command::PlaySingle},
+	{L"Hi-Scores", Command::ViewScores},
 	{L"Quit", Command::GotoMenu, 1},
 };
 
@@ -73,7 +72,10 @@ MainMenuState::handleInput(const DX::StepTimer& timer)
 				m_states.changeState(&m_states.getReady);
 				break;
 
-			// case Command::ViewScores:
+			case Command::ViewScores:
+				m_states.changeState(&m_states.showingScores);
+				break;
+
 			case Command::QuitApp:
 				ExitGame();
 				break;
