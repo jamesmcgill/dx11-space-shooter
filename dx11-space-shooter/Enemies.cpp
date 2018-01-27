@@ -140,7 +140,7 @@ Enemies::updateLevel()
 {
 	if (!m_isLevelActive)
 	{
-		// Activate next level
+		// Activate next level once enemies are cleared
 		if (m_currentLevelIdx < m_levels.size())
 		{
 			if (!isAnyEnemyAlive())
@@ -151,23 +151,23 @@ Enemies::updateLevel()
 		}
 		return;
 	}
-
 	auto& level = m_levels[m_currentLevelIdx];
-	ASSERT(m_nextEventWaveIdx < level.waves.size());
-	auto& nextWave = level.waves[m_nextEventWaveIdx];
+
+	// End of level
+	if (m_nextEventWaveIdx >= level.waves.size())
+	{
+		m_isLevelActive = false;
+		m_nextEventWaveIdx = 0;
+		m_currentLevelIdx++;
+		return;
+	}
 
 	// Spawn next wave
+	auto& nextWave = level.waves[m_nextEventWaveIdx];
 	if (m_currentLevelTimeS >= nextWave.spawnTimeS)
 	{
 		spawnFormation(nextWave.formationIdx, m_currentLevelTimeS);
-
 		m_nextEventWaveIdx++;
-		if (m_nextEventWaveIdx >= level.waves.size())
-		{
-			m_isLevelActive		 = false;
-			m_nextEventWaveIdx = 0;
-			m_currentLevelIdx++;
-		}
 	}
 }
 
