@@ -2,6 +2,7 @@
 #include "Editor/FormationListMode.h"
 #include "Editor/Modes.h"
 #include "AppContext.h"
+#include "AppResources.h"
 #include "Enemies.h"
 
 #include "utils/Log.h"
@@ -32,12 +33,14 @@ FormationListMode::itemName(size_t itemIdx) const
 std::wstring
 FormationListMode::itemNameToDisplay(size_t itemIdx) const
 {
-	return (itemIdx == m_renamingIdx) ? renameText() : itemName(itemIdx);
+	return (m_isRenaming && (itemIdx == m_selectedIdx))
+					 ? m_renameText.getDisplayText()
+					 : itemName(itemIdx);
 }
 
 //------------------------------------------------------------------------------
 void
-FormationListMode::setItemName(size_t itemIdx, std::wstring newName)
+FormationListMode::setItemName(size_t itemIdx, const std::wstring& newName)
 {
 	formationRef(itemIdx).id = newName;
 }

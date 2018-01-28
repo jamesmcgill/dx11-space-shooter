@@ -69,7 +69,7 @@ IMode::updateIndices()
 
 //------------------------------------------------------------------------------
 void
-IMode::jumpToLevelWave(const size_t levelIdx, const size_t waveIdx)
+IMode::jumpToLevelWave(size_t levelIdx, size_t waveIdx)
 {
 	m_gameLogic.reset();
 	m_gameLogic.m_enemies.jumpToLevel(levelIdx);
@@ -116,7 +116,7 @@ IMode::pathsRef() const
 
 //------------------------------------------------------------------------------
 Level&
-IMode::levelRef(const size_t idx) const
+IMode::levelRef(size_t idx) const
 {
 	auto& levels = levelsRef();
 	ASSERT(idx < levels.size());

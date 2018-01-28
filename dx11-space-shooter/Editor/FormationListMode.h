@@ -18,7 +18,7 @@ struct FormationListMode : public IRenameableMode
 	std::wstring menuTitle() const override;
 	std::wstring itemName(size_t itemIdx) const override;
 	std::wstring itemNameToDisplay(size_t itemIdx) const override;
-	void setItemName(size_t itemIdx, std::wstring newName) override;
+	void setItemName(size_t itemIdx, const std::wstring& newName) override;
 
 	void onCreate() override;
 	void onDeleteItem(size_t itemIdx) override;

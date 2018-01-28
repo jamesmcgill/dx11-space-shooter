@@ -115,6 +115,9 @@
     <ClInclude Include="Editor\ModeMenu.h">
       <Filter>Editor</Filter>
     </ClInclude>
+    <ClInclude Include="utils\KeyboardInputString.h">
+      <Filter>utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -197,6 +200,9 @@
       <Filter>Editor</Filter>
     </ClCompile>
     <ClCompile Include="AppResources.cpp" />
+    <ClCompile Include="utils\KeyboardInputString.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />

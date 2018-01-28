@@ -1,33 +1,38 @@
 #pragma once
 
-#include "IMode.h"
+#include "Editor/IMode.h"
+#include "utils/KeyboardInputString.h"
 
 //------------------------------------------------------------------------------
-struct IRenameableMode : public IMode
+namespace DX
 {
-	static const size_t RENAME_DISABLED = static_cast<size_t>(-1);
+class StepTimer;
+};
+struct Modes;
+struct AppContext;
+struct AppResources;
+class GameLogic;
 
-	size_t m_renamingIdx = RENAME_DISABLED;
-	std::wstring m_renameBuffer;
-
+//------------------------------------------------------------------------------
+class IRenameableMode : public IMode
+{
+public:
 	IRenameableMode(
 		Modes& modes,
 		AppContext& context,
 		AppResources& resources,
 		GameLogic& logic)
 			: IMode(modes, context, resources, logic)
+			, m_renameText(resources)
 	{
 	}
 
-	// IMode
-	void onEnterMode(bool isNavigatingForward = true) override;
-	void handleInput(const DX::StepTimer& timer) override;
+	virtual void handleInput(const DX::StepTimer& timer) override;
+	virtual void setItemName(size_t itemIdx, const std::wstring& newName) = 0;
 
-	// IRenameableMode
-	void handleInput_renaming(const DX::StepTimer& timer);
-	virtual void setItemName(size_t itemIdx, std::wstring newName) = 0;
-
-	std::wstring renameText() const;
+protected:
+	KeyboardInputString m_renameText;
+	bool m_isRenaming = false;
 };
 
 //------------------------------------------------------------------------------

@@ -225,6 +225,7 @@
     <ClInclude Include="Starfield.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="UIDebugDraw.h" />
+    <ClInclude Include="utils\KeyboardInputString.h" />
     <ClInclude Include="utils\Log.h" />
   </ItemGroup>
   <ItemGroup>
@@ -268,6 +269,7 @@
     <ClCompile Include="ScoreBoard.cpp" />
     <ClCompile Include="Starfield.cpp" />
     <ClCompile Include="UIDebugDraw.cpp" />
+    <ClCompile Include="utils\KeyboardInputString.cpp" />
     <ClCompile Include="utils\Log.cpp" />
   </ItemGroup>
   <ItemGroup>

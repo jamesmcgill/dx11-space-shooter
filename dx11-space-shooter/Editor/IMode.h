@@ -75,7 +75,7 @@ struct IMode
 	void updateIndices();
 
 	//----------------------------------------------------------------------------
-	void jumpToLevelWave(const size_t levelIdx, const size_t waveIdx);
+	void jumpToLevelWave(size_t levelIdx, size_t waveIdx);
 	void spawnFormation(size_t formationIdx);
 	void spawnPath(size_t pathIdx);
 
@@ -84,7 +84,7 @@ struct IMode
 	FormationPool& formationsRef() const;
 	PathPool& pathsRef() const;
 
-	Level& levelRef(const size_t idx) const;
+	Level& levelRef(size_t idx) const;
 	Wave& levelWaveRef(size_t levelIdx, size_t waveIdx) const;
 	Formation& formationRef(size_t idx) const;
 
