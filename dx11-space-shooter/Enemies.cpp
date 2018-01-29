@@ -141,13 +141,10 @@ Enemies::updateLevel()
 	if (!m_isLevelActive)
 	{
 		// Activate next level once enemies are cleared
-		if (m_currentLevelIdx < m_levels.size())
+		if (!isAnyEnemyAlive())
 		{
-			if (!isAnyEnemyAlive())
-			{
-				m_isLevelActive = true;
-				resetCurrentTime();
-			}
+			m_isLevelActive = true;
+			resetCurrentTime();
 		}
 		return;
 	}
@@ -159,6 +156,12 @@ Enemies::updateLevel()
 		m_isLevelActive		 = false;
 		m_nextEventWaveIdx = 0;
 		m_currentLevelIdx++;
+		if (m_currentLevelIdx >= m_levels.size())
+		{
+			// Wrap around to level 1 after finishing the last level
+			m_currentLevelIdx = 0;
+		}
+
 		return;
 	}
 
@@ -323,8 +326,9 @@ Enemies::emitShot(
 	newShot.position
 		= emitter.position + emitter.model->bound.Center
 			+ Vector3(0.0f, (yPosScale * emitter.model->bound.Radius), 0.0f);
-	newShot.velocity	 = Vector3(0.0f, speed, 0.0f);
-	newShot.birthTimeS = m_currentLevelTimeS;
+	newShot.velocity = Vector3(0.0f, speed, 0.0f);
+	newShot.birthTimeS
+		= static_cast<float>(m_resources.m_timer.GetTotalSeconds());
 
 	shotEntityIdx++;
 	if (shotEntityIdx >= maxEntityIdxPlusOne)

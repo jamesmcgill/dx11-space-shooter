@@ -171,8 +171,8 @@ GameLogic::renderShotParticles()
 	Matrix worldToScreen = m_context.worldToView * m_context.viewToProjection
 												 * m_context.projectionToPixels;
 
-	static const XMVECTOR scale = {1.0f, 1.0f, 1.0f, 1.0f};
-
+	static const XMVECTOR outerScale = {1.0f, 1.0f, 1.0f, 1.0f};
+	static const XMVECTOR coreScale	= {0.5f, 0.5f, 0.5f, 0.5f};
 	for (size_t idx = PLAYER_SHOTS_IDX; idx < ENEMY_SHOTS_END; ++idx)
 	{
 		auto& shot = m_context.entities[idx];
@@ -181,14 +181,20 @@ GameLogic::renderShotParticles()
 			continue;
 		}
 
-		const float aliveS = (m_enemies.currentLevelTimeS() - shot.birthTimeS);
-		static const float SATURATION_DECAY = 1.5f;
+		const float aliveS = static_cast<float>(
+			m_resources.m_timer.GetTotalSeconds() - shot.birthTimeS);
+		static const float SATURATION_DECAY = 1.2f;
 		float saturation
 			= 1.0f - std::clamp((aliveS * SATURATION_DECAY), 0.0f, 1.0f);
 		Vector4 color(Colors::OrangeRed);
 		color.x += saturation;
 		color.y += saturation;
 		color.z += saturation;
+
+		Vector4 coreColor(Colors::Yellow);
+		coreColor.x += saturation;
+		coreColor.y += saturation;
+		coreColor.z += saturation;
 
 		auto pos = Vector3::Transform(shot.position, worldToScreen);
 		spriteBatch.Draw(
@@ -198,7 +204,18 @@ GameLogic::renderShotParticles()
 			color,
 			0.f,
 			texture.origin,
-			scale,
+			outerScale * (1.0f + 2.0f * saturation),
+			SpriteEffects_None,
+			0.f);
+
+		spriteBatch.Draw(
+			texture.texture.Get(),
+			XMLoadFloat3(&pos),
+			nullptr,
+			coreColor,
+			0.f,
+			texture.origin,
+			coreScale * (1.0f + 2.0f * saturation),
 			SpriteEffects_None,
 			0.f);
 	}
