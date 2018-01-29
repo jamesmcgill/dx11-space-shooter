@@ -20,6 +20,12 @@ void
 GetReadyState::handleInput(const DX::StepTimer& timer)
 {
 	UNREFERENCED_PARAMETER(timer);
+
+	const auto& kb = m_resources.kbTracker;
+	if (kb.IsKeyPressed(DirectX::Keyboard::Escape))
+	{
+		m_states.changeState(&m_states.playing);
+	}
 }
 
 //------------------------------------------------------------------------------

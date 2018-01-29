@@ -105,7 +105,7 @@ Game::initialize(HWND window, int width, int height)
 	m_timer.SetTargetElapsedSeconds(1.0 / 60);
 	*/
 
-	m_appStates.changeState(&m_appStates.playing);
+	m_appStates.changeState(&m_appStates.menu);
 }
 
 #pragma region Frame Update
