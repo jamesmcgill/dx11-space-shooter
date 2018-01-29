@@ -51,12 +51,12 @@ struct AppContext
 	Entity entities[NUM_ENTITIES];
 
 	DirectX::SimpleMath::Vector3 playerAccel = {};
+	int playerScore													 = 0;
+	int playerLives													 = INITIAL_NUM_PLAYER_LIVES;
+	PlayerState playerState									 = PlayerState::Normal;
+	float playerDeathTimerS									 = 0.0f;
+	float playerReviveTimerS								 = 0.0f;
 
-	int playerScore					 = 0;
-	int playerLives					 = INITIAL_NUM_PLAYER_LIVES;
-	PlayerState playerState	= PlayerState::Normal;
-	float playerDeathTimerS	= 0.0f;
-	float playerReviveTimerS = 0.0f;
 	ui::Text uiScore;
 	ui::Text uiLives;
 
@@ -80,7 +80,26 @@ struct AppContext
 	ui::Text uiCameraDist;
 	ui::Text uiControlInfo;
 
-	//------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
+	void resetPlayer()
+	{
+		playerAccel				 = DirectX::SimpleMath::Vector3();
+		playerScore				 = 0;
+		playerLives				 = INITIAL_NUM_PLAYER_LIVES;
+		playerState				 = PlayerState::Normal;
+		playerDeathTimerS	= 0.0f;
+		playerReviveTimerS = 0.0f;
+	}
+
+	//----------------------------------------------------------------------------
+	void resetCamera()
+	{
+		cameraRotationX = 0.0f;
+		cameraRotationY = 0.0f;
+		cameraDistance	= defaultCameraDistance;
+	}
+
+	//----------------------------------------------------------------------------
 	DirectX::XMVECTOR cameraPos()
 	{
 		using namespace DirectX;
@@ -102,7 +121,7 @@ struct AppContext
 		return XMVectorAdd(eyePos, CAMERA_LOOKAT);
 	}
 
-	//------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------
 	void updateViewMatrix()
 	{
 		worldToView = XMMatrixLookAtRH(cameraPos(), CAMERA_LOOKAT, CAMERA_UP);

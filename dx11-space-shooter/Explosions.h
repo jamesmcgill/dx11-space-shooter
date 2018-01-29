@@ -13,6 +13,8 @@ class Explosions
 {
 public:
 	Explosions(AppContext& context, Texture& texture);
+
+	void reset();
 	void update(DX::StepTimer const& timer);
 	void render(DirectX::SpriteBatch& batch);
 	void emit(

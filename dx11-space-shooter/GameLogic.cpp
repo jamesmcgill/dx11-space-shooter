@@ -26,7 +26,6 @@ GameLogic::GameLogic(AppContext& context, AppResources& resources)
 		, m_enemies(context, resources)
 {
 	TRACE
-	reset();
 }
 
 //------------------------------------------------------------------------------
@@ -46,11 +45,13 @@ GameLogic::reset()
 	player.isAlive		 = true;
 	player.isColliding = false;
 	player.position		 = PLAYER_START_POS;
+	player.velocity		 = Vector3();
 
-	m_context.playerScore = 0;
-	m_context.playerLives = INITIAL_NUM_PLAYER_LIVES;
-	m_context.playerState = PlayerState::Normal;
-	m_hudDirty						= true;
+	m_context.resetPlayer();
+	m_context.resetCamera();
+	m_resources.explosions->reset();
+
+	m_hudDirty = true;
 
 	m_context.updateViewMatrix();
 }

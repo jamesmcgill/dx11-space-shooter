@@ -35,6 +35,17 @@ Explosions::Explosions(AppContext& context, Texture& texture)
 
 //------------------------------------------------------------------------------
 void
+Explosions::reset()
+{
+	TRACE
+	for (auto& p : m_particles)
+	{
+		p.energy = 0.0f;
+	}
+}
+
+//------------------------------------------------------------------------------
+void
 Explosions::update(DX::StepTimer const& timer)
 {
 	TRACE
