@@ -12,6 +12,11 @@ using namespace DirectX::SimpleMath;
 constexpr float SHOT_SPEED									= 40.0f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
+using UniRandFloat = std::uniform_real_distribution<float>;
+using UniRandIdx	 = std::uniform_int_distribution<size_t>;
+static UniRandFloat shotTimeRand(0.1f, 0.8f);
+static UniRandIdx enemyIdxRand(ENEMIES_IDX, ENEMIES_END - 1);
+
 //------------------------------------------------------------------------------
 Enemies::Enemies(AppContext& context, AppResources& resources)
 		: m_context(context)
@@ -72,6 +77,10 @@ Enemies::reset()
 	m_currentLevelIdx	= 0;
 	m_nextEventWaveIdx = 0;
 
+	float currentTimeS
+		= static_cast<float>(m_resources.m_timer.GetTotalSeconds());
+	m_nextShotTimeS = currentTimeS + shotTimeRand(m_resources.randEngine);
+
 	for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 	{
 		m_context.entities[i].isAlive			= false;
@@ -92,28 +101,34 @@ void
 Enemies::update(const DX::StepTimer& timer)
 {
 	TRACE
-	float elapsedTimeS = static_cast<float>(timer.GetElapsedSeconds());
+	float currentTimeS = static_cast<float>(timer.GetTotalSeconds());
 	incrementCurrentTime(timer);
 
 	updateLevel();
 
 	// Spawn enemy shots
-	if (fmod(m_currentLevelTimeS, 2.0f) < elapsedTimeS)
+	if (currentTimeS >= m_nextShotTimeS)
 	{
-		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
+		m_nextShotTimeS = currentTimeS + shotTimeRand(m_resources.randEngine);
+
+		size_t attempts = 0;
+		size_t enemyIdx = 0;
+		do
 		{
-			if (m_context.entities[i].isAlive)
-			{
-				emitShot(
-					m_context.entities[i],
-					-1.0f,
-					-SHOT_SPEED,
-					m_context.nextEnemyShotIdx,
-					ENEMY_SHOTS_IDX,
-					ENEMY_SHOTS_END);
-				m_resources.soundEffects[AudioResource::EnemyShot]->Play();
-				break;
-			}
+			enemyIdx = enemyIdxRand(m_resources.randEngine);
+			ASSERT(enemyIdx < ENEMIES_END && enemyIdx >= ENEMIES_IDX);
+		} while (!m_context.entities[enemyIdx].isAlive && ++attempts < 10);
+
+		if (m_context.entities[enemyIdx].isAlive)
+		{
+			emitShot(
+				m_context.entities[enemyIdx],
+				-1.0f,
+				-SHOT_SPEED,
+				m_context.nextEnemyShotIdx,
+				ENEMY_SHOTS_IDX,
+				ENEMY_SHOTS_END);
+			m_resources.soundEffects[AudioResource::EnemyShot]->Play();
 		}
 	}
 

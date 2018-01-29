@@ -76,6 +76,7 @@ private:
 	size_t m_currentLevelIdx	= 0;
 	size_t m_nextEventWaveIdx = 0;
 	bool m_isLevelActive			= false;
+	float m_nextShotTimeS			= 0.0f;
 };
 
 //------------------------------------------------------------------------------

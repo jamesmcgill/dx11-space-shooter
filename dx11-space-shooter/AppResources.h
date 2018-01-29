@@ -24,6 +24,10 @@ struct Texture
 //------------------------------------------------------------------------------
 struct AppResources
 {
+	// Random Generators
+	std::random_device randDevice;
+	std::default_random_engine randEngine;
+
 	DX::StepTimer m_timer;
 
 	std::unique_ptr<DX::DeviceResources> m_deviceResources;
@@ -70,7 +74,8 @@ struct AppResources
 	std::map<AudioResource, std::unique_ptr<DirectX::SoundEffect>> soundEffects;
 
 	AppResources()
-			: m_keyboard(std::make_unique<DirectX::Keyboard>())
+			: randEngine(randDevice())
+			, m_keyboard(std::make_unique<DirectX::Keyboard>())
 			, m_mouse(std::make_unique<DirectX::Mouse>())
 	{
 	}
