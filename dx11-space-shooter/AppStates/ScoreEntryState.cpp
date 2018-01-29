@@ -11,71 +11,31 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-const XMVECTOR FONT_COLOR																= {1.0f, 1.0f, 0.0f};
-static const std::vector<std::wstring> ENTER_TEXT_LINES = {
-	L"Congratulations!", L"You have a new hi-score.", L"Please Enter Your Name:"};
-static const std::vector<std::wstring> INSTRUCTION_LINES
-	= {L"Maximum 3 Initials",
-		 L"Up/Down Arrows: Change letter",
-		 L"Backspace: Remove last letter",
-		 L"Enter: Select letter"};
+const XMVECTOR FONT_COLOR = {1.0f, 1.0f, 0.0f};
 
-constexpr size_t MAX_NAME_LENGTH = 3;
+static const std::wstring FINALSCORE_TEXT = L"Final Score: {}";
+static const std::wstring HEADING_TEXT		= L"Congratulations!";
+static const std::vector<std::wstring> ENTER_TEXT_LINES
+	= {L"You have a new hi-score.", L"Please Enter Your Name:"};
 
 //------------------------------------------------------------------------------
 void
 ScoreEntryState::handleInput(const DX::StepTimer& timer)
 {
-	UNREFERENCED_PARAMETER(timer);
-
-	TRACE
-	auto& kb = m_resources.kbTracker;
-
-	if (kb.IsKeyPressed(Keyboard::Enter))
+	const auto& kb = m_resources.kbTracker;
+	if (
+		kb.IsKeyPressed(DirectX::Keyboard::Enter)
+		&& !m_playerName.getRawText().empty())
 	{
-		m_playerName.push_back(m_currentChar);
+		m_resources.scoreBoard->insertScore(
+			{m_context.playerScore, m_playerName.getRawText()});
 
-		if (m_playerName.size() >= MAX_NAME_LENGTH)
-		{
-			m_resources.scoreBoard->insertScore(
-				{m_context.playerScore, m_playerName});
-			m_resources.scoreBoard->saveToFile();
-			m_states.changeState(&m_states.menu);
-		}
+		m_resources.scoreBoard->saveToFile();
+		m_states.changeState(&m_states.menu);
+		return;
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Up))
-	{
-		if (m_currentChar == 'A')
-		{
-			m_currentChar = 'Z';
-		}
-		else
-		{
-			m_currentChar--;
-		}
-	}
-
-	if (kb.IsKeyPressed(Keyboard::Down))
-	{
-		if (m_currentChar == 'Z')
-		{
-			m_currentChar = 'A';
-		}
-		else
-		{
-			m_currentChar++;
-		}
-	}
-
-	if (kb.IsKeyPressed(Keyboard::Back) || kb.IsKeyPressed(Keyboard::Escape))
-	{
-		if (!m_playerName.empty())
-		{
-			m_currentChar = m_playerName.back();
-			m_playerName.pop_back();
-		}
-	}
+	m_playerName.handleInput(timer);
 }
 
 //------------------------------------------------------------------------------
@@ -94,55 +54,65 @@ ScoreEntryState::render()
 	m_resources.m_spriteBatch->Begin();
 	m_resources.starField->render(*m_resources.m_spriteBatch);
 
-	Vector2 fontDimensions = m_resources.font32pt->MeasureString(L"XXX");
-	Vector2 centerPos = {m_context.screenHalfWidth, m_context.screenHalfHeight};
+	auto& headingFont			 = m_resources.font32pt;
+	auto finalScoreStr		 = fmt::format(FINALSCORE_TEXT, m_context.playerScore);
+	Vector2 fontDimensions = headingFont->MeasureString(finalScoreStr.c_str());
+	Vector2 origin				 = Vector2(fontDimensions.x / 2.f, 0.0f);
 
-	Vector2 linePos
-		= centerPos - Vector2(0.0f, (ENTER_TEXT_LINES.size() * fontDimensions.y));
+	Vector2 position = {m_context.screenHalfWidth, fontDimensions.y};
+
+	headingFont->DrawString(
+		m_resources.m_spriteBatch.get(),
+		finalScoreStr.c_str(),
+		position,
+		FONT_COLOR,
+		0.f,
+		origin);
+	position.y += 2 * fontDimensions.y;
+
+	fontDimensions = headingFont->MeasureString(HEADING_TEXT.c_str());
+	origin				 = Vector2(fontDimensions.x / 2.f, 0.0f);
+	headingFont->DrawString(
+		m_resources.m_spriteBatch.get(),
+		HEADING_TEXT.c_str(),
+		position,
+		FONT_COLOR,
+		0.f,
+		origin);
+	position.y += fontDimensions.y;
+
+	auto& mainFont = m_resources.font16pt;
+	fontDimensions = mainFont->MeasureString(L"XXX");
+	position.y += fontDimensions.y / 2.0f;
+
 	for (auto& line : ENTER_TEXT_LINES)
 	{
-		Vector2 origin = m_resources.font32pt->MeasureString(line.c_str()) / 2.f;
-		m_resources.font32pt->DrawString(
+		fontDimensions = mainFont->MeasureString(line.c_str());
+		origin				 = fontDimensions / 2.f;
+
+		mainFont->DrawString(
 			m_resources.m_spriteBatch.get(),
 			line.c_str(),
-			linePos,
+			position,
 			FONT_COLOR,
 			0.f,
 			origin);
-		linePos.y += fontDimensions.y;
+		position.y += fontDimensions.y;
 	}
 
-	{
-		Vector2 origin		 = fontDimensions / 2.f;
-		auto displayedName = (m_playerName.size() >= MAX_NAME_LENGTH)
-													 ? m_playerName
-													 : m_playerName + m_currentChar;
+	auto& nameFont		= m_resources.font32pt;
+	Vector2 centerPos = {m_context.screenHalfWidth, m_context.screenHalfHeight};
+	fontDimensions
+		= nameFont->MeasureString(m_playerName.getDisplayText().c_str());
+	origin = fontDimensions / 2.f;
 
-		m_resources.font32pt->DrawString(
-			m_resources.m_spriteBatch.get(),
-			displayedName.c_str(),
-			linePos,
-			FONT_COLOR,
-			0.f,
-			origin);
-	}
-
-	linePos = Vector2(
-		0.0f,
-		m_context.screenHeight
-			- ((INSTRUCTION_LINES.size() - 1) * fontDimensions.y));
-	for (auto& line : INSTRUCTION_LINES)
-	{
-		Vector2 origin = {0.0f, fontDimensions.y};
-		m_resources.font32pt->DrawString(
-			m_resources.m_spriteBatch.get(),
-			line.c_str(),
-			linePos,
-			FONT_COLOR,
-			0.f,
-			origin);
-		linePos.y += fontDimensions.y;
-	}
+	nameFont->DrawString(
+		m_resources.m_spriteBatch.get(),
+		m_playerName.getDisplayText().c_str(),
+		centerPos,
+		FONT_COLOR,
+		0.f,
+		origin);
 
 	m_resources.m_spriteBatch->End();
 }
@@ -173,8 +143,7 @@ void
 ScoreEntryState::enter()
 {
 	TRACE
-	m_playerName.clear();
-	m_currentChar = L'A';
+	m_playerName.setRawText(L"");
 }
 
 //------------------------------------------------------------------------------

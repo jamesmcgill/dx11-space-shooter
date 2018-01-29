@@ -13,8 +13,9 @@ struct AppResources;
 class KeyboardInputString
 {
 public:
-	KeyboardInputString(AppResources& resources)
+	KeyboardInputString(AppResources& resources, size_t maxLength = 30)
 			: m_resources(resources)
+			, m_maxLength(maxLength)
 	{
 	}
 
@@ -26,6 +27,7 @@ public:
 
 private:
 	AppResources& m_resources;
+	size_t m_maxLength;
 	std::wstring m_buffer;
 };
 

@@ -575,7 +575,7 @@ Game::createDeviceDependentResources()
 		= std::make_unique<Explosions>(m_context, m_resources.explosionTexture);
 
 	m_resources.menuManager = std::make_unique<MenuManager>(m_context);
-	m_resources.scoreBoard	= std::make_unique<ScoreBoard>(m_context);
+	m_resources.scoreBoard = std::make_unique<ScoreBoard>(m_context, m_resources);
 	m_resources.scoreBoard->loadFromFile();
 
 	m_resources.font8pt = std::make_unique<DirectX::SpriteFont>(

@@ -19,7 +19,7 @@ IRenameableMode::handleInput(const DX::StepTimer& timer)
 			m_isRenaming = false;
 		}
 
-		if (kb.IsKeyPressed(Keyboard::Enter))
+		if (kb.IsKeyPressed(Keyboard::Enter) && !m_renameText.getRawText().empty())
 		{
 			setItemName(m_selectedIdx, m_renameText.getRawText());
 			m_isRenaming = false;

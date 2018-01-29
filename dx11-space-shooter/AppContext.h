@@ -4,7 +4,7 @@
 #include "UIDebugDraw.h"
 
 //------------------------------------------------------------------------------
-constexpr int INITIAL_NUM_PLAYER_LIVES = 5;
+constexpr int INITIAL_NUM_PLAYER_LIVES = 2;
 
 static const DirectX::SimpleMath::Vector4 CAMERA_LOOKAT
 	= {0.0f, 0.0f, 0.0f, 0.0f};

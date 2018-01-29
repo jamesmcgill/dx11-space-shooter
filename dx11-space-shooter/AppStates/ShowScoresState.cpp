@@ -52,8 +52,7 @@ ShowScoresState::render()
 	m_resources.m_spriteBatch->Begin();
 
 	m_resources.starField->render(*m_resources.m_spriteBatch);
-	m_resources.scoreBoard->render(
-		m_resources.font32pt.get(), m_resources.m_spriteBatch.get());
+	m_resources.scoreBoard->render(*m_resources.m_spriteBatch);
 
 	m_resources.m_spriteBatch->End();
 }

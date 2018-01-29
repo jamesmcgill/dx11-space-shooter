@@ -1,9 +1,7 @@
 #include "pch.h"
 #include "ScoreBoard.h"
 #include "AppContext.h"
-#include <algorithm>
-#include <iostream>
-#include <fstream>
+#include "AppResources.h"
 
 #include "utils/Log.h"
 
@@ -11,86 +9,66 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 //------------------------------------------------------------------------------
-static const wchar_t* SCORE_FILENAME = L"score.dat";
-static const wchar_t* ENTER_NAME_MESSAGE
-	= L"Congratulations!\nYou have a new hi-score.\nPlease Enter Your Name:\n";
-
-static const int PLAYER_NAME_LENGTH		= 4;
+static const wchar_t* SCORE_FILENAME	= L"score.dat";
 static const size_t NUM_SCORES				= 10;
 static const XMVECTOR HIGHLIGHT_COLOR = {1.0f, 1.0f, 0.0f};
 static const XMVECTOR NORMAL_COLOR		= {1.0f, 1.0f, 1.0f};
 static const int FILE_VERSION					= 100;
 static const wchar_t* DEFAULT_NAME		= L"Jim";
-
-//------------------------------------------------------------------------------
-ScoreBoard::ScoreBoard(AppContext& context)
-		: m_context(context)
-{
-}
+static const float X_PADDING					= 30.0f;
 
 //------------------------------------------------------------------------------
 void
-ScoreBoard::PrevMenu()
+ScoreBoard::render(DirectX::SpriteBatch& spriteBatch)
 {
-	if (!m_isEntryModeOn)
+	TRACE
+
+	// Layout
+	//
+	//       ####
+	// ####  ----
+	// ----  ####
+	// ####  ---- X
+	// ----  ####
+	// ####  ----
+	//       ####
+	auto& font			 = m_resources.font32pt;
+	float fontHeight = XMVectorGetY(font->MeasureString(L"XXX"));
+	float padding		 = fontHeight * 0.3f;
+	Vector2 pos			 = {m_context.screenHalfWidth, 0.0f};
+
+	float numRowsAboveCenter = (m_scores.size() % 2 == 0)
+															 ? m_scores.size() / 2.0f
+															 : ((m_scores.size() + 1) / 2.0f) - 0.5f;
+	float numPaddingRowsAbove = numRowsAboveCenter - 0.5f;
+
+	// Screen center - text rows - padding rows
+	pos.y = m_context.screenHalfHeight - (numRowsAboveCenter * fontHeight)
+					- (numPaddingRowsAbove * padding);
+
+	// Render Scoreboard
+	for (auto& e : m_scores)
 	{
-		return;
+		fmt::WMemoryWriter scoreStr;
+		scoreStr << e.score;
+
+		XMVECTOR dimensions = font->MeasureString(scoreStr.c_str());
+		Vector2 scoreOrigin = {(XMVectorGetX(dimensions)), 0.0f};
+		Vector2 nameOrigin	= {0.0f, 0.0f};
+
+		font->DrawString(
+			&spriteBatch,
+			scoreStr.c_str(),
+			{pos.x - X_PADDING, pos.y},
+			NORMAL_COLOR,
+			0.f,
+			scoreOrigin);
+
+		font->DrawString(
+			&spriteBatch, e.playerName.c_str(), pos, NORMAL_COLOR, 0.f, nameOrigin);
+
+		pos.y += fontHeight + padding;
 	}
-
-	/*if (m_unCurrentCharIdx > 0) m_unCurrentCharIdx--;*/
-}
-
-//------------------------------------------------------------------------------
-void
-ScoreBoard::NextItem()
-{
-	if (!m_isEntryModeOn)
-	{
-		return;
-	}
-
-	// if (m_ucCurrentChar == 'A')
-	//	m_ucCurrentChar = 'Z';
-	// else
-	//	m_ucCurrentChar--;
-}
-
-//------------------------------------------------------------------------------
-void
-ScoreBoard::PrevItem()
-{
-	if (!m_isEntryModeOn)
-	{
-		return;
-	}
-
-	// if (m_ucCurrentChar == 'Z')
-	//	m_ucCurrentChar = 'A';
-	// else
-	//	m_ucCurrentChar++;
-}
-
-//------------------------------------------------------------------------------
-void
-ScoreBoard::SelectItem()
-{
-	if (!m_isEntryModeOn)
-	{
-		return;
-	}
-
-	// if (m_unCurrentCharIdx < PLAYERNAME_MAXLENGTH - 1) {
-	//	m_ucPlayerName[m_unCurrentCharIdx] = m_ucCurrentChar;
-	//	m_unCurrentCharIdx++;
-	//}
-
-	// if (m_unCurrentCharIdx >= PLAYERNAME_MAXLENGTH - 1) {
-	//	insertScore(g_pApp->GetCurrentPlayerScore(), m_ucPlayerName);
-	//	m_isEntryModeOn = false;
-
-	//	m_ucCurrentChar		 = 'A';
-	//	m_unCurrentCharIdx = 0;
-	//}
 }
 
 //------------------------------------------------------------------------------
@@ -118,7 +96,7 @@ ScoreBoard::insertScore(Score newScore)
 }
 
 //------------------------------------------------------------------------------
-void
+bool
 ScoreBoard::loadFromFile()
 {
 	TRACE
@@ -126,22 +104,22 @@ ScoreBoard::loadFromFile()
 	std::wifstream file(SCORE_FILENAME, std::ios::in);
 	if (!file.is_open())
 	{
-		// TODO: Logging and error handling
 		loadDefaultScores();
-		return;
+		LOG_ERROR("Couldn't open file: %s", SCORE_FILENAME);
+		return false;
 	}
 
 	std::wstring versionStr;
 	if (!getline(file, versionStr))
 	{
-		// TODO: Logging and error handling
-		throw;
+		LOG_ERROR("Couldn't read from file: %s", SCORE_FILENAME);
+		return false;
 	}
 	int version = std::stoi(versionStr);
 	if (version != FILE_VERSION)
 	{
-		// TODO: Logging and error handling
-		throw;
+		LOG_ERROR("Invalid Version in scores file: %s", SCORE_FILENAME);
+		return false;
 	}
 
 	std::wstring scoreStr;
@@ -150,26 +128,28 @@ ScoreBoard::loadFromFile()
 	{
 		if (!getline(file, nameStr))
 		{
-			// TODO: Logging and error handling
-			throw;
+			LOG_ERROR("Couldn't read from file: %s", SCORE_FILENAME);
+			return false;
 		}
 
 		int value = std::stoi(scoreStr);
 		Score score{value, nameStr};
 		m_scores.push_back(score);
 	}
+
+	return true;
 }
 
 //------------------------------------------------------------------------------
-void
+bool
 ScoreBoard::saveToFile()
 {
 	TRACE
 	std::wofstream file(SCORE_FILENAME, std::ios::out);
 	if (!file.is_open())
 	{
-		// TODO: Logging and error handling
-		throw;
+		LOG_ERROR("Couldn't open %s for saving", SCORE_FILENAME);
+		return false;
 	}
 
 	file << FILE_VERSION << '\n';
@@ -178,6 +158,8 @@ ScoreBoard::saveToFile()
 		file << e.score << '\n';
 		file << e.playerName << '\n';
 	}
+
+	return true;
 }
 
 //------------------------------------------------------------------------------
@@ -193,91 +175,5 @@ ScoreBoard::loadDefaultScores()
 		score -= 1000;
 	}
 }
-
-//------------------------------------------------------------------------------
-void
-ScoreBoard::render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch)
-{
-	TRACE
-
-	// Layout
-	//
-	//       ####
-	// ####  ----
-	// ----  ####
-	// ####  ---- X
-	// ----  ####
-	// ####  ----
-	//       ####
-	float fontHeight = XMVectorGetY(font->MeasureString(L"XXX"));
-	float padding		 = fontHeight * 0.3f;
-	Vector2 pos			 = {m_context.screenHalfWidth, 0.0f};
-
-	float numRowsAboveCenter = (m_scores.size() % 2 == 0)
-															 ? m_scores.size() / 2.0f
-															 : ((m_scores.size() + 1) / 2.0f) - 0.5f;
-	float numPaddingRowsAbove = numRowsAboveCenter - 0.5f;
-
-	// Screen center - text rows - padding rows
-	pos.y = m_context.screenHalfHeight - (numRowsAboveCenter * fontHeight)
-					- (numPaddingRowsAbove * padding);
-
-	// Render Scoreboard
-	for (auto& e : m_scores)
-	{
-		XMVECTOR dimensions = font->MeasureString(e.playerName.c_str());
-		Vector2 nameOrigin	= {(XMVectorGetX(dimensions)), 0.0f};
-		Vector2 scoreOrigin = {0.0f, nameOrigin.y};
-
-		font->DrawString(
-			spriteBatch, e.playerName.c_str(), pos, NORMAL_COLOR, 0.f, nameOrigin);
-
-		fmt::WMemoryWriter w;
-		w << e.score;
-
-		font->DrawString(
-			spriteBatch, w.c_str(), pos, NORMAL_COLOR, 0.f, scoreOrigin);
-
-		pos.y += fontHeight + padding;
-	}
-}
-
-//------------------------------------------------------------------------------
-// HRESULT
-// ScoreBoard::DrawNewScoreEntryScreen(LPDIRECT3DDEVICE9 pd3dDevice)
-//{
-//	RECT main_rect;
-//	RECT entry_rect;
-//
-//	SetRect(&main_rect, 0, 0, m_unScreenWidth, m_unScreenHeight * 0.75f);
-//	SetRect(&entry_rect, 0, 0, m_unScreenWidth, m_unScreenHeight);
-//
-//	m_pLargeFont->DrawText(
-//		NULL,																	 // pSprite
-//		ENTER_NAME_MESSAGE,										 // pString
-//		-1,																		 // Count
-//		&main_rect,														 // pRect
-//		DT_CENTER | DT_VCENTER | DT_NOCLIP,		 // Format,
-//		0xFFFFFFFF);													 // Color
-//
-//	stringstream p, q;
-//	string s;
-//
-//	for (unsigned int i = 0; i < m_unCurrentCharIdx; i++)
-//	{
-//		q << m_ucPlayerName[i];
-//	}
-//	q << m_ucCurrentChar;
-//	s = q.str();
-//	m_pLargeFont->DrawText(
-//		NULL,																	 // pSprite
-//		s.c_str(),														 // pString
-//		-1,																		 // Count
-//		&entry_rect,													 // pRect
-//		DT_CENTER | DT_VCENTER | DT_NOCLIP,		 // Format,
-//		0xFFFFFFFF);													 // Color
-//
-//	return S_OK;
-//}
 
 //------------------------------------------------------------------------------

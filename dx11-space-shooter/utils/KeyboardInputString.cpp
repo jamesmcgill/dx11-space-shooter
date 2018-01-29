@@ -38,6 +38,18 @@ KeyboardInputString::handleInput(const DX::StepTimer& timer)
 	const auto kbState = m_resources.m_keyboard->GetState();
 	using DirectX::Keyboard;
 
+	if (kb.IsKeyPressed(Keyboard::Delete) || kb.IsKeyPressed(Keyboard::Back))
+	{
+		if (!m_buffer.empty())
+		{
+			m_buffer.pop_back();
+		}
+	}
+
+	if (m_buffer.size() >= m_maxLength) {
+		return;
+	}
+
 	auto isCapitalised = [&kbState]() -> bool {
 		return kbState.IsKeyDown(Keyboard::CapsLock)
 					 || kbState.IsKeyDown(Keyboard::LeftShift)
@@ -75,12 +87,9 @@ KeyboardInputString::handleInput(const DX::StepTimer& timer)
 		m_buffer.push_back(isCapitalised() ? L'_' : L'-');
 	}
 
-	if (kb.IsKeyPressed(Keyboard::Delete) || kb.IsKeyPressed(Keyboard::Back))
+	if (kb.IsKeyPressed(Keyboard::Space))
 	{
-		if (!m_buffer.empty())
-		{
-			m_buffer.pop_back();
-		}
+		m_buffer.push_back(L' ');
 	}
 }
 

@@ -1,6 +1,13 @@
 #pragma once
 
+#include "UIDebugDraw.h"
+
+namespace DX
+{
+class StepTimer;
+};
 struct AppContext;
+struct AppResources;
 
 //------------------------------------------------------------------------------
 class ScoreBoard
@@ -8,34 +15,29 @@ class ScoreBoard
 public:
 	struct Score
 	{
-		int score;
+		int score = 0;
 		std::wstring playerName;
 	};
 
-private:
-	AppContext& m_context;
-	std::vector<Score> m_scores;
-
-	// New Score Entry
-	bool m_isEntryModeOn = false;
-	char m_ucCurrentChar = 'A';
-	char m_ucPlayerName[4];
-	unsigned int m_unCurrentCharIdx = 0;
-
 public:
-	ScoreBoard(AppContext& context);
-	void render(DirectX::SpriteFont* font, DirectX::SpriteBatch* spriteBatch);
+	ScoreBoard(AppContext& context, AppResources& resources)
+			: m_context(context)
+			, m_resources(resources)
+	{
+	}
 
-	// Input
-	void PrevMenu();
-	void NextItem();
-	void PrevItem();
-	void SelectItem();
+	void render(DirectX::SpriteBatch& spriteBatch);
 
-	void loadFromFile();
-	void saveToFile();
-
-	void loadDefaultScores();
 	bool isHiScore(const int& nScore) const;
 	void insertScore(Score newScore);
+
+	bool loadFromFile();
+	bool saveToFile();
+	void loadDefaultScores();
+
+private:
+	AppContext& m_context;
+	AppResources& m_resources;
+
+	std::vector<Score> m_scores;
 };

@@ -1,10 +1,13 @@
 #pragma once
 
 #include "IAppState.h"
+#include "utils/KeyboardInputString.h"
 
 //------------------------------------------------------------------------------
 class ScoreEntryState : public IAppState
 {
+	static constexpr size_t MAX_NAME_LENGTH = 20;
+
 public:
 	ScoreEntryState(
 		AppStates& states,
@@ -12,6 +15,7 @@ public:
 		AppResources& resources,
 		GameLogic& logic)
 			: IAppState(states, context, resources, logic)
+			, m_playerName(resources, MAX_NAME_LENGTH)
 	{
 	}
 
@@ -27,8 +31,7 @@ public:
 	void exit() override;
 
 private:
-	std::wstring m_playerName;
-	wchar_t m_currentChar = L' ';
+	KeyboardInputString m_playerName;
 };
 
 //------------------------------------------------------------------------------
