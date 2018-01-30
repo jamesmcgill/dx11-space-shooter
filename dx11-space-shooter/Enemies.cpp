@@ -382,6 +382,8 @@ void
 Enemies::save()
 {
 	TRACE
+	LevelData::populateIdsPreSave(m_pathPool, m_formationPool, m_levels);
+
 	// NB: begin()+1 skips the items injected to index[0] by addNullData()
 	// We don't need to save those
 	LevelData::save(

@@ -16,12 +16,12 @@ static const std::string SECTIONS_KEY				 = "sections";
 static const std::string WAYPOINT_KEY = "waypoint";
 static const std::string CONTROL_KEY	= "control";
 
-static const std::string PATH_IDX_KEY	= "pathIdx";
+static const std::string PATH_ID_KEY	 = "pathId";
 static const std::string NUM_SHIPS_KEY = "numShips";
 static const std::string MODEL_KEY		 = "model";
 
-static const std::string SPAWN_TIME_KEY		 = "spawnTimeS";
-static const std::string FORMATION_IDX_KEY = "formationIdx";
+static const std::string SPAWN_TIME_KEY		= "spawnTimeS";
+static const std::string FORMATION_ID_KEY = "formationId";
 
 static const std::string WAVES_KEY = "waves";
 //------------------------------------------------------------------------------
@@ -183,9 +183,9 @@ FormationSection::from_json(const json11::Json& json)
 		const auto& key		= child.first;
 		const auto& value = child.second;
 
-		if (value.is_number() && key == PATH_IDX_KEY)
+		if (value.is_string() && key == PATH_ID_KEY)
 		{
-			ret.pathIdx = static_cast<size_t>(value.int_value());
+			ret.pathId = strUtils::utf8ToWstring(value.string_value());
 		}
 		else if (value.is_number() && key == NUM_SHIPS_KEY)
 		{
@@ -203,7 +203,7 @@ FormationSection::from_json(const json11::Json& json)
 json11::Json
 FormationSection::to_json() const
 {
-	return json11::Json::object{{PATH_IDX_KEY, static_cast<int>(pathIdx)},
+	return json11::Json::object{{PATH_ID_KEY, strUtils::wstringToUtf8(pathId)},
 															{NUM_SHIPS_KEY, numShips},
 															{MODEL_KEY, static_cast<int>(model)}};
 }
@@ -265,9 +265,9 @@ Wave::from_json(const json11::Json& json)
 		const auto& key		= child.first;
 		const auto& value = child.second;
 
-		if (value.is_number() && key == FORMATION_IDX_KEY)
+		if (value.is_string() && key == FORMATION_ID_KEY)
 		{
-			ret.formationIdx = value.int_value();
+			ret.formationId = strUtils::utf8ToWstring(value.string_value());
 		}
 		else if (value.is_number() && key == SPAWN_TIME_KEY)
 		{
@@ -283,7 +283,7 @@ Wave::to_json() const
 {
 	return json11::Json::object{
 		{SPAWN_TIME_KEY, spawnTimeS},
-		{FORMATION_IDX_KEY, static_cast<int>(formationIdx)}};
+		{FORMATION_ID_KEY, strUtils::wstringToUtf8(formationId)}};
 }
 
 //------------------------------------------------------------------------------
@@ -468,7 +468,8 @@ LevelData::load(PathPool& paths, FormationPool& formations, LevelPool& levels)
 	std::string err;
 	const auto& str		= ss.str();
 	json11::Json json = json11::Json::parse(str, err);
-	if (json.is_null()) {
+	if (json.is_null())
+	{
 		LOG_ERROR(str.c_str());
 		return false;
 	}
@@ -476,15 +477,14 @@ LevelData::load(PathPool& paths, FormationPool& formations, LevelPool& levels)
 	Parser parser(paths, formations, levels);
 	parser.parse(json);
 
+	populateIndicesPostLoad(paths, formations, levels);
+
 	return (parser.isParseError == false);
 }
 
 //------------------------------------------------------------------------------
 bool
-LevelData::save(
-	const PathPool& paths,
-	const FormationPool& formations,
-	const LevelPool& levels)
+LevelData::save(PathPool& paths, FormationPool& formations, LevelPool& levels)
 {
 	return save(
 		paths.begin(),
@@ -498,33 +498,94 @@ LevelData::save(
 //------------------------------------------------------------------------------
 bool
 LevelData::save(
-	PathPool::const_iterator pathsBegin,
-	PathPool::const_iterator pathsEnd,
-	FormationPool::const_iterator formationsBegin,
-	FormationPool::const_iterator formationsEnd,
-	LevelPool::const_iterator levelsBegin,
-	LevelPool::const_iterator levelsEnd)
+	PathPool::iterator pathsBegin,
+	PathPool::iterator pathsEnd,
+	FormationPool::iterator formationsBegin,
+	FormationPool::iterator formationsEnd,
+	LevelPool::iterator levelsBegin,
+	LevelPool::iterator levelsEnd)
 {
 	TRACE
-		std::ofstream fileOut(LEVEL_DATA_FILENAME);
+	std::ofstream fileOut(LEVEL_DATA_FILENAME);
 	if (!fileOut.is_open())
 	{
 		LOG_ERROR("Level file could opened on save");
 		return false;
 	}
-
-	auto paths = json11::Json(pathsBegin, pathsEnd);
+	auto paths			= json11::Json(pathsBegin, pathsEnd);
 	auto formations = json11::Json(formationsBegin, formationsEnd);
-	auto levels = json11::Json(levelsBegin, levelsEnd);
+	auto levels			= json11::Json(levelsBegin, levelsEnd);
 
 	fileOut << json11::Json(
-		json11::Json::array{
-		json11::Json::object{ { PATHS_NODE_ID, paths } },
-			json11::Json::object{ { FORMATIONS_NODE_ID, formations } },
-			json11::Json::object{ { LEVELS_NODE_ID, levels } }})
-		.dump();
+							 json11::Json::array{
+								 json11::Json::object{{PATHS_NODE_ID, paths}},
+								 json11::Json::object{{FORMATIONS_NODE_ID, formations}},
+								 json11::Json::object{{LEVELS_NODE_ID, levels}}})
+							 .dump();
 
-		return true;
+	return true;
+}
+
+//------------------------------------------------------------------------------
+void
+LevelData::populateIdsPreSave(
+	PathPool& paths, FormationPool& formations, LevelPool& levels)
+{
+	for (auto& formation : formations)
+	{
+		for (auto& sec : formation.sections)
+		{
+			ASSERT(sec.pathIdx < paths.size());
+			sec.pathId = paths[sec.pathIdx].id;
+		}
+	}
+
+	for (auto& level : levels)
+	{
+		for (auto& wave : level.waves)
+		{
+			ASSERT(wave.formationIdx < formations.size());
+			wave.formationId = formations[wave.formationIdx].id;
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+void
+LevelData::populateIndicesPostLoad(
+	PathPool& paths, FormationPool& formations, LevelPool& levels)
+{
+	for (auto& formation : formations)
+	{
+		for (auto& sec : formation.sections)
+		{
+			sec.pathIdx = 0;
+			for (size_t i = 0; i < paths.size(); ++i)
+			{
+				if (paths[i].id == sec.pathId)
+				{
+					sec.pathIdx = i;
+					continue;
+				}
+			}
+		}
+	}
+
+	for (auto& level : levels)
+	{
+		for (auto& wave : level.waves)
+		{
+			wave.formationIdx = 0;
+			for (size_t i = 0; i < formations.size(); ++i)
+			{
+				if (formations[i].id == wave.formationId)
+				{
+					wave.formationIdx = i;
+					continue;
+				}
+			}
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
