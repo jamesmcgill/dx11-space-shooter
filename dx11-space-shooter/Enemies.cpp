@@ -10,12 +10,12 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 constexpr float SHOT_SPEED									= 40.0f;
+constexpr float SHOOT_DELAY									= 0.3f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 using UniRandFloat = std::uniform_real_distribution<float>;
 using UniRandIdx	 = std::uniform_int_distribution<size_t>;
-static UniRandFloat shotTimeRand(0.1f, 0.8f);
-static UniRandIdx enemyIdxRand(ENEMIES_IDX, ENEMIES_END - 1);
+static UniRandFloat shotTimeRand(0.3f, 0.6f);
 
 //------------------------------------------------------------------------------
 Enemies::Enemies(AppContext& context, AppResources& resources)
@@ -111,16 +111,25 @@ Enemies::update(const DX::StepTimer& timer)
 	{
 		m_nextShotTimeS = currentTimeS + shotTimeRand(m_resources.randEngine);
 
-		size_t attempts = 0;
-		size_t enemyIdx = 0;
-		do
-		{
-			enemyIdx = enemyIdxRand(m_resources.randEngine);
-			ASSERT(enemyIdx < ENEMIES_END && enemyIdx >= ENEMIES_IDX);
-		} while (!m_context.entities[enemyIdx].isAlive && ++attempts < 10);
+		auto canShoot = [currentTimeS](Entity& enemy) {
+			return enemy.isAlive && (currentTimeS > enemy.birthTimeS + SHOOT_DELAY);
+		};
 
-		if (m_context.entities[enemyIdx].isAlive)
+		std::vector<size_t> shooterCandidateIdxs;
+		for (size_t i = ENEMIES_IDX; i < ENEMIES_END; ++i)
 		{
+			if (canShoot(m_context.entities[i]))
+			{
+				shooterCandidateIdxs.push_back(i);
+			}
+		}
+		if (!shooterCandidateIdxs.empty())
+		{
+			UniRandIdx enemyIdxRand(0, shooterCandidateIdxs.size() - 1);
+			size_t candidateIdx = enemyIdxRand(m_resources.randEngine);
+			size_t enemyIdx			= shooterCandidateIdxs[candidateIdx];
+			ASSERT(enemyIdx < ENEMIES_END);
+
 			emitShot(
 				m_context.entities[enemyIdx],
 				-1.0f,
@@ -184,7 +193,9 @@ Enemies::updateLevel()
 	auto& nextWave = level.waves[m_nextEventWaveIdx];
 	if (m_currentLevelTimeS >= nextWave.spawnTimeS)
 	{
-		spawnFormation(nextWave.formationIdx, m_currentLevelTimeS);
+		float currentTimeS
+			= static_cast<float>(m_resources.m_timer.GetTotalSeconds());
+		spawnFormation(nextWave.formationIdx, currentTimeS);
 		m_nextEventWaveIdx++;
 	}
 }
@@ -269,6 +280,23 @@ Enemies::spawnFormationSection(
 }
 
 //------------------------------------------------------------------------------
+void
+Enemies::spawnFormation(const size_t formationIdx)
+{
+	float now = static_cast<float>(m_resources.m_timer.GetTotalSeconds());
+	spawnFormation(formationIdx, now);
+}
+
+//------------------------------------------------------------------------------
+void
+Enemies::spawnFormationSection(
+	const int numShips, const size_t pathIdx, const ModelResource model)
+{
+	float now = static_cast<float>(m_resources.m_timer.GetTotalSeconds());
+	spawnFormationSection(numShips, pathIdx, model, now);
+}
+
+//------------------------------------------------------------------------------
 static FXMVECTOR
 bezier(FLOAT t, FXMVECTOR startPos, FXMVECTOR endPos, FXMVECTOR control)
 {
@@ -299,7 +327,8 @@ Enemies::performPhysicsUpdate()
 		}
 		ASSERT(e.pathIdx < m_pathPool.size());
 		const auto& path	 = m_pathPool[e.pathIdx];
-		const float aliveS = (m_currentLevelTimeS - e.birthTimeS);
+		const float aliveS = static_cast<float>(
+			m_resources.m_timer.GetTotalSeconds() - e.birthTimeS);
 		if (aliveS < 0.0f)
 		{
 			ASSERT(!path.waypoints.empty());

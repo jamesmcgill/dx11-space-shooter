@@ -81,7 +81,7 @@ void
 IMode::spawnFormation(size_t formationIdx)
 {
 	m_gameLogic.m_enemies.reset();
-	m_gameLogic.m_enemies.spawnFormation(formationIdx, 0.0f);
+	m_gameLogic.m_enemies.spawnFormation(formationIdx);
 }
 
 //------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ IMode::spawnPath(size_t pathIdx)
 {
 	m_gameLogic.m_enemies.reset();
 	m_gameLogic.m_enemies.spawnFormationSection(
-		5, pathIdx, ModelResource::Enemy9, 0.0f);
+		5, pathIdx, ModelResource::Enemy9);
 }
 
 //------------------------------------------------------------------------------

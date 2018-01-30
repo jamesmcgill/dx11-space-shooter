@@ -37,6 +37,12 @@ public:
 		const ModelResource model,
 		const float birthTimeS);
 
+	void spawnFormation(const size_t formationIdx);
+	void spawnFormationSection(
+		const int numShips,
+		const size_t pathIdx,
+		const ModelResource model);
+
 	void emitShot(
 		const Entity& emitter,
 		const float yPosScale,
