@@ -52,7 +52,10 @@ Enemies::addDummyData()
 {
 	ASSERT(m_pathPool.size() == 0);
 	ASSERT(m_formationPool.size() == 0);
+	ASSERT(m_levels.size() == 0);
 	ASSERT(m_pathPool.size() == DUMMY_PATH_IDX);
+	ASSERT(m_formationPool.size() == DUMMY_FORMATION_IDX);
+	ASSERT(m_formationPool.size() == DUMMY_LEVEL_IDX);
 
 	static const Path nullPath = {
 		L"nullPath",
@@ -62,11 +65,13 @@ Enemies::addDummyData()
 	};
 	m_pathPool.emplace_back(nullPath);
 
-	const int shipCount = 1;
+	const int shipCount = 0;
 	auto& formation			= m_formationPool.emplace_back(Formation());
 	formation.id				= L"nullFormation";
 	formation.sections.emplace_back(
 		FormationSection{DUMMY_PATH_IDX, shipCount, ModelResource::Enemy1});
+
+	m_levels.emplace_back(Level{{Wave{0.0f, DUMMY_FORMATION_IDX}}});
 }
 
 //------------------------------------------------------------------------------
@@ -173,6 +178,7 @@ Enemies::updateLevel()
 		}
 		return;
 	}
+	ASSERT(m_currentLevelIdx < m_levels.size());
 	auto& level = m_levels[m_currentLevelIdx];
 
 	// End of level
@@ -421,7 +427,7 @@ Enemies::save()
 		m_pathPool.end(),
 		m_formationPool.begin() + 1,
 		m_formationPool.end(),
-		m_levels.begin(),
+		m_levels.begin() + 1,
 		m_levels.end());
 }
 

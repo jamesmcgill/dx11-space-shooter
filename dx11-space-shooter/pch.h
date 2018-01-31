@@ -115,9 +115,9 @@ wstringToUtf8(const std::wstring& str)
 		CP_UTF8,
 		0,
 		str.data(),
-		str.length(),
+		static_cast<int>(str.length()),
 		outStr.data(),
-		outStr.length(),
+		static_cast<int>(outStr.length()),
 		NULL,
 		NULL);
 	return outStr;
@@ -128,7 +128,12 @@ utf8ToWstring(const std::string& str)
 {
 	std::wstring outStr(str.length(), 0);
 	MultiByteToWideChar(
-		CP_UTF8, 0, str.data(), str.length(), outStr.data(), outStr.length());
+		CP_UTF8,
+		0,
+		str.data(),
+		static_cast<int>(str.length()),
+		outStr.data(),
+		static_cast<int>(outStr.length()));
 	return outStr;
 }
 

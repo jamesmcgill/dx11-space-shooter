@@ -39,9 +39,7 @@ public:
 
 	void spawnFormation(const size_t formationIdx);
 	void spawnFormationSection(
-		const int numShips,
-		const size_t pathIdx,
-		const ModelResource model);
+		const int numShips, const size_t pathIdx, const ModelResource model);
 
 	void emitShot(
 		const Entity& emitter,
@@ -72,6 +70,7 @@ public:
 	// hiding this in the editor and save file.
 	static constexpr size_t DUMMY_PATH_IDX			= 0;
 	static constexpr size_t DUMMY_FORMATION_IDX = 0;
+	static constexpr size_t DUMMY_LEVEL_IDX			= 0;
 	void addDummyData();
 
 private:

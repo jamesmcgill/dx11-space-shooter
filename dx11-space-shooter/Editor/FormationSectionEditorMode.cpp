@@ -57,6 +57,11 @@ FormationSectionEditorMode::onBack()
 void
 FormationSectionEditorMode::onCreate()
 {
+	if (PATH_FIRST_IDX >= pathsRef().size())
+	{
+		return;		 // Do nothing. No paths available
+	}
+
 	auto& formation = formationRef(m_context.editorFormationIdx);
 
 	FormationSection section;

@@ -22,6 +22,7 @@ struct LevelListMode : public IMode
 	void onItemSelected() override;
 	void onDeleteItem(size_t itemIdx) override;
 	void onItemCommand() override;
+	size_t firstMenuIdx() const override;
 	size_t lastItemIdx() const override;
 
 	void update(const DX::StepTimer& timer) override;

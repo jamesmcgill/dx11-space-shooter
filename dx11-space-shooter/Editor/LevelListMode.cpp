@@ -45,6 +45,14 @@ LevelListMode::onDeleteItem(size_t itemIdx)
 
 //------------------------------------------------------------------------------
 size_t
+LevelListMode::firstMenuIdx() const
+{
+	// Prevent displaying the dummy data at index[0]
+	return Enemies::DUMMY_LEVEL_IDX + 1;
+}
+
+//------------------------------------------------------------------------------
+size_t
 LevelListMode::lastItemIdx() const
 {
 	return levelsRef().size() - 1;

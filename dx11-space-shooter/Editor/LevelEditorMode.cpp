@@ -56,6 +56,11 @@ LevelEditorMode::onBack()
 void
 LevelEditorMode::onCreate()
 {
+	if (FORMATION_FIRST_IDX >= formationsRef().size())
+	{
+		return;		 // Do nothing. No formations available
+	}
+
 	auto& waves = levelRef(m_context.editorLevelIdx).waves;
 	float t			= (waves.empty()) ? MIN_SPAWN_TIME : waves.back().spawnTimeS;
 
