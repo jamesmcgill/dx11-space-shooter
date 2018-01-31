@@ -44,12 +44,6 @@ Midi-Mapping is:
 + Player Min Velocity (channel 20)
 
 
-## Status:
-+ Editor is missing bezier path editor and load/save functionality.
-+ Only small hard-coded development level exists in game.
-+ Joypad support to be added
-
-
 ## Building:
 Recommended for building: (although should still build after retargetting these in VS)
 + Windows SDK 10.0.16299.0
