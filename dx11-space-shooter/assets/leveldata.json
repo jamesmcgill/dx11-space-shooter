@@ -309,10 +309,10 @@
 				"id": "quickLoopLR",
 				"waypoints": [{
 						"control": [0, 0, 0],
-						"waypoint": [-47.616519927978516, -12.424936294555664, 0]
+						"waypoint": [-47.318916320800781, -4.8112525939941406, 0]
 					}, {
-						"control": [35.489185333251953, -19.121009826660156, 0],
-						"waypoint": [35.489185333251953, 5.8776636123657227, 0]
+						"control": [34.769989013671875, -10.316912651062012, 0],
+						"waypoint": [34.819583892822266, 6.6464729309082031, 0]
 					}, {
 						"control": [35.191585540771484, 22.394643783569336, 0],
 						"waypoint": [0.37200593948364258, 18.37700080871582, 0]
@@ -328,10 +328,10 @@
 				"id": "quickLoopRL",
 				"waypoints": [{
 						"control": [0, 0, 0],
-						"waypoint": [47.616519927978516, -12.424936294555664, 0]
+						"waypoint": [47.318916320800781, -4.8112525939941406, 0]
 					}, {
-						"control": [-35.489185333251953, -19.121009826660156, 0],
-						"waypoint": [-35.489185333251953, 5.8776636123657227, 0]
+						"control": [-34.769989013671875, -10.316912651062012, 0],
+						"waypoint": [-34.819583892822266, 6.6464729309082031, 0]
 					}, {
 						"control": [-35.191585540771484, 22.394643783569336, 0],
 						"waypoint": [-0.37200593948364258, 18.37700080871582, 0]
@@ -723,8 +723,7 @@
 						"waypoint": [47.269317626953125, -4.7120499610900879, 0]
 					}
 				]
-			},
-			{
+			}, {
 				"id": "UpAndDownL",
 				"waypoints": [{
 						"control": [3.5712435245513916, 0.94241058826446533, 0],
@@ -749,7 +748,7 @@
 						"waypoint": [-14.880159378051758, 26.784292221069336, 0]
 					}
 				]
-			},			{
+			}, {
 				"id": "UpAndDownR",
 				"waypoints": [{
 						"control": [-3.5712435245513916, 0.94241058826446533, 0],
@@ -950,12 +949,12 @@
 			}, {
 				"id": "multi",
 				"sections": [{
-						"model": 8,
-						"numShips": 3,
+						"model": 4,
+						"numShips": 5,
 						"pathId": "DualPath-1A"
 					}, {
-						"model": 1,
-						"numShips": 3,
+						"model": 6,
+						"numShips": 5,
 						"pathId": "DualPath-1B"
 					}
 				]
@@ -975,6 +974,134 @@
 						"pathId": "CrissCrossLR"
 					}
 				]
+			}, {
+				"id": "simple2",
+				"sections": [{
+						"model": 3,
+						"numShips": 6,
+						"pathId": "DualPath-1B"
+					}
+				]
+			}, {
+				"id": "multi2",
+				"sections": [{
+						"model": 1,
+						"numShips": 6,
+						"pathId": "DualPath-1A"
+					}, {
+						"model": 5,
+						"numShips": 4,
+						"pathId": "DualPath-1B"
+					}
+				]
+			}, {
+				"id": "slowBounce",
+				"sections": [{
+						"model": 7,
+						"numShips": 6,
+						"pathId": "SlowBounceRL"
+					}
+				]
+			}, {
+				"id": "quickLoopLR",
+				"sections": [{
+						"model": 0,
+						"numShips": 4,
+						"pathId": "quickLoopLR"
+					}
+				]
+			}, {
+				"id": "quickLoopRL",
+				"sections": [{
+						"model": 8,
+						"numShips": 4,
+						"pathId": "quickLoopRL"
+					}
+				]
+			}, {
+				"id": "multi2",
+				"sections": [{
+						"model": 0,
+						"numShips": 3,
+						"pathId": "UpAndDownR"
+					}, {
+						"model": 1,
+						"numShips": 5,
+						"pathId": "slowLoopLeftSide"
+					}
+				]
+			}, {
+				"id": "multi3",
+				"sections": [{
+						"model": 4,
+						"numShips": 7,
+						"pathId": "quickSweepAndUp"
+					}, {
+						"model": 3,
+						"numShips": 3,
+						"pathId": "CrissCrossLR"
+					}
+				]
+			}, {
+				"id": "quickSweep",
+				"sections": [{
+						"model": 2,
+						"numShips": 7,
+						"pathId": "quickSweepAndUp"
+					}
+				]
+			}, {
+				"id": "multiCross",
+				"sections": [{
+						"model": 3,
+						"numShips": 3,
+						"pathId": "CrissCrossRL"
+					}, {
+						"model": 3,
+						"numShips": 3,
+						"pathId": "CrissCrossLR"
+					}
+				]
+			}, {
+				"id": "CrissCross",
+				"sections": [{
+						"model": 2,
+						"numShips": 7,
+						"pathId": "CrissCrossRL"
+					}
+				]
+			}, {
+				"id": "simple3",
+				"sections": [{
+						"model": 6,
+						"numShips": 5,
+						"pathId": "S-CurveLR"
+					}
+				]
+			}, {
+				"id": "roundTheHouse",
+				"sections": [{
+						"model": 6,
+						"numShips": 6,
+						"pathId": "slowRoundTheHouseRL"
+					}
+				]
+			}, {
+				"id": "simple4",
+				"sections": [{
+						"model": 0,
+						"numShips": 3,
+						"pathId": "quickLoopLR"
+					}
+				]
+			}, {
+				"id": "simple5",
+				"sections": [{
+						"model": 7,
+						"numShips": 8,
+						"pathId": "quickLoopRL"
+					}
+				]
 			}
 		]
 	}, {
@@ -984,31 +1111,88 @@
 						"spawnTimeS": 3
 					}, {
 						"formationId": "multi",
-						"spawnTimeS": 5
-					}, {
-						"formationId": "many",
 						"spawnTimeS": 10
 					}, {
-						"formationId": "players",
-						"spawnTimeS": 14
+						"formationId": "many",
+						"spawnTimeS": 19
 					}, {
-						"formationId": "simple",
-						"spawnTimeS": 18
+						"formationId": "quickLoopLR",
+						"spawnTimeS": 24
+					}, {
+						"formationId": "simple2",
+						"spawnTimeS": 27
+					}, {
+						"formationId": "roundTheHouse",
+						"spawnTimeS": 29
+					}, {
+						"formationId": "simple2",
+						"spawnTimeS": 38
+					}, {
+						"formationId": "simple5",
+						"spawnTimeS": 48
+					}, {
+						"formationId": "multi2",
+						"spawnTimeS": 55
+					}, {
+						"formationId": "multiCross",
+						"spawnTimeS": 58
+					}, {
+						"formationId": "slowBounce",
+						"spawnTimeS": 63
+					}, {
+						"formationId": "quickLoopRL",
+						"spawnTimeS": 70
+					}, {
+						"formationId": "quickLoopLR",
+						"spawnTimeS": 74
+					}, {
+						"formationId": "multi2",
+						"spawnTimeS": 78
+					}, {
+						"formationId": "quickSweep",
+						"spawnTimeS": 90
+					}, {
+						"formationId": "CrissCross",
+						"spawnTimeS": 100
+					}, {
+						"formationId": "simple3",
+						"spawnTimeS": 113
+					}, {
+						"formationId": "multi3",
+						"spawnTimeS": 120
+					}, {
+						"formationId": "slowBounce",
+						"spawnTimeS": 126
+					}, {
+						"formationId": "quickLoopLR",
+						"spawnTimeS": 132
+					}, {
+						"formationId": "simple2",
+						"spawnTimeS": 132
+					}, {
+						"formationId": "simple3",
+						"spawnTimeS": 140
 					}
 				]
 			}, {
 				"waves": [{
-						"formationId": "simple",
+						"formationId": "multi3",
 						"spawnTimeS": 3
 					}, {
-						"formationId": "multi",
-						"spawnTimeS": 5
+						"formationId": "quickLoopRL",
+						"spawnTimeS": 13
 					}, {
 						"formationId": "many",
-						"spawnTimeS": 10
+						"spawnTimeS": 13
 					}, {
-						"formationId": "players",
-						"spawnTimeS": 14
+						"formationId": "simple2",
+						"spawnTimeS": 18
+					}, {
+						"formationId": "roundTheHouse",
+						"spawnTimeS": 22
+					}, {
+						"formationId": "DebugFormation",
+						"spawnTimeS": 28
 					}
 				]
 			}
