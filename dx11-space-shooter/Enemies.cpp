@@ -10,12 +10,13 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 constexpr float SHOT_SPEED									= 40.0f;
+constexpr float ENEMY_SHOT_SPEED						= 25.0f;
 constexpr float SHOOT_DELAY									= 0.3f;
 constexpr float ENEMY_SPAWN_OFFSET_TIME_SEC = 0.5f;
 
 using UniRandFloat = std::uniform_real_distribution<float>;
 using UniRandIdx	 = std::uniform_int_distribution<size_t>;
-static UniRandFloat shotTimeRand(0.3f, 0.6f);
+static UniRandFloat shotTimeRand(0.5f, 1.0f);
 
 //------------------------------------------------------------------------------
 Enemies::Enemies(AppContext& context, AppResources& resources)
@@ -133,7 +134,7 @@ Enemies::update(const DX::StepTimer& timer)
 			emitShot(
 				m_context.entities[enemyIdx],
 				-1.0f,
-				-SHOT_SPEED,
+				-ENEMY_SHOT_SPEED,
 				m_context.nextEnemyShotIdx,
 				ENEMY_SHOTS_IDX,
 				ENEMY_SHOTS_END);
