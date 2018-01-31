@@ -4,7 +4,7 @@
 #include "utils/Log.h"
 
 //------------------------------------------------------------------------------
-HRESULT
+void
 Texture::CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName)
 {
 	HRESULT hr = DirectX::CreateDDSTextureFromFile(
@@ -12,7 +12,7 @@ Texture::CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName)
 	if (FAILED(hr))
 	{
 		LOG_ERROR("Couldn't load texture from file: %s", fileName);
-		return hr;
+		throw std::exception("Texture");
 	}
 
 	if (texture)
@@ -26,7 +26,7 @@ Texture::CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName)
 		if (dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
 		{
 			LOG_ERROR("Expected a Texture2D");
-			return E_FAIL;
+			throw std::exception("Texture");
 		}
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> tex2D;
@@ -39,8 +39,6 @@ Texture::CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName)
 		height = desc.Height;
 		origin = {width / 2.0f, height / 2.0f, 0.0f};
 	}
-
-	return S_OK;
 }
 
 //------------------------------------------------------------------------------

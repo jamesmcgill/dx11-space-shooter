@@ -49,8 +49,8 @@ private:
 	void updateControlsInfo(ui::Text& uiText);
 	void clear();
 
-	void createDeviceDependentResources();
-	void createWindowSizeDependentResources();
+	HRESULT createDeviceDependentResources();
+	HRESULT createWindowSizeDependentResources();
 
 	AppContext m_context;
 	AppResources m_resources;

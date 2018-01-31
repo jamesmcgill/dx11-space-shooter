@@ -18,7 +18,7 @@ struct Texture
 	int height = 0;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
 
-	HRESULT CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName);
+	void CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName);
 };
 
 //------------------------------------------------------------------------------

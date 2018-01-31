@@ -92,10 +92,18 @@ Game::initialize(HWND window, int width, int height)
 	m_resources.m_deviceResources->SetWindow(window, width, height);
 
 	m_resources.m_deviceResources->CreateDeviceResources();
-	createDeviceDependentResources();
+	if (FAILED(createDeviceDependentResources()))
+	{
+		ExitGame();
+		return;
+	}
 
 	m_resources.m_deviceResources->CreateWindowSizeDependentResources();
-	createWindowSizeDependentResources();
+	if (FAILED(createWindowSizeDependentResources()))
+	{
+		ExitGame();
+		return;
+	}
 
 	// TODO: Change the timer settings if you want something other than the
 	// default variable timestep mode. e.g. for 60 FPS fixed timestep update
@@ -517,7 +525,11 @@ Game::onWindowSizeChanged(int width, int height)
 	if (!m_resources.m_deviceResources->WindowSizeChanged(width, height))
 		return;
 
-	createWindowSizeDependentResources();
+	if (FAILED(createWindowSizeDependentResources()))
+	{
+		ExitGame();
+		return;
+	}
 
 	// TODO: Game window is being resized.
 }
@@ -540,101 +552,111 @@ Game::getDefaultSize(int& width, int& height) const
 //------------------------------------------------------------------------------
 // These are the resources that depend on the device.
 //------------------------------------------------------------------------------
-void
+HRESULT
 Game::createDeviceDependentResources()
 {
 	TRACE
 	auto device	= m_resources.m_deviceResources->GetD3DDevice();
 	auto context = m_resources.m_deviceResources->GetD3DDeviceContext();
 
-	m_resources.m_states = std::make_unique<DirectX::CommonStates>(
-		m_resources.m_deviceResources->GetD3DDevice());
-	m_resources.m_debugEffect = std::make_unique<DirectX::BasicEffect>(device);
-	m_resources.m_debugEffect->SetVertexColorEnabled(true);
-
-	m_resources.m_effectFactory
-		= std::make_unique<DirectX::EffectFactory>(device);
-
-	DirectX::IEffectFactory::EffectInfo info;
-	info.ambientColor = {0.0f, 1.0f, 0.0f};
-	m_resources.m_debugBoundEffect
-		= std::static_pointer_cast<DirectX::BasicEffect>(
-			m_resources.m_effectFactory->CreateEffect(info, context));
-	m_resources.m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
-	// m_debugBoundEffect->SetLightingEnabled(false);
-
-	m_resources.m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(context);
-
-	m_resources.starTexture.CreateFromFile(device, L"assets/star.dds");
-	m_resources.explosionTexture.CreateFromFile(device, L"assets/explosion.dds");
-	m_resources.shotTexture.CreateFromFile(device, L"assets/explosion.dds");
-
-	m_resources.starField
-		= std::make_unique<StarField>(m_context, m_resources.starTexture);
-	m_resources.explosions
-		= std::make_unique<Explosions>(m_context, m_resources.explosionTexture);
-
-	m_resources.menuManager = std::make_unique<MenuManager>(m_context);
-	m_resources.scoreBoard = std::make_unique<ScoreBoard>(m_context, m_resources);
-	m_resources.scoreBoard->loadFromFile();
-
-	m_resources.font8pt = std::make_unique<DirectX::SpriteFont>(
-		device, L"assets/verdana8.spritefont");
-	m_resources.font16pt = std::make_unique<DirectX::SpriteFont>(
-		device, L"assets/verdana16.spritefont");
-	m_resources.font32pt = std::make_unique<DirectX::SpriteFont>(
-		device, L"assets/verdana32.spritefont");
-
-	m_resources.fontMono8pt
-		= std::make_unique<DirectX::SpriteFont>(device, L"assets/mono8.spritefont");
-	m_resources.fontMono16pt = std::make_unique<DirectX::SpriteFont>(
-		device, L"assets/mono16.spritefont");
-	m_resources.fontMono32pt = std::make_unique<DirectX::SpriteFont>(
-		device, L"assets/mono32.spritefont");
-
-	m_resources.m_batch = std::make_unique<DX::DebugBatchType>(context);
+	try
 	{
-		void const* shaderByteCode;
-		size_t byteCodeLength;
-		m_resources.m_debugEffect->GetVertexShaderBytecode(
-			&shaderByteCode, &byteCodeLength);
+		m_resources.m_states = std::make_unique<DirectX::CommonStates>(
+			m_resources.m_deviceResources->GetD3DDevice());
+		m_resources.m_debugEffect = std::make_unique<DirectX::BasicEffect>(device);
+		m_resources.m_debugEffect->SetVertexColorEnabled(true);
 
-		DX::ThrowIfFailed(device->CreateInputLayout(
-			DirectX::VertexPositionColor::InputElements,
-			DirectX::VertexPositionColor::InputElementCount,
-			shaderByteCode,
-			byteCodeLength,
-			m_resources.m_debugInputLayout.ReleaseAndGetAddressOf()));
-	}
+		m_resources.m_effectFactory
+			= std::make_unique<DirectX::EffectFactory>(device);
 
-	m_resources.m_debugBound
-		= DirectX::GeometricPrimitive::CreateSphere(context, 2.0f);
-	m_resources.m_debugBound->CreateInputLayout(
-		m_resources.m_debugBoundEffect.get(), &m_resources.m_debugBoundInputLayout);
+		DirectX::IEffectFactory::EffectInfo info;
+		info.ambientColor = {0.0f, 1.0f, 0.0f};
+		m_resources.m_debugBoundEffect
+			= std::static_pointer_cast<DirectX::BasicEffect>(
+				m_resources.m_effectFactory->CreateEffect(info, context));
+		m_resources.m_debugBoundEffect->SetColorAndAlpha({0.0f, 1.0f, 0.0f, 0.4f});
+		// m_debugBoundEffect->SetLightingEnabled(false);
 
-	// Load the models
-	for (const auto& res : m_resources.modelLocations)
-	{
-		auto& data = m_resources.modelData[res.first];
-		auto& path = res.second;
-		data.model = DirectX::Model::CreateFromSDKMESH(
-			device, path.c_str(), *m_resources.m_effectFactory);
-		data.bound				= {};
-		data.bound.Radius = 0.0f;
-		for (const auto& mesh : data.model->meshes)
+		m_resources.m_spriteBatch = std::make_unique<DirectX::SpriteBatch>(context);
+
+		m_resources.starTexture.CreateFromFile(device, L"assets/star.dds");
+		m_resources.explosionTexture.CreateFromFile(
+			device, L"assets/explosion.dds");
+		m_resources.shotTexture.CreateFromFile(device, L"assets/explosion.dds");
+
+		m_resources.starField
+			= std::make_unique<StarField>(m_context, m_resources.starTexture);
+		m_resources.explosions
+			= std::make_unique<Explosions>(m_context, m_resources.explosionTexture);
+
+		m_resources.menuManager = std::make_unique<MenuManager>(m_context);
+		m_resources.scoreBoard
+			= std::make_unique<ScoreBoard>(m_context, m_resources);
+		m_resources.scoreBoard->loadFromFile();
+
+		m_resources.font8pt = std::make_unique<DirectX::SpriteFont>(
+			device, L"assets/verdana8.spritefont");
+		m_resources.font16pt = std::make_unique<DirectX::SpriteFont>(
+			device, L"assets/verdana16.spritefont");
+		m_resources.font32pt = std::make_unique<DirectX::SpriteFont>(
+			device, L"assets/verdana32.spritefont");
+
+		m_resources.fontMono8pt = std::make_unique<DirectX::SpriteFont>(
+			device, L"assets/mono8.spritefont");
+		m_resources.fontMono16pt = std::make_unique<DirectX::SpriteFont>(
+			device, L"assets/mono16.spritefont");
+		m_resources.fontMono32pt = std::make_unique<DirectX::SpriteFont>(
+			device, L"assets/mono32.spritefont");
+
+		m_resources.m_batch = std::make_unique<DX::DebugBatchType>(context);
 		{
-			DirectX::BoundingSphere::CreateMerged(
-				data.bound, mesh->boundingSphere, data.bound);
+			void const* shaderByteCode;
+			size_t byteCodeLength;
+			m_resources.m_debugEffect->GetVertexShaderBytecode(
+				&shaderByteCode, &byteCodeLength);
+
+			DX::ThrowIfFailed(device->CreateInputLayout(
+				DirectX::VertexPositionColor::InputElements,
+				DirectX::VertexPositionColor::InputElementCount,
+				shaderByteCode,
+				byteCodeLength,
+				m_resources.m_debugInputLayout.ReleaseAndGetAddressOf()));
+		}
+
+		m_resources.m_debugBound
+			= DirectX::GeometricPrimitive::CreateSphere(context, 2.0f);
+		m_resources.m_debugBound->CreateInputLayout(
+			m_resources.m_debugBoundEffect.get(),
+			&m_resources.m_debugBoundInputLayout);
+
+		// Load the models
+		for (const auto& res : m_resources.modelLocations)
+		{
+			auto& data = m_resources.modelData[res.first];
+			auto& path = res.second;
+			data.model = DirectX::Model::CreateFromSDKMESH(
+				device, path.c_str(), *m_resources.m_effectFactory);
+			data.bound				= {};
+			data.bound.Radius = 0.0f;
+			for (const auto& mesh : data.model->meshes)
+			{
+				DirectX::BoundingSphere::CreateMerged(
+					data.bound, mesh->boundingSphere, data.bound);
+			}
+		}
+
+		// Load the audio effects
+		for (const auto& res : m_resources.soundEffectLocations)
+		{
+			auto& effect = m_resources.soundEffects[res.first];
+			auto& path	 = res.second;
+			effect			 = std::make_unique<DirectX::SoundEffect>(
+				m_resources.audioEngine.get(), path.c_str());
 		}
 	}
-
-	// Load the audio effects
-	for (const auto& res : m_resources.soundEffectLocations)
+	catch (...)
 	{
-		auto& effect = m_resources.soundEffects[res.first];
-		auto& path	 = res.second;
-		effect			 = std::make_unique<DirectX::SoundEffect>(
-			m_resources.audioEngine.get(), path.c_str());
+		return E_FAIL;
 	}
 
 	// TODO(James): Critical these are not null for any entity. <NOT_NULLABLE>?
@@ -654,12 +676,14 @@ Game::createDeviceDependentResources()
 	{
 		m_context.entities[i].model = &m_resources.modelData[ModelResource::Enemy1];
 	}
+
+	return S_OK;
 }
 
 //------------------------------------------------------------------------------
 // Allocate all memory resources that change on a window SizeChanged event.
 //------------------------------------------------------------------------------
-void
+HRESULT
 Game::createWindowSizeDependentResources()
 {
 	TRACE
@@ -699,6 +723,8 @@ Game::createWindowSizeDependentResources()
 	updateControlsInfo(m_context.uiControlInfo);
 
 	m_context.updateViewMatrix();
+
+	return S_OK;
 }
 
 //------------------------------------------------------------------------------
@@ -741,9 +767,17 @@ void
 Game::OnDeviceRestored()
 {
 	TRACE
-	createDeviceDependentResources();
+	if (FAILED(createDeviceDependentResources()))
+	{
+		ExitGame();
+		return;
+	}
 
-	createWindowSizeDependentResources();
+	if (FAILED(createWindowSizeDependentResources()))
+	{
+		ExitGame();
+		return;
+	}
 }
 
 //------------------------------------------------------------------------------
