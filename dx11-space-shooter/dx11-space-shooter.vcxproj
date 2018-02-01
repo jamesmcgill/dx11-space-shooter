@@ -220,6 +220,7 @@
     <ClInclude Include="LevelData.h" />
     <ClInclude Include="MenuManager.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ResourceIDs.h" />
     <ClInclude Include="ScoreBoard.h" />
     <ClInclude Include="Starfield.h" />
@@ -277,6 +278,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico" />
+    <Image Include="pac.ico" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="settings.manifest" />

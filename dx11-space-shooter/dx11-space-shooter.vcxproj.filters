@@ -118,6 +118,7 @@
     <ClInclude Include="utils\KeyboardInputString.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -208,6 +209,9 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="pac.ico">
+      <Filter>Assets</Filter>
+    </Image>
     <Image Include="directx.ico">
       <Filter>Assets</Filter>
     </Image>
