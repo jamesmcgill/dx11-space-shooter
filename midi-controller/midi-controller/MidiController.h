@@ -1,6 +1,11 @@
 #pragma once
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4505)
 #include "WinRTMidi.h"
 #include "WindowsVersionHelper.h"
+#pragma warning(pop)
+
 #include <iostream>
 #include <functional>
 #include <array>
