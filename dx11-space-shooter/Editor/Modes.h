@@ -11,45 +11,45 @@
 //------------------------------------------------------------------------------
 struct Modes
 {
-	LevelListMode levelListMode;
-	LevelEditorMode levelEditorMode;
+  LevelListMode levelListMode;
+  LevelEditorMode levelEditorMode;
 
-	FormationListMode formationListMode;
-	FormationSectionEditorMode formationSectionEditorMode;
+  FormationListMode formationListMode;
+  FormationSectionEditorMode formationSectionEditorMode;
 
-	PathListMode pathListMode;
-	PathEditorMode pathEditorMode;
+  PathListMode pathListMode;
+  PathEditorMode pathEditorMode;
 
-	IMode* pCurrentMode = &levelListMode;
+  IMode* pCurrentMode = &levelListMode;
 
-	Modes(AppContext& context, AppResources& resources, GameLogic& logic)
-			: levelListMode(*this, context, resources, logic)
-			, levelEditorMode(*this, context, resources, logic)
-			, formationListMode(*this, context, resources, logic)
-			, formationSectionEditorMode(*this, context, resources, logic)
-			, pathListMode(*this, context, resources, logic)
-			, pathEditorMode(*this, context, resources, logic)
-	{
-	}
+  Modes(AppContext& context, AppResources& resources, GameLogic& logic)
+      : levelListMode(*this, context, resources, logic)
+      , levelEditorMode(*this, context, resources, logic)
+      , formationListMode(*this, context, resources, logic)
+      , formationSectionEditorMode(*this, context, resources, logic)
+      , pathListMode(*this, context, resources, logic)
+      , pathEditorMode(*this, context, resources, logic)
+  {
+  }
 
-	void initModes()
-	{
-		levelListMode.init();
-		levelEditorMode.init();
-		formationListMode.init();
-		formationSectionEditorMode.init();
-		pathListMode.init();
-		pathEditorMode.init();
-	}
+  void initModes()
+  {
+    levelListMode.init();
+    levelEditorMode.init();
+    formationListMode.init();
+    formationSectionEditorMode.init();
+    pathListMode.init();
+    pathEditorMode.init();
+  }
 
-	void enterMode(IMode* pNewMode, bool isNavigatingForward = true)
-	{
-		ASSERT(pCurrentMode);
-		ASSERT(pNewMode);
-		pCurrentMode->onExitMode();
-		pCurrentMode = pNewMode;
-		pCurrentMode->onEnterMode(isNavigatingForward);
-	}
+  void enterMode(IMode* pNewMode, bool isNavigatingForward = true)
+  {
+    ASSERT(pCurrentMode);
+    ASSERT(pNewMode);
+    pCurrentMode->onExitMode();
+    pCurrentMode = pNewMode;
+    pCurrentMode->onEnterMode(isNavigatingForward);
+  }
 };
 
 //------------------------------------------------------------------------------

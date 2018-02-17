@@ -6,20 +6,22 @@
 int
 main()
 {
-	midi::g_onControllerEvent = [](int controllerId, int value) {
-		std::cout << "Controller " << controllerId << " = " << value << "\n";
-	};
+  midi::g_onControllerEvent = [](int controllerId, int value) {
+    std::cout << "Controller " << controllerId << " = " << value << "\n";
+  };
 
-	midi::MidiController midi;
-	midi.loadAndInitDll();
+  midi::MidiController midi;
+  midi.loadAndInitDll();
 
-	std::cout << "Press any key to exit..." << std::endl;
-	while (true) {
-		if (_kbhit()) {
-			break;
-		}
-	}
-	return 0;
+  std::cout << "Press any key to exit..." << std::endl;
+  while (true)
+  {
+    if (_kbhit())
+    {
+      break;
+    }
+  }
+  return 0;
 }
 
 //------------------------------------------------------------------------------

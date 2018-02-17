@@ -15,26 +15,26 @@
 class AppStates
 {
 public:
-	// Available States
-	MainMenuState menu;
-	GetReadyState getReady;
-	GamePlayState playing;
-	GameOverState gameOver;
-	PauseMenuState paused;
-	ShowScoresState showingScores;
-	ScoreEntryState enteringScore;
-	EditorState editing;
+  // Available States
+  MainMenuState menu;
+  GetReadyState getReady;
+  GamePlayState playing;
+  GameOverState gameOver;
+  PauseMenuState paused;
+  ShowScoresState showingScores;
+  ScoreEntryState enteringScore;
+  EditorState editing;
 
 public:
-	AppStates(AppContext& context, AppResources& resources, GameLogic& logic);
-	IAppState* currentState() const;
-	IAppState* previousState() const;
-	void changeState(IAppState* newState);
+  AppStates(AppContext& context, AppResources& resources, GameLogic& logic);
+  IAppState* currentState() const;
+  IAppState* previousState() const;
+  void changeState(IAppState* newState);
 
 private:
-	void loadAndEnterState();
-	IAppState* m_currentState;
-	IAppState* m_previousState = nullptr;
+  void loadAndEnterState();
+  IAppState* m_currentState;
+  IAppState* m_previousState = nullptr;
 };
 
 //------------------------------------------------------------------------------

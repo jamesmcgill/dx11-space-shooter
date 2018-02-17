@@ -17,47 +17,47 @@ struct TimedRecord;
 class Game : public DX::IDeviceNotify
 {
 public:
-	Game();
-	~Game();
+  Game();
+  ~Game();
 
-	// Initialization and management
-	void initialize(HWND window, int width, int height);
+  // Initialization and management
+  void initialize(HWND window, int width, int height);
 
-	// Basic game loop
-	void tick();
+  // Basic game loop
+  void tick();
 
-	// IDeviceNotify
-	virtual void OnDeviceLost() override;
-	virtual void OnDeviceRestored() override;
+  // IDeviceNotify
+  virtual void OnDeviceLost() override;
+  virtual void OnDeviceRestored() override;
 
-	// Messages
-	void onActivated();
-	void onDeactivated();
-	void onSuspending();
-	void onResuming();
-	void onWindowSizeChanged(int width, int height);
+  // Messages
+  void onActivated();
+  void onDeactivated();
+  void onSuspending();
+  void onResuming();
+  void onWindowSizeChanged(int width, int height);
 
-	// Properties
-	void getDefaultSize(int& width, int& height) const;
+  // Properties
+  void getDefaultSize(int& width, int& height) const;
 
 private:
-	void update();
-	void render();
-	void drawBasicProfileInfo();
-	void drawProfilerList();
-	void drawFlameGraph();
-	void updateControlsInfo(ui::Text& uiText);
-	void clear();
+  void update();
+  void render();
+  void drawBasicProfileInfo();
+  void drawProfilerList();
+  void drawFlameGraph();
+  void updateControlsInfo(ui::Text& uiText);
+  void clear();
 
-	HRESULT createDeviceDependentResources();
-	HRESULT createWindowSizeDependentResources();
+  HRESULT createDeviceDependentResources();
+  HRESULT createWindowSizeDependentResources();
 
-	AppContext m_context;
-	AppResources m_resources;
-	GameLogic m_gameLogic;
-	AppStates m_appStates;
+  AppContext m_context;
+  AppResources m_resources;
+  GameLogic m_gameLogic;
+  AppStates m_appStates;
 
-	const logger::TimedRecord* overriddenFlameHead = nullptr;
+  const logger::TimedRecord* overriddenFlameHead = nullptr;
 };
 
 //------------------------------------------------------------------------------

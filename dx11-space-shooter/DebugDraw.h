@@ -31,98 +31,98 @@ namespace DX
 class DrawContext
 {
 public:
-	enum class Projection
-	{
-		Screen,
-		World
-	};
+  enum class Projection
+  {
+    Screen,
+    World
+  };
 
-	DrawContext(AppContext& context, AppResources& resources);
-	~DrawContext();
+  DrawContext(AppContext& context, AppResources& resources);
+  ~DrawContext();
 
-	void begin(Projection proj = Projection::World);
-	void end();
+  void begin(Projection proj = Projection::World);
+  void end();
 
-	void setProjection(Projection proj);
-	void setScreenProjection();
-	void setWorldProjection();
+  void setProjection(Projection proj);
+  void setScreenProjection();
+  void setWorldProjection();
 
 private:
-	AppContext& m_context;
-	AppResources& m_resources;
-	bool m_isOpen = false;
+  AppContext& m_context;
+  AppResources& m_resources;
+  bool m_isOpen = false;
 
-	void setStates(
-		ID3D11BlendState* blend,
-		ID3D11DepthStencilState* depth,
-		ID3D11RasterizerState* raster,
-		ID3D11SamplerState* sampler);
+  void setStates(
+    ID3D11BlendState* blend,
+    ID3D11DepthStencilState* depth,
+    ID3D11RasterizerState* raster,
+    ID3D11SamplerState* sampler);
 };
 
 //------------------------------------------------------------------------------
 using DebugBatchType = DirectX::PrimitiveBatch<DirectX::VertexPositionColor>;
 
 void XM_CALLCONV Draw(
-	DebugBatchType* batch,
-	const DirectX::BoundingSphere& sphere,
-	DirectX::FXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  const DirectX::BoundingSphere& sphere,
+  DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV Draw(
-	DebugBatchType* batch,
-	const DirectX::BoundingBox& box,
-	DirectX::FXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  const DirectX::BoundingBox& box,
+  DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV Draw(
-	DebugBatchType* batch,
-	const DirectX::BoundingOrientedBox& obb,
-	DirectX::FXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  const DirectX::BoundingOrientedBox& obb,
+  DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV Draw(
-	DebugBatchType* batch,
-	const DirectX::BoundingFrustum& frustum,
-	DirectX::FXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  const DirectX::BoundingFrustum& frustum,
+  DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawGrid(
-	DebugBatchType* batch,
-	DirectX::FXMVECTOR xAxis,
-	DirectX::FXMVECTOR yAxis,
-	DirectX::FXMVECTOR origin,
-	size_t xdivs,
-	size_t ydivs,
-	DirectX::GXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  DirectX::FXMVECTOR xAxis,
+  DirectX::FXMVECTOR yAxis,
+  DirectX::FXMVECTOR origin,
+  size_t xdivs,
+  size_t ydivs,
+  DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawRing(
-	DebugBatchType* batch,
-	DirectX::FXMVECTOR origin,
-	DirectX::FXMVECTOR majorAxis,
-	DirectX::FXMVECTOR minorAxis,
-	DirectX::GXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  DirectX::FXMVECTOR origin,
+  DirectX::FXMVECTOR majorAxis,
+  DirectX::FXMVECTOR minorAxis,
+  DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawRay(
-	DebugBatchType* batch,
-	DirectX::FXMVECTOR origin,
-	DirectX::FXMVECTOR direction,
-	bool normalize					 = true,
-	DirectX::FXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  DirectX::FXMVECTOR origin,
+  DirectX::FXMVECTOR direction,
+  bool normalize           = true,
+  DirectX::FXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawTriangle(
-	DebugBatchType* batch,
-	DirectX::FXMVECTOR pointA,
-	DirectX::FXMVECTOR pointB,
-	DirectX::FXMVECTOR pointC,
-	DirectX::GXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  DirectX::FXMVECTOR pointA,
+  DirectX::FXMVECTOR pointB,
+  DirectX::FXMVECTOR pointC,
+  DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawCurve(
-	DebugBatchType* batch,
-	DirectX::FXMVECTOR startPos,
-	DirectX::FXMVECTOR endPos,
-	DirectX::FXMVECTOR control,
-	DirectX::GXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  DirectX::FXMVECTOR startPos,
+  DirectX::FXMVECTOR endPos,
+  DirectX::FXMVECTOR control,
+  DirectX::GXMVECTOR color = DirectX::Colors::White);
 
 void XM_CALLCONV DrawLine(
-	DebugBatchType* batch,
-	DirectX::FXMVECTOR startPos,
-	DirectX::FXMVECTOR endPos,
-	DirectX::FXMVECTOR color = DirectX::Colors::White);
+  DebugBatchType* batch,
+  DirectX::FXMVECTOR startPos,
+  DirectX::FXMVECTOR endPos,
+  DirectX::FXMVECTOR color = DirectX::Colors::White);
 
-}		 // namespace DX
+}    // namespace DX

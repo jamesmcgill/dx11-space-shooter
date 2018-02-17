@@ -3,33 +3,33 @@
 //------------------------------------------------------------------------------
 enum class ModelResource
 {
-	Enemy1,
-	Enemy2,
-	Enemy3,
-	Enemy4,
-	Enemy5,
-	Enemy6,
-	Enemy7,
-	Enemy8,
-	Enemy9,
+  Enemy1,
+  Enemy2,
+  Enemy3,
+  Enemy4,
+  Enemy5,
+  Enemy6,
+  Enemy7,
+  Enemy8,
+  Enemy9,
 
-	Player,
-	Shot,
+  Player,
+  Shot,
 
-	COUNT
+  COUNT
 };
 
 //------------------------------------------------------------------------------
 enum class AudioResource
 {
-	GameStart,
-	GameOver,
-	PlayerShot,
-	EnemyShot,
-	PlayerExplode,
-	EnemyExplode,
+  GameStart,
+  GameOver,
+  PlayerShot,
+  EnemyShot,
+  PlayerExplode,
+  EnemyExplode,
 
-	COUNT
+  COUNT
 };
 
 //------------------------------------------------------------------------------
