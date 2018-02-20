@@ -3,6 +3,7 @@
 #include "DebugDraw.h"
 #include "UIDebugDraw.h"
 
+#define LOGGER_PROFILER_IMPLEMENTATION
 #include "utils/Log.h"
 
 //------------------------------------------------------------------------------

@@ -73,9 +73,6 @@
     <ClInclude Include="AppStates\ScoreEntryState.h">
       <Filter>AppStates</Filter>
     </ClInclude>
-    <ClInclude Include="utils\Log.h">
-      <Filter>utils</Filter>
-    </ClInclude>
     <ClInclude Include="UIDebugDraw.h" />
     <ClInclude Include="AppStates\EditorState.h">
       <Filter>AppStates</Filter>
@@ -119,6 +116,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="utils\log.h">
+      <Filter>utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -163,9 +163,6 @@
       <Filter>AppStates</Filter>
     </ClCompile>
     <ClCompile Include="UIDebugDraw.cpp" />
-    <ClCompile Include="utils\Log.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="AppStates\EditorState.cpp">
       <Filter>AppStates</Filter>
     </ClCompile>

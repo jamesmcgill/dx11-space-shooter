@@ -11,7 +11,7 @@ Texture::CreateFromFile(ID3D11Device* d3dDevice, const wchar_t* fileName)
     d3dDevice, fileName, nullptr, texture.ReleaseAndGetAddressOf());
   if (FAILED(hr))
   {
-    LOG_ERROR("Couldn't load texture from file: %s", fileName);
+    LOG_ERROR("Couldn't load texture from file: %ws", fileName);
     throw std::exception("Texture");
   }
 

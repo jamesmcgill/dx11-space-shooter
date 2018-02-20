@@ -105,20 +105,20 @@ ScoreBoard::loadFromFile()
   if (!file.is_open())
   {
     loadDefaultScores();
-    LOG_ERROR("Couldn't open file: %s", SCORE_FILENAME);
+    LOG_ERROR("Couldn't open file: %ws", SCORE_FILENAME);
     return false;
   }
 
   std::wstring versionStr;
   if (!getline(file, versionStr))
   {
-    LOG_ERROR("Couldn't read from file: %s", SCORE_FILENAME);
+    LOG_ERROR("Couldn't read from file: %ws", SCORE_FILENAME);
     return false;
   }
   int version = std::stoi(versionStr);
   if (version != FILE_VERSION)
   {
-    LOG_ERROR("Invalid Version in scores file: %s", SCORE_FILENAME);
+    LOG_ERROR("Invalid Version in scores file: %ws", SCORE_FILENAME);
     return false;
   }
 
@@ -128,7 +128,7 @@ ScoreBoard::loadFromFile()
   {
     if (!getline(file, nameStr))
     {
-      LOG_ERROR("Couldn't read from file: %s", SCORE_FILENAME);
+      LOG_ERROR("Couldn't read from file: %ws", SCORE_FILENAME);
       return false;
     }
 
@@ -148,7 +148,7 @@ ScoreBoard::saveToFile()
   std::wofstream file(SCORE_FILENAME, std::ios::out);
   if (!file.is_open())
   {
-    LOG_ERROR("Couldn't open %s for saving", SCORE_FILENAME);
+    LOG_ERROR("Couldn't open %ws for saving", SCORE_FILENAME);
     return false;
   }
 

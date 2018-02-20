@@ -123,7 +123,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK-dec2017\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <IntrinsicFunctions>false</IntrinsicFunctions>
@@ -172,7 +172,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)\DirectXTK-dec2017\Inc;$(SolutionDir)\midi-controller</AdditionalIncludeDirectories>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <EnablePREfast>false</EnablePREfast>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/permissive- %(AdditionalOptions)</AdditionalOptions>
@@ -227,7 +227,7 @@
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="UIDebugDraw.h" />
     <ClInclude Include="utils\KeyboardInputString.h" />
-    <ClInclude Include="utils\Log.h" />
+    <ClInclude Include="utils\log.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppResources.cpp" />
@@ -271,7 +271,6 @@
     <ClCompile Include="Starfield.cpp" />
     <ClCompile Include="UIDebugDraw.cpp" />
     <ClCompile Include="utils\KeyboardInputString.cpp" />
-    <ClCompile Include="utils\Log.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
