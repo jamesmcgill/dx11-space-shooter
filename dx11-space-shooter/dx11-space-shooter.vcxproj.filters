@@ -8,9 +8,6 @@
       <UniqueIdentifier>40429be5-2926-4ecb-b070-7922e1c633fe</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dds;dlg;fbx;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="fmt">
-      <UniqueIdentifier>{a442010c-d978-4aa6-8ac1-aa3cc413c51d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="AppStates">
       <UniqueIdentifier>{00cffc13-b446-4f4f-9ca5-93636dc0ffcc}</UniqueIdentifier>
     </Filter>
@@ -22,6 +19,9 @@
     </Filter>
     <Filter Include="Editor">
       <UniqueIdentifier>{bf06e384-1d74-4dc0-aa25-fe83f2652f0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fmt">
+      <UniqueIdentifier>{41041473-80b2-4d05-9f57-b6574dcd4a67}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,9 +36,6 @@
     <ClInclude Include="Starfield.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="DebugDraw.h" />
-    <ClInclude Include="fmt\format.h">
-      <Filter>fmt</Filter>
-    </ClInclude>
     <ClInclude Include="MenuManager.h" />
     <ClInclude Include="AppStates\MainMenuState.h">
       <Filter>AppStates</Filter>
@@ -130,9 +127,6 @@
     <ClCompile Include="Starfield.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
-    <ClCompile Include="fmt\format.cc">
-      <Filter>fmt</Filter>
-    </ClCompile>
     <ClCompile Include="MenuManager.cpp" />
     <ClCompile Include="AppStates\MainMenuState.cpp">
       <Filter>AppStates</Filter>
@@ -200,6 +194,9 @@
     <ClCompile Include="AppResources.cpp" />
     <ClCompile Include="utils\KeyboardInputString.cpp">
       <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="fmt-6.0.0\format.cc">
+      <Filter>fmt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

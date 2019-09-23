@@ -145,7 +145,7 @@ Path::from_json(const json11::Json& json)
 
     if (value.is_string() && key == ID_NODE_KEY)
     {
-      ret.id = strUtils::utf8ToWstring(value.string_value());
+      ret.id = strUtils::utf8ToWstring(value.string_value().c_str());
     }
     else if (value.is_array() && key == WAYPOINTS_KEY)
     {
@@ -185,7 +185,7 @@ FormationSection::from_json(const json11::Json& json)
 
     if (value.is_string() && key == PATH_ID_KEY)
     {
-      ret.pathId = strUtils::utf8ToWstring(value.string_value());
+      ret.pathId = strUtils::utf8ToWstring(value.string_value().c_str());
     }
     else if (value.is_number() && key == NUM_SHIPS_KEY)
     {
@@ -227,7 +227,7 @@ Formation::from_json(const json11::Json& json)
 
     if (value.is_string() && key == ID_NODE_KEY)
     {
-      ret.id = strUtils::utf8ToWstring(value.string_value());
+      ret.id = strUtils::utf8ToWstring(value.string_value().c_str());
     }
     else if (value.is_array() && key == SECTIONS_KEY)
     {
@@ -267,7 +267,7 @@ Wave::from_json(const json11::Json& json)
 
     if (value.is_string() && key == FORMATION_ID_KEY)
     {
-      ret.formationId = strUtils::utf8ToWstring(value.string_value());
+      ret.formationId = strUtils::utf8ToWstring(value.string_value().c_str());
     }
     else if (value.is_number() && key == SPAWN_TIME_KEY)
     {

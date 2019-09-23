@@ -268,7 +268,7 @@ Game::drawProfilerList()
     auto& accumRecord = accumulatedRecords[entry.first];
     drawText(
       L"{:<35} ({:>2})h    ({:>5.4f} / {:<5.4f})ms",
-      record.function,
+      strUtils::utf8ToWstring(record.function),
       accumRecord.callsCount.average(),
       logger::Timing::ticksToMilliSeconds(accumRecord.ticks.min),
       logger::Timing::ticksToMilliSeconds(accumRecord.ticks.max));
@@ -406,7 +406,7 @@ Game::drawFlameGraph()
       toolTipNode   = node;
     }
 
-    uiText.text     = fmt::format(L"{}", node->function);
+    uiText.text = strUtils::utf8ToWstring(node->function);
     uiText.position = Vector2(ceil(xPos + 5.0f), ceil(yPos + yHalfHeight));
     uiText.draw(*m_resources.m_spriteBatch);
   };
@@ -430,7 +430,7 @@ Game::drawFlameGraph()
 
     uiText.text = fmt::format(
       L"{}({:<5.4f}ms)",
-      toolTipNode->function,
+      strUtils::utf8ToWstring(toolTipNode->function),
       logger::Timing::ticksToMilliSeconds(toolTipNode->duration));
     uiText.position = Vector2(
       mouseState.x + (TOOLTIP_HEIGHT / 2.0f),

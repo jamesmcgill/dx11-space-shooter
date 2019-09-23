@@ -47,10 +47,10 @@ ScoreBoard::render(DirectX::SpriteBatch& spriteBatch)
           - (numPaddingRowsAbove * padding);
 
   // Render Scoreboard
+  std::wstring scoreStr;
   for (auto& e : m_scores)
   {
-    fmt::WMemoryWriter scoreStr;
-    scoreStr << e.score;
+    scoreStr = fmt::format(L"{} ", e.score);
 
     XMVECTOR dimensions = font->MeasureString(scoreStr.c_str());
     Vector2 scoreOrigin = {(XMVectorGetX(dimensions)), 0.0f};
